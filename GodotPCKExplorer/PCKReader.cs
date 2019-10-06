@@ -8,13 +8,24 @@ using System.Windows.Forms;
 
 namespace GodotPCKExplorer
 {
-	class PCKReader
+	public class PCKReader
 	{
 		BinaryReader fileStream = null;
 		public Dictionary<string, PackedFile> Files = new Dictionary<string, PackedFile>();
 		public int PCK_VersionMajor = 0;
 		public int PCK_VersionMinor = 0;
 		public int PCK_VersionLast = 0;
+
+		public void Close()
+		{
+			if (fileStream != null && fileStream.BaseStream != null)
+			{
+				fileStream.Close();
+				fileStream = null;
+
+				Files.Clear();
+			}
+		}
 
 		public bool OpenFile(string p_path)
 		{
@@ -38,12 +49,12 @@ namespace GodotPCKExplorer
 
 			int magic = fileStream.ReadInt32();
 
-			if (magic != 0x43504447)
+			if (magic != Program.PCK_MAGIC)
 			{
 				//maybe at the end.... self contained exe
 				fileStream.BaseStream.Seek(4, SeekOrigin.End);
 				magic = fileStream.ReadInt32();
-				if (magic != 0x43504447)
+				if (magic != Program.PCK_MAGIC)
 				{
 					fileStream.Close();
 					MessageBox.Show("Error: Not Godot PCK file!", "Error");
@@ -55,7 +66,7 @@ namespace GodotPCKExplorer
 				fileStream.BaseStream.Seek(-ds - 8, SeekOrigin.Current);
 
 				magic = fileStream.ReadInt32();
-				if (magic != 0x43504447)
+				if (magic != Program.PCK_MAGIC)
 				{
 					fileStream.Close();
 					MessageBox.Show("Error: Not Godot PCK file!", "Error");

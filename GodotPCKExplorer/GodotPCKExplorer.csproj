@@ -32,6 +32,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>icon.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -52,6 +55,18 @@
     <Compile Include="AboutBox1.Designer.cs">
       <DependentUpon>AboutBox1.cs</DependentUpon>
     </Compile>
+    <Compile Include="BackgroundProgress.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="BackgroundProgress.Designer.cs">
+      <DependentUpon>BackgroundProgress.cs</DependentUpon>
+    </Compile>
+    <Compile Include="CreatePCKFile.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="CreatePCKFile.Designer.cs">
+      <DependentUpon>CreatePCKFile.cs</DependentUpon>
+    </Compile>
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -59,11 +74,18 @@
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
     <Compile Include="PackedFile.cs" />
+    <Compile Include="PCKPacker.cs" />
     <Compile Include="PCKReader.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="AboutBox1.resx">
       <DependentUpon>AboutBox1.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="BackgroundProgress.resx">
+      <DependentUpon>BackgroundProgress.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CreatePCKFile.resx">
+      <DependentUpon>CreatePCKFile.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
@@ -91,6 +113,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="icon.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -25,11 +25,14 @@ namespace GodotPCKExplorer
 			MD5 = _MD5;
 		}
 
+		public delegate void VoidInt(int progress);
+		public event VoidInt OnProgress;
+
 		public bool ExtractFile(string basePath)
 		{
 			string path = basePath + "/" + FilePath.Replace("res://", "");
 			string dir = Path.GetDirectoryName(path);
-			FileStream file;
+			BinaryWriter file;
 
 			try
 			{
@@ -39,7 +42,7 @@ namespace GodotPCKExplorer
 				}
 
 				Directory.CreateDirectory(dir);
-				file = File.OpenWrite(path);
+				file = new BinaryWriter(File.OpenWrite(path));
 			}
 			catch (Exception e)
 			{
@@ -47,10 +50,37 @@ namespace GodotPCKExplorer
 				return false;
 			}
 
-			if (Size > 0)
+			const int buf_max = 65536;
+
+			try
 			{
-				reader.BaseStream.Seek(Offset, SeekOrigin.Begin);
-				file.Write(reader.ReadBytes((int)Size), 0, (int)Size);
+				if (Size > 0)
+				{
+					reader.BaseStream.Seek(Offset, SeekOrigin.Begin);
+					long to_write = Size;
+
+					while (to_write > 0)
+					{
+						var read = reader.ReadBytes(Math.Min(buf_max, (int)to_write));
+						file.Write(read);
+						to_write -= read.Length;
+
+						OnProgress?.Invoke(100 - (int)((double)to_write / Size * 100));
+					}
+				}
+			}
+			catch (Exception e)
+			{
+				MessageBox.Show(e.Message, "Error");
+				file.Close();
+				try
+				{
+					File.Delete(path);
+				}
+				catch
+				{
+
+				}
 			}
 
 			file.Close();

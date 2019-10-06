@@ -8,6 +8,8 @@ namespace GodotPCKExplorer
 {
 	static class Program
 	{
+		public const int PCK_MAGIC = 0x43504447;
+
 		/// <summary>
 		/// The main entry point for the application.
 		/// </summary>

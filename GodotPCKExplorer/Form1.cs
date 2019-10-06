@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static GodotPCKExplorer.PackedFile;
 
 namespace GodotPCKExplorer
 {
@@ -32,7 +33,7 @@ namespace GodotPCKExplorer
 			if (res == DialogResult.OK)
 			{
 				dataGridView1.Rows.Clear();
-			
+
 				if (pckReader.OpenFile(openFileDialog1.FileName))
 				{
 					foreach (var f in pckReader.Files)
@@ -50,39 +51,96 @@ namespace GodotPCKExplorer
 
 		private void extractFileToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			var res = folderBrowserDialog1.ShowDialog();
-			if (res == DialogResult.OK)
-			{
-				string basePath = folderBrowserDialog1.SelectedPath;
+			List<DataGridViewRow> rows = new List<DataGridViewRow>();
+			foreach (DataGridViewRow i in dataGridView1.SelectedRows)
+				rows.Add(i);
 
-				foreach (DataGridViewRow i in dataGridView1.SelectedRows)
-				{
-					string path = (string)(i.Cells[0].Value);
-					if (path != null)
-						pckReader.Files[path].ExtractFile(basePath);
-				}
-			}
+			ExtractFiles(rows);
 		}
 
 		private void extractAllToolStripMenuItem_Click(object sender, EventArgs e)
 		{
+			List<DataGridViewRow> rows = new List<DataGridViewRow>();
+			foreach (DataGridViewRow i in dataGridView1.Rows)
+				rows.Add(i);
+
+			ExtractFiles(rows);
+		}
+
+		private void ExtractFiles(List<DataGridViewRow> rows)
+		{
+			var bp = new BackgroundProgress();
+			var bw = bp.backgroundWorker1;
+			bool result = true;
+
 			var res = folderBrowserDialog1.ShowDialog();
+
+			bw.DoWork += (sender, ev) =>
+			{
+				if (res == DialogResult.OK)
+				{
+					string basePath = folderBrowserDialog1.SelectedPath;
+
+					int count = 0;
+					double one_file_in_progress_line = 1.0 / rows.Count;
+					foreach (var i in rows)
+					{
+						string path = (string)(i.Cells[0].Value);
+						if (path != null)
+						{
+							VoidInt upd = (p) =>
+							{
+								bw.ReportProgress((int)(((double)count / rows.Count * 100) + (p * one_file_in_progress_line)));
+							};
+							pckReader.Files[path].OnProgress += upd;
+
+							if (!pckReader.Files[path].ExtractFile(basePath))
+							{
+								pckReader.Files[path].OnProgress -= upd;
+
+								result = false;
+								return;
+							}
+						}
+
+						count++;
+						bw.ReportProgress((int)((double)count / rows.Count * 100));
+
+						if (bw.CancellationPending)
+						{
+							result = false;
+							return;
+						}
+					}
+				}
+				else
+				{
+					result = false;
+				}
+			};
+
+			bw.RunWorkerAsync();
+			bp.ShowDialog();
+
+			if (result)
+				MessageBox.Show("Complete!");
+		}
+
+		private void packFolderToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			var res = folderBrowserDialog_pack_folder.ShowDialog();
 			if (res == DialogResult.OK)
 			{
-				string basePath = folderBrowserDialog1.SelectedPath;
-
-				foreach (DataGridViewRow i in dataGridView1.Rows)
-				{
-					string path = (string)(i.Cells[0].Value);
-					if (path != null)
-						pckReader.Files[path].ExtractFile(basePath);
-				}
+				var dlg = new CreatePCKFile();
+				dlg.SetFolderPath(folderBrowserDialog_pack_folder.SelectedPath);
+				dlg.ShowDialog();
 			}
 		}
 
-		private void saveFileToolStripMenuItem_Click(object sender, EventArgs e)
+		private void closeFileToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-
+			dataGridView1.Rows.Clear();
+			pckReader.Close();
 		}
 	}
 }

@@ -101,5 +101,10 @@ namespace GodotPCKExplorer
 			}
 		}
 		#endregion
+
+		private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+		{
+			System.Diagnostics.Process.Start("https://gitlab.com/DmitriySalnikovDev/godotpckexplorer");
+		}
 	}
 }
