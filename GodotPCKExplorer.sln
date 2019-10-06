@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29326.143
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotPCKUnpacker", "GodotPCKUnpacker\GodotPCKUnpacker.csproj", "{F97C15B2-F26D-46E6-AF17-5A2495A9FAC8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotPCKExplorer", "GodotPCKExplorer\GodotPCKExplorer.csproj", "{F97C15B2-F26D-46E6-AF17-5A2495A9FAC8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,4 +1,4 @@
-﻿namespace GodotPCKUnpacker
+﻿namespace GodotPCKExplorer
 {
 	partial class Form1
 	{
@@ -28,13 +28,14 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-			this.components = new System.ComponentModel.Container();
 			this.menuStrip1 = new System.Windows.Forms.MenuStrip();
 			this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.openFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.saveFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.editToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.extractFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.extractAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.addFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.addFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -44,12 +45,8 @@
 			this.path = new System.Windows.Forms.DataGridViewTextBoxColumn();
 			this.offset = new System.Windows.Forms.DataGridViewTextBoxColumn();
 			this.size = new System.Windows.Forms.DataGridViewTextBoxColumn();
-			this.extractAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.packedFileBindingSource = new System.Windows.Forms.BindingSource(this.components);
-			this.saveFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuStrip1.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
-			((System.ComponentModel.ISupportInitialize)(this.packedFileBindingSource)).BeginInit();
 			this.SuspendLayout();
 			// 
 			// menuStrip1
@@ -77,14 +74,21 @@
 			// openFileToolStripMenuItem
 			// 
 			this.openFileToolStripMenuItem.Name = "openFileToolStripMenuItem";
-			this.openFileToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.openFileToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
 			this.openFileToolStripMenuItem.Text = "Open File";
 			this.openFileToolStripMenuItem.Click += new System.EventHandler(this.openFileToolStripMenuItem_Click);
+			// 
+			// saveFileToolStripMenuItem
+			// 
+			this.saveFileToolStripMenuItem.Name = "saveFileToolStripMenuItem";
+			this.saveFileToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
+			this.saveFileToolStripMenuItem.Text = "Save File";
+			this.saveFileToolStripMenuItem.Click += new System.EventHandler(this.saveFileToolStripMenuItem_Click);
 			// 
 			// exitToolStripMenuItem
 			// 
 			this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-			this.exitToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.exitToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
 			this.exitToolStripMenuItem.Text = "Exit";
 			this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
 			// 
@@ -102,20 +106,27 @@
 			// extractFileToolStripMenuItem
 			// 
 			this.extractFileToolStripMenuItem.Name = "extractFileToolStripMenuItem";
-			this.extractFileToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.extractFileToolStripMenuItem.Size = new System.Drawing.Size(157, 22);
 			this.extractFileToolStripMenuItem.Text = "Extract Selected";
 			this.extractFileToolStripMenuItem.Click += new System.EventHandler(this.extractFileToolStripMenuItem_Click);
+			// 
+			// extractAllToolStripMenuItem
+			// 
+			this.extractAllToolStripMenuItem.Name = "extractAllToolStripMenuItem";
+			this.extractAllToolStripMenuItem.Size = new System.Drawing.Size(157, 22);
+			this.extractAllToolStripMenuItem.Text = "Extract All";
+			this.extractAllToolStripMenuItem.Click += new System.EventHandler(this.extractAllToolStripMenuItem_Click);
 			// 
 			// addFileToolStripMenuItem
 			// 
 			this.addFileToolStripMenuItem.Name = "addFileToolStripMenuItem";
-			this.addFileToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.addFileToolStripMenuItem.Size = new System.Drawing.Size(157, 22);
 			this.addFileToolStripMenuItem.Text = "Add Files";
 			// 
 			// addFolderToolStripMenuItem
 			// 
 			this.addFolderToolStripMenuItem.Name = "addFolderToolStripMenuItem";
-			this.addFolderToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.addFolderToolStripMenuItem.Size = new System.Drawing.Size(157, 22);
 			this.addFolderToolStripMenuItem.Text = "Add Folder";
 			// 
 			// aboutToolStripMenuItem
@@ -127,7 +138,7 @@
 			// 
 			// openFileDialog1
 			// 
-			this.openFileDialog1.FileName = "openFileDialog1";
+			this.openFileDialog1.Filter = "Godot PCK files|*.pck|All files|*.*";
 			// 
 			// dataGridView1
 			// 
@@ -169,24 +180,6 @@
 			this.size.Name = "size";
 			this.size.ReadOnly = true;
 			// 
-			// extractAllToolStripMenuItem
-			// 
-			this.extractAllToolStripMenuItem.Name = "extractAllToolStripMenuItem";
-			this.extractAllToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-			this.extractAllToolStripMenuItem.Text = "Extract All";
-			this.extractAllToolStripMenuItem.Click += new System.EventHandler(this.extractAllToolStripMenuItem_Click);
-			// 
-			// packedFileBindingSource
-			// 
-			this.packedFileBindingSource.DataSource = typeof(GodotPCKUnpacker.PackedFile);
-			// 
-			// saveFileToolStripMenuItem
-			// 
-			this.saveFileToolStripMenuItem.Name = "saveFileToolStripMenuItem";
-			this.saveFileToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-			this.saveFileToolStripMenuItem.Text = "Save File";
-			this.saveFileToolStripMenuItem.Click += new System.EventHandler(this.saveFileToolStripMenuItem_Click);
-			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -200,7 +193,6 @@
 			this.menuStrip1.ResumeLayout(false);
 			this.menuStrip1.PerformLayout();
 			((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
-			((System.ComponentModel.ISupportInitialize)(this.packedFileBindingSource)).EndInit();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -220,7 +212,6 @@
 		private System.Windows.Forms.OpenFileDialog openFileDialog1;
 		private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog1;
 		private System.Windows.Forms.DataGridView dataGridView1;
-		private System.Windows.Forms.BindingSource packedFileBindingSource;
 		private System.Windows.Forms.DataGridViewTextBoxColumn path;
 		private System.Windows.Forms.DataGridViewTextBoxColumn offset;
 		private System.Windows.Forms.DataGridViewTextBoxColumn size;

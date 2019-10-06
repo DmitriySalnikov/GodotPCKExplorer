@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace GodotPCKUnpacker
+namespace GodotPCKExplorer
 {
 	partial class AboutBox1 : Form
 	{

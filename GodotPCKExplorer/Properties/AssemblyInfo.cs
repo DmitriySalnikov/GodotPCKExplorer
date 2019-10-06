@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDescription("C# implementation of pck file format")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Dmitriy Salnikov")]
-[assembly: AssemblyProduct("GodotPCKUnpacker")]
+[assembly: AssemblyProduct("GodotPCKExplorer")]
 [assembly: AssemblyCopyright("Copyright ©  2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

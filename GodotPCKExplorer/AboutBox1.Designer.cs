@@ -1,4 +1,4 @@
-﻿namespace GodotPCKUnpacker
+﻿namespace GodotPCKExplorer
 {
 	partial class AboutBox1
 	{

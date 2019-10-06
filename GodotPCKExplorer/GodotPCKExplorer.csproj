@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{F97C15B2-F26D-46E6-AF17-5A2495A9FAC8}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>GodotPCKUnpacker</RootNamespace>
-    <AssemblyName>GodotPCKUnpacker</AssemblyName>
+    <RootNamespace>GodotPCKExplorer</RootNamespace>
+    <AssemblyName>GodotPCKExplorer</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -76,6 +76,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="Properties\DataSources\PackedFile.datasource" />
     <None Include="Properties\Settings.settings">
