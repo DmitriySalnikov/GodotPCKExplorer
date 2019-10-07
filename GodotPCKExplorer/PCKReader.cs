@@ -61,7 +61,7 @@ namespace GodotPCKExplorer
 			if (magic != Program.PCK_MAGIC)
 			{
 				//maybe at the end.... self contained exe
-				fileStream.BaseStream.Seek(4, SeekOrigin.End);
+				fileStream.BaseStream.Seek(-4, SeekOrigin.End);
 				magic = fileStream.ReadInt32();
 				if (magic != Program.PCK_MAGIC)
 				{

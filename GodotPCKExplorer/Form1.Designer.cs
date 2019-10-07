@@ -28,7 +28,7 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
+			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
 			this.menuStrip1 = new System.Windows.Forms.MenuStrip();
 			this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.openFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -147,7 +147,7 @@
 			// 
 			// openFileDialog1
 			// 
-			this.openFileDialog1.Filter = "Godot PCK files|*.pck|Godot PCK files and Executables|*.pck;*.exe|Executables|*.e" +
+			this.openFileDialog1.Filter = "Godot PCK files and Executables|*.pck;*.exe|Godot PCK files|*.pck|Executables|*.e" +
     "xe|All files|*.*";
 			// 
 			// dataGridView1
@@ -188,8 +188,8 @@
 			// 
 			// size
 			// 
-			dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
-			this.size.DefaultCellStyle = dataGridViewCellStyle1;
+			dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
+			this.size.DefaultCellStyle = dataGridViewCellStyle2;
 			this.size.FillWeight = 13F;
 			this.size.HeaderText = "Size";
 			this.size.Name = "size";

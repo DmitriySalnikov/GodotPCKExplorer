@@ -16,7 +16,7 @@ namespace GodotPCKExplorer
 		const string version_string_pattern = @"([0-9]{1,2})\.([0-9]{1,2})\.([0-9]{1,2})\.([0-9]{1,2})";
 		static Regex VersionStringRegEx = new Regex(version_string_pattern);
 
-		static string ValidCommands = $"Example of valid arguments:\nOpen file '-o \"C:\\Game.pck\"'\nExport files '-e \"C:\\Game.pck\" \"C:\\Export Directory\"'\nPack files (version can be ignored if you have saved {CreatePCKFile.GodotVersionSave}) '-p \"C:\\Directory with files\" \"C:\\GameNew.pck\" 1.3.2.0'";
+		static string ValidCommands = $"Example of valid arguments:\nOpen file '-o \"C:\\Game.pck\"'\nExport files '-e \"C:\\Game.exe\" \"C:\\Export Directory\"'\nPack files (version can be ignored if you have saved {CreatePCKFile.GodotVersionSave}) '-p \"C:\\Directory with files\" \"C:\\GameNew.pck\" 1.3.2.0'";
 		public static bool CMDMode = false;
 
 		/// <summary>
@@ -28,7 +28,6 @@ namespace GodotPCKExplorer
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
 
-			//"C:\My\Projects\VS\GodotPCKExplorer\GodotPCKExplorer\bin\Debug\GodotPCKExplorer.exe" -o "C:\My\Projects\GE\C# Game.pck"
 			string[] args = null;
 			bool run_with_args = false;
 
