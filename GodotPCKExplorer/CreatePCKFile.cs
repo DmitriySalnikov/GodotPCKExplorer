@@ -30,7 +30,11 @@ namespace GodotPCKExplorer
 			dataGridView1.Rows.Clear();
 			foreach (var f in files)
 			{
-				dataGridView1.Rows.Add(f.Key, f.Value.Size);
+				var tmpRow = new DataGridViewRow();
+				tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Key });
+				tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = Utils.SizeSuffix(f.Value.Size), Tag = f.Value.Size });
+
+				dataGridView1.Rows.Add(tmpRow);
 			}
 
 			CalculatePCKSize();
@@ -45,7 +49,7 @@ namespace GodotPCKExplorer
 				size += f.Size;
 			}
 
-			l_total_size.Text = $"Total size: ~{(float)size / 1024 / 1024:f3} MB";
+			l_total_size.Text = $"Total size: ~{Utils.SizeSuffix(size)}";
 		}
 
 		void ScanFoldersForFiles(string folder)
@@ -84,6 +88,18 @@ namespace GodotPCKExplorer
 					MessageBox.Show("Compelete!");
 				}
 			}
+		}
+
+		private void dataGridView1_SortCompare(object sender, DataGridViewSortCompareEventArgs e)
+		{
+			if (e.Column.Index != 1)
+			{
+				e.Handled = false;
+				return;
+			}
+
+			e.SortResult = (long)(dataGridView1.Rows[e.RowIndex1].Cells[1].Tag) > (long)(dataGridView1.Rows[e.RowIndex2].Cells[1].Tag) ? 1 : -1;
+			e.Handled = true;
 		}
 	}
 }

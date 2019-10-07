@@ -38,7 +38,12 @@ namespace GodotPCKExplorer
 				{
 					foreach (var f in pckReader.Files)
 					{
-						dataGridView1.Rows.Add(f.Value.FilePath, f.Value.Offset, f.Value.Size);
+						var tmpRow = new DataGridViewRow();
+						tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.FilePath });
+						tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.Offset });
+						tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = Utils.SizeSuffix(f.Value.Size), Tag = f.Value.Size });
+
+						dataGridView1.Rows.Add(tmpRow);
 					}
 				}
 			}
@@ -141,6 +146,18 @@ namespace GodotPCKExplorer
 		{
 			dataGridView1.Rows.Clear();
 			pckReader.Close();
+		}
+
+		private void dataGridView1_SortCompare(object sender, DataGridViewSortCompareEventArgs e)
+		{
+			if (e.Column.Index != 2)
+			{
+				e.Handled = false;
+				return;
+			}
+
+			e.SortResult = (long)(dataGridView1.Rows[e.RowIndex1].Cells[2].Tag) > (long)(dataGridView1.Rows[e.RowIndex2].Cells[2].Tag) ? 1 : -1;
+			e.Handled = true;
 		}
 	}
 }

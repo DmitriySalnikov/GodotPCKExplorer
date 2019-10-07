@@ -28,9 +28,8 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
+			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
 			this.dataGridView1 = new System.Windows.Forms.DataGridView();
-			this.filePath = new System.Windows.Forms.DataGridViewTextBoxColumn();
-			this.size = new System.Windows.Forms.DataGridViewTextBoxColumn();
 			this.btn_create = new System.Windows.Forms.Button();
 			this.l_total_size = new System.Windows.Forms.Label();
 			this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
@@ -39,6 +38,8 @@
 			this.nud_minor = new System.Windows.Forms.NumericUpDown();
 			this.nud_revision = new System.Windows.Forms.NumericUpDown();
 			this.nud_ver = new System.Windows.Forms.NumericUpDown();
+			this.size = new System.Windows.Forms.DataGridViewTextBoxColumn();
+			this.filePath = new System.Windows.Forms.DataGridViewTextBoxColumn();
 			((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.nud_major)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.nud_minor)).BeginInit();
@@ -62,22 +63,8 @@
 			this.dataGridView1.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
 			this.dataGridView1.Size = new System.Drawing.Size(776, 397);
 			this.dataGridView1.TabIndex = 0;
+			this.dataGridView1.SortCompare += new System.Windows.Forms.DataGridViewSortCompareEventHandler(this.dataGridView1_SortCompare);
 			this.dataGridView1.UserDeletedRow += new System.Windows.Forms.DataGridViewRowEventHandler(this.dataGridView1_UserDeletedRow);
-			// 
-			// filePath
-			// 
-			this.filePath.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
-			this.filePath.FillWeight = 85F;
-			this.filePath.HeaderText = "File Path";
-			this.filePath.Name = "filePath";
-			this.filePath.ReadOnly = true;
-			// 
-			// size
-			// 
-			this.size.FillWeight = 15F;
-			this.size.HeaderText = "Size";
-			this.size.Name = "size";
-			this.size.ReadOnly = true;
 			// 
 			// btn_create
 			// 
@@ -181,6 +168,23 @@
             0,
             0});
 			// 
+			// size
+			// 
+			dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
+			this.size.DefaultCellStyle = dataGridViewCellStyle2;
+			this.size.FillWeight = 15F;
+			this.size.HeaderText = "Size";
+			this.size.Name = "size";
+			this.size.ReadOnly = true;
+			// 
+			// filePath
+			// 
+			this.filePath.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+			this.filePath.FillWeight = 85F;
+			this.filePath.HeaderText = "File Path";
+			this.filePath.Name = "filePath";
+			this.filePath.ReadOnly = true;
+			// 
 			// CreatePCKFile
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -210,8 +214,6 @@
 		#endregion
 
 		private System.Windows.Forms.DataGridView dataGridView1;
-		private System.Windows.Forms.DataGridViewTextBoxColumn filePath;
-		private System.Windows.Forms.DataGridViewTextBoxColumn size;
 		private System.Windows.Forms.Button btn_create;
 		private System.Windows.Forms.Label l_total_size;
 		private System.Windows.Forms.SaveFileDialog saveFileDialog1;
@@ -220,5 +222,7 @@
 		private System.Windows.Forms.NumericUpDown nud_minor;
 		private System.Windows.Forms.NumericUpDown nud_revision;
 		private System.Windows.Forms.NumericUpDown nud_ver;
+		private System.Windows.Forms.DataGridViewTextBoxColumn filePath;
+		private System.Windows.Forms.DataGridViewTextBoxColumn size;
 	}
 }
