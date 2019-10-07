@@ -170,6 +170,7 @@
 			// 
 			this.cb_ver.FormattingEnabled = true;
 			this.cb_ver.Items.AddRange(new object[] {
+            "0",
             "1"});
 			this.cb_ver.Location = new System.Drawing.Point(536, 415);
 			this.cb_ver.Name = "cb_ver";
