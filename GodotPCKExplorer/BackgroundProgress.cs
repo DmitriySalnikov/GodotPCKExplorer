@@ -17,6 +17,7 @@ namespace GodotPCKExplorer
 		public BackgroundProgress()
 		{
 			InitializeComponent();
+			Icon = Properties.Resources.icon;
 		}
 
 		private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace GodotPCKExplorer
 {
@@ -35,6 +36,14 @@ namespace GodotPCKExplorer
 			return string.Format("{0:n" + decimalPlaces + "} {1}",
 				adjustedSize,
 				SizeSuffixes[mag]);
+		}
+
+		public static void ShowMessage(string text, string title)
+		{
+			if (Program.CMDMode)
+				Console.WriteLine($"{title}: {text}");
+			else
+				MessageBox.Show(text, title);
 		}
 	}
 }

@@ -206,6 +206,9 @@ namespace GodotPCKExplorer
 			bw.RunWorkerAsync();
 			bp.ShowDialog();
 
+			if (result)
+				Utils.ShowMessage("Complete!", "Progress");
+
 			return result;
 		}
 	}

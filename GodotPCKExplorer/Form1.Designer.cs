@@ -28,7 +28,7 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
 			this.menuStrip1 = new System.Windows.Forms.MenuStrip();
 			this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.openFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -44,10 +44,10 @@
 			this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
 			this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
 			this.dataGridView1 = new System.Windows.Forms.DataGridView();
-			this.folderBrowserDialog_pack_folder = new System.Windows.Forms.FolderBrowserDialog();
-			this.size = new System.Windows.Forms.DataGridViewTextBoxColumn();
-			this.offset = new System.Windows.Forms.DataGridViewTextBoxColumn();
 			this.path = new System.Windows.Forms.DataGridViewTextBoxColumn();
+			this.offset = new System.Windows.Forms.DataGridViewTextBoxColumn();
+			this.size = new System.Windows.Forms.DataGridViewTextBoxColumn();
+			this.folderBrowserDialog_pack_folder = new System.Windows.Forms.FolderBrowserDialog();
 			this.menuStrip1.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
 			this.SuspendLayout();
@@ -171,14 +171,13 @@
 			this.dataGridView1.TabIndex = 2;
 			this.dataGridView1.SortCompare += new System.Windows.Forms.DataGridViewSortCompareEventHandler(this.dataGridView1_SortCompare);
 			// 
-			// size
+			// path
 			// 
-			dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
-			this.size.DefaultCellStyle = dataGridViewCellStyle2;
-			this.size.FillWeight = 13F;
-			this.size.HeaderText = "Size";
-			this.size.Name = "size";
-			this.size.ReadOnly = true;
+			this.path.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+			this.path.FillWeight = 70F;
+			this.path.HeaderText = "Path";
+			this.path.Name = "path";
+			this.path.ReadOnly = true;
 			// 
 			// offset
 			// 
@@ -187,13 +186,14 @@
 			this.offset.Name = "offset";
 			this.offset.ReadOnly = true;
 			// 
-			// path
+			// size
 			// 
-			this.path.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
-			this.path.FillWeight = 70F;
-			this.path.HeaderText = "Path";
-			this.path.Name = "path";
-			this.path.ReadOnly = true;
+			dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
+			this.size.DefaultCellStyle = dataGridViewCellStyle1;
+			this.size.FillWeight = 13F;
+			this.size.HeaderText = "Size";
+			this.size.Name = "size";
+			this.size.ReadOnly = true;
 			// 
 			// Form1
 			// 
@@ -205,6 +205,7 @@
 			this.MainMenuStrip = this.menuStrip1;
 			this.Name = "Form1";
 			this.Text = "Godot PCK Explorer";
+			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
 			this.menuStrip1.ResumeLayout(false);
 			this.menuStrip1.PerformLayout();
 			((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();

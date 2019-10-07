@@ -28,8 +28,10 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
 			this.dataGridView1 = new System.Windows.Forms.DataGridView();
+			this.filePath = new System.Windows.Forms.DataGridViewTextBoxColumn();
+			this.size = new System.Windows.Forms.DataGridViewTextBoxColumn();
 			this.btn_create = new System.Windows.Forms.Button();
 			this.l_total_size = new System.Windows.Forms.Label();
 			this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
@@ -37,14 +39,11 @@
 			this.nud_major = new System.Windows.Forms.NumericUpDown();
 			this.nud_minor = new System.Windows.Forms.NumericUpDown();
 			this.nud_revision = new System.Windows.Forms.NumericUpDown();
-			this.nud_ver = new System.Windows.Forms.NumericUpDown();
-			this.size = new System.Windows.Forms.DataGridViewTextBoxColumn();
-			this.filePath = new System.Windows.Forms.DataGridViewTextBoxColumn();
+			this.cb_ver = new System.Windows.Forms.ComboBox();
 			((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.nud_major)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.nud_minor)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.nud_revision)).BeginInit();
-			((System.ComponentModel.ISupportInitialize)(this.nud_ver)).BeginInit();
 			this.SuspendLayout();
 			// 
 			// dataGridView1
@@ -65,6 +64,23 @@
 			this.dataGridView1.TabIndex = 0;
 			this.dataGridView1.SortCompare += new System.Windows.Forms.DataGridViewSortCompareEventHandler(this.dataGridView1_SortCompare);
 			this.dataGridView1.UserDeletedRow += new System.Windows.Forms.DataGridViewRowEventHandler(this.dataGridView1_UserDeletedRow);
+			// 
+			// filePath
+			// 
+			this.filePath.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+			this.filePath.FillWeight = 85F;
+			this.filePath.HeaderText = "File Path";
+			this.filePath.Name = "filePath";
+			this.filePath.ReadOnly = true;
+			// 
+			// size
+			// 
+			dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
+			this.size.DefaultCellStyle = dataGridViewCellStyle1;
+			this.size.FillWeight = 15F;
+			this.size.HeaderText = "Size";
+			this.size.Name = "size";
+			this.size.ReadOnly = true;
 			// 
 			// btn_create
 			// 
@@ -150,47 +166,23 @@
 			this.nud_revision.Size = new System.Drawing.Size(38, 20);
 			this.nud_revision.TabIndex = 10;
 			// 
-			// nud_ver
+			// cb_ver
 			// 
-			this.nud_ver.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.nud_ver.Location = new System.Drawing.Point(536, 415);
-			this.nud_ver.Maximum = new decimal(new int[] {
-            99,
-            0,
-            0,
-            0});
-			this.nud_ver.Name = "nud_ver";
-			this.nud_ver.Size = new System.Drawing.Size(38, 20);
-			this.nud_ver.TabIndex = 11;
-			this.nud_ver.Value = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-			// 
-			// size
-			// 
-			dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
-			this.size.DefaultCellStyle = dataGridViewCellStyle2;
-			this.size.FillWeight = 15F;
-			this.size.HeaderText = "Size";
-			this.size.Name = "size";
-			this.size.ReadOnly = true;
-			// 
-			// filePath
-			// 
-			this.filePath.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
-			this.filePath.FillWeight = 85F;
-			this.filePath.HeaderText = "File Path";
-			this.filePath.Name = "filePath";
-			this.filePath.ReadOnly = true;
+			this.cb_ver.FormattingEnabled = true;
+			this.cb_ver.Items.AddRange(new object[] {
+            "1"});
+			this.cb_ver.Location = new System.Drawing.Point(536, 415);
+			this.cb_ver.Name = "cb_ver";
+			this.cb_ver.Size = new System.Drawing.Size(38, 21);
+			this.cb_ver.TabIndex = 12;
+			this.cb_ver.Text = "1";
 			// 
 			// CreatePCKFile
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(800, 450);
-			this.Controls.Add(this.nud_ver);
+			this.Controls.Add(this.cb_ver);
 			this.Controls.Add(this.nud_revision);
 			this.Controls.Add(this.nud_minor);
 			this.Controls.Add(this.nud_major);
@@ -205,7 +197,6 @@
 			((System.ComponentModel.ISupportInitialize)(this.nud_major)).EndInit();
 			((System.ComponentModel.ISupportInitialize)(this.nud_minor)).EndInit();
 			((System.ComponentModel.ISupportInitialize)(this.nud_revision)).EndInit();
-			((System.ComponentModel.ISupportInitialize)(this.nud_ver)).EndInit();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -221,8 +212,8 @@
 		private System.Windows.Forms.NumericUpDown nud_major;
 		private System.Windows.Forms.NumericUpDown nud_minor;
 		private System.Windows.Forms.NumericUpDown nud_revision;
-		private System.Windows.Forms.NumericUpDown nud_ver;
 		private System.Windows.Forms.DataGridViewTextBoxColumn filePath;
 		private System.Windows.Forms.DataGridViewTextBoxColumn size;
+		private System.Windows.Forms.ComboBox cb_ver;
 	}
 }

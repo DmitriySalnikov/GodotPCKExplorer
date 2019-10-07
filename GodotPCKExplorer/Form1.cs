@@ -14,10 +14,13 @@ namespace GodotPCKExplorer
 	public partial class Form1 : Form
 	{
 		PCKReader pckReader = new PCKReader();
+		string FormBaseTitle = "";
 
 		public Form1()
 		{
 			InitializeComponent();
+			Icon = Properties.Resources.icon;
+			FormBaseTitle = Text;
 		}
 
 		private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
@@ -33,18 +36,24 @@ namespace GodotPCKExplorer
 			if (res == DialogResult.OK)
 			{
 				dataGridView1.Rows.Clear();
+				OpenFile(openFileDialog1.FileName);
+			}
+		}
 
-				if (pckReader.OpenFile(openFileDialog1.FileName))
+		public void OpenFile(string path)
+		{
+			if (pckReader.OpenFile(path))
+			{
+				foreach (var f in pckReader.Files)
 				{
-					foreach (var f in pckReader.Files)
-					{
-						var tmpRow = new DataGridViewRow();
-						tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.FilePath });
-						tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.Offset });
-						tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = Utils.SizeSuffix(f.Value.Size), Tag = f.Value.Size });
+					var tmpRow = new DataGridViewRow();
+					tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.FilePath });
+					tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.Offset });
+					tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = Utils.SizeSuffix(f.Value.Size), Tag = f.Value.Size });
 
-						dataGridView1.Rows.Add(tmpRow);
-					}
+					dataGridView1.Rows.Add(tmpRow);
+
+					Text = $"\"{pckReader.PackPath}\" Pack version {pckReader.PCK_VersionPack}. Godot version {pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}";
 				}
 			}
 		}
@@ -56,79 +65,29 @@ namespace GodotPCKExplorer
 
 		private void extractFileToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			List<DataGridViewRow> rows = new List<DataGridViewRow>();
-			foreach (DataGridViewRow i in dataGridView1.SelectedRows)
-				rows.Add(i);
+			var res = folderBrowserDialog1.ShowDialog();
+			if (res == DialogResult.OK)
+			{
+				List<string> rows = new List<string>();
+				foreach (DataGridViewRow i in dataGridView1.Rows)
+					rows.Add((string)i.Cells[0].Value);
 
-			ExtractFiles(rows);
+				pckReader.ExtractFiles(rows, folderBrowserDialog1.SelectedPath);
+			}
 		}
 
 		private void extractAllToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			List<DataGridViewRow> rows = new List<DataGridViewRow>();
-			foreach (DataGridViewRow i in dataGridView1.Rows)
-				rows.Add(i);
-
-			ExtractFiles(rows);
-		}
-
-		private void ExtractFiles(List<DataGridViewRow> rows)
-		{
-			var bp = new BackgroundProgress();
-			var bw = bp.backgroundWorker1;
-			bool result = true;
-
 			var res = folderBrowserDialog1.ShowDialog();
-
-			bw.DoWork += (sender, ev) =>
+			if (res == DialogResult.OK)
 			{
-				if (res == DialogResult.OK)
-				{
-					string basePath = folderBrowserDialog1.SelectedPath;
+				List<string> rows = new List<string>();
+				foreach (DataGridViewRow i in dataGridView1.Rows)
+					rows.Add((string)i.Cells[0].Value);
 
-					int count = 0;
-					double one_file_in_progress_line = 1.0 / rows.Count;
-					foreach (var i in rows)
-					{
-						string path = (string)(i.Cells[0].Value);
-						if (path != null)
-						{
-							VoidInt upd = (p) =>
-							{
-								bw.ReportProgress((int)(((double)count / rows.Count * 100) + (p * one_file_in_progress_line)));
-							};
-							pckReader.Files[path].OnProgress += upd;
+				pckReader.ExtractFiles(rows, folderBrowserDialog1.SelectedPath);
+			}
 
-							if (!pckReader.Files[path].ExtractFile(basePath))
-							{
-								pckReader.Files[path].OnProgress -= upd;
-
-								result = false;
-								return;
-							}
-						}
-
-						count++;
-						bw.ReportProgress((int)((double)count / rows.Count * 100));
-
-						if (bw.CancellationPending)
-						{
-							result = false;
-							return;
-						}
-					}
-				}
-				else
-				{
-					result = false;
-				}
-			};
-
-			bw.RunWorkerAsync();
-			bp.ShowDialog();
-
-			if (result)
-				MessageBox.Show("Complete!");
 		}
 
 		private void packFolderToolStripMenuItem_Click(object sender, EventArgs e)
@@ -146,6 +105,7 @@ namespace GodotPCKExplorer
 		{
 			dataGridView1.Rows.Clear();
 			pckReader.Close();
+			Text = FormBaseTitle;
 		}
 
 		private void dataGridView1_SortCompare(object sender, DataGridViewSortCompareEventArgs e)
@@ -158,6 +118,11 @@ namespace GodotPCKExplorer
 
 			e.SortResult = (long)(dataGridView1.Rows[e.RowIndex1].Cells[2].Tag) > (long)(dataGridView1.Rows[e.RowIndex2].Cells[2].Tag) ? 1 : -1;
 			e.Handled = true;
+		}
+
+		private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+		{
+			pckReader.Close();
 		}
 	}
 }

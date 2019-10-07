@@ -14,6 +14,9 @@ namespace GodotPCKExplorer
 		public AboutBox1()
 		{
 			InitializeComponent();
+
+			Icon = Properties.Resources.icon;
+
 			this.Text = String.Format("About {0}", AssemblyTitle);
 			this.labelProductName.Text = AssemblyProduct;
 			this.labelVersion.Text = String.Format("Version {0}", AssemblyVersion);

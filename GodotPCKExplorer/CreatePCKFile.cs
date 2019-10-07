@@ -14,11 +14,30 @@ namespace GodotPCKExplorer
 	public partial class CreatePCKFile : Form
 	{
 		string BasePath = "C:/";
+		public const string GodotVersionSave = "godot_version.save";
 		Dictionary<string, PCKPacker.FileToPack> files = new Dictionary<string, PCKPacker.FileToPack>();
 
 		public CreatePCKFile()
 		{
 			InitializeComponent();
+			Icon = Properties.Resources.icon;
+
+			if (File.Exists(GodotVersionSave))
+			{
+				try
+				{
+					var reader = new BinaryReader(File.OpenRead(GodotVersionSave));
+					cb_ver.SelectedItem = reader.ReadByte().ToString();
+					nud_major.Value = reader.ReadByte();
+					nud_minor.Value = reader.ReadByte();
+					nud_revision.Value = reader.ReadByte();
+					reader.Close();
+				}
+				catch
+				{
+
+				}
+			}
 		}
 
 		public void SetFolderPath(string path)
@@ -79,13 +98,27 @@ namespace GodotPCKExplorer
 			{
 				var packer = new PCKPacker();
 
-				bool p_res = packer.PackFiles(saveFileDialog1.FileName, files.Values.ToList(), 10,
-					new PCKPacker.PCKVersion((int)nud_ver.Value, (int)nud_major.Value, (int)nud_minor.Value, (int)nud_revision.Value)
+				bool p_res = packer.PackFiles(saveFileDialog1.FileName, files.Values.ToList(), 8,
+					new PCKPacker.PCKVersion(int.Parse((string)cb_ver.SelectedItem), (int)nud_major.Value, (int)nud_minor.Value, (int)nud_revision.Value)
 					);
 
-				if (p_res)
+				try
 				{
-					MessageBox.Show("Compelete!");
+					if (File.Exists(GodotVersionSave))
+					{
+						File.Delete(GodotVersionSave);
+					}
+				
+					var writer = new BinaryWriter(File.OpenWrite(GodotVersionSave));
+					writer.Write((byte)int.Parse((string)cb_ver.SelectedItem));
+					writer.Write((byte)nud_major.Value);
+					writer.Write((byte)nud_minor.Value);
+					writer.Write((byte)nud_revision.Value);
+					writer.Close();
+				}
+				catch
+				{
+
 				}
 			}
 		}

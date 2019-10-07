@@ -46,7 +46,7 @@ namespace GodotPCKExplorer
 			}
 			catch (Exception e)
 			{
-				MessageBox.Show(e.Message, "Error");
+				Utils.ShowMessage(e.Message, "Error");
 				return false;
 			}
 
@@ -71,7 +71,7 @@ namespace GodotPCKExplorer
 			}
 			catch (Exception e)
 			{
-				MessageBox.Show(e.Message, "Error");
+				Utils.ShowMessage(e.Message, "Error");
 				file.Close();
 				try
 				{

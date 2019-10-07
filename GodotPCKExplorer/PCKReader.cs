@@ -12,9 +12,11 @@ namespace GodotPCKExplorer
 	{
 		BinaryReader fileStream = null;
 		public Dictionary<string, PackedFile> Files = new Dictionary<string, PackedFile>();
+		public string PackPath = "";
+		public int PCK_VersionPack = 0;
 		public int PCK_VersionMajor = 0;
 		public int PCK_VersionMinor = 0;
-		public int PCK_VersionLast = 0;
+		public int PCK_VersionRevision = 0;
 
 		public void Close()
 		{
@@ -23,13 +25,19 @@ namespace GodotPCKExplorer
 				fileStream.Close();
 				fileStream = null;
 
-				Files.Clear();
 			}
+
+			Files.Clear();
+			PackPath = "";
+			PCK_VersionPack = 0;
+			PCK_VersionMajor = 0;
+			PCK_VersionMinor = 0;
+			PCK_VersionRevision = 0;
 		}
 
 		public bool OpenFile(string p_path)
 		{
-			if(fileStream != null && fileStream.BaseStream != null)
+			if (fileStream != null && fileStream.BaseStream != null)
 			{
 				fileStream.Close();
 				fileStream = null;
@@ -39,11 +47,12 @@ namespace GodotPCKExplorer
 
 			try
 			{
+				p_path = Path.GetFullPath(p_path);
 				fileStream = new BinaryReader(File.OpenRead(p_path));
 			}
 			catch (Exception e)
 			{
-				MessageBox.Show(e.Message, "Error");
+				Utils.ShowMessage(e.Message, "Error");
 				return false;
 			}
 
@@ -57,7 +66,7 @@ namespace GodotPCKExplorer
 				if (magic != Program.PCK_MAGIC)
 				{
 					fileStream.Close();
-					MessageBox.Show("Error: Not Godot PCK file!", "Error");
+					Utils.ShowMessage("Not Godot PCK file!", "Error");
 					return false;
 				}
 				fileStream.BaseStream.Seek(-12, SeekOrigin.Current);
@@ -69,28 +78,16 @@ namespace GodotPCKExplorer
 				if (magic != Program.PCK_MAGIC)
 				{
 					fileStream.Close();
-					MessageBox.Show("Error: Not Godot PCK file!", "Error");
+					Utils.ShowMessage("Not Godot PCK file!", "Error");
+
 					return false;
 				}
 			}
 
-			PCK_VersionLast = fileStream.ReadInt32();
+			PCK_VersionPack = fileStream.ReadInt32();
 			PCK_VersionMajor = fileStream.ReadInt32();
 			PCK_VersionMinor = fileStream.ReadInt32();
-			fileStream.ReadInt32(); // ver_rev
-
-			//if (version != PACK_VERSION)
-			//{
-			//	fileStream.close();
-			//	memdelete(f);
-			//	ERR_FAIL_V_MSG(false, "Pack version unsupported: " + itos(version) + ".");
-			//}
-			//if (ver_major > VERSION_MAJOR || (ver_major == VERSION_MAJOR && ver_minor > VERSION_MINOR))
-			//{
-			//	fileStream.close();
-			//	memdelete(f);
-			//	ERR_FAIL_V_MSG(false, "Pack created with a newer version of the engine: " + itos(ver_major) + "." + itos(ver_minor) + ".");
-			//}
+			PCK_VersionRevision = fileStream.ReadInt32();
 
 			for (int i = 0; i < 16; i++)
 			{
@@ -110,8 +107,65 @@ namespace GodotPCKExplorer
 				Files.Add(path, new PackedFile(fileStream, path, ofs, size, md5));
 			};
 
-			//fileStream.Close();
+			PackPath = p_path;
 			return true;
+		}
+
+		public bool ExtractAllFiles(string folder)
+		{
+			return ExtractFiles(Files.Keys.ToList(), folder);
+		}
+
+		public bool ExtractFiles(List<string> names, string folder)
+		{
+			var bp = new BackgroundProgress();
+			var bw = bp.backgroundWorker1;
+			bool result = true;
+
+			bw.DoWork += (sender, ev) =>
+			{
+				string basePath = folder;
+
+				int count = 0;
+				double one_file_in_progress_line = 1.0 / names.Count;
+				foreach (var path in names)
+				{
+					if (path != null)
+					{
+						PackedFile.VoidInt upd = (p) =>
+						{
+							bw.ReportProgress((int)(((double)count / names.Count * 100) + (p * one_file_in_progress_line)));
+						};
+						Files[path].OnProgress += upd;
+
+						if (!Files[path].ExtractFile(basePath))
+						{
+							Files[path].OnProgress -= upd;
+							result = false;
+							return;
+						}
+
+						Files[path].OnProgress -= upd;
+					}
+
+					count++;
+					bw.ReportProgress((int)((double)count / names.Count * 100));
+
+					if (bw.CancellationPending)
+					{
+						result = false;
+						return;
+					}
+				}
+			};
+
+			bw.RunWorkerAsync();
+			bp.ShowDialog();
+
+			if (result)
+				Utils.ShowMessage("Complete!", "Progress");
+
+			return result;
 		}
 	}
 }
