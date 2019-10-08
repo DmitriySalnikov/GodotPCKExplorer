@@ -40,10 +40,10 @@
 			this.editToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.extractFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.extractAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.integrationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.registerProgramToOpenPCKInExplorerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.unregisterProgramToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
 			this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
 			this.dataGridView1 = new System.Windows.Forms.DataGridView();
@@ -142,13 +142,6 @@
 			this.extractAllToolStripMenuItem.Text = "Extract All";
 			this.extractAllToolStripMenuItem.Click += new System.EventHandler(this.extractAllToolStripMenuItem_Click);
 			// 
-			// aboutToolStripMenuItem
-			// 
-			this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-			this.aboutToolStripMenuItem.Size = new System.Drawing.Size(52, 20);
-			this.aboutToolStripMenuItem.Text = "About";
-			this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
-			// 
 			// integrationToolStripMenuItem
 			// 
 			this.integrationToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -172,6 +165,13 @@
 			this.unregisterProgramToolStripMenuItem.Text = "Unregister program";
 			this.unregisterProgramToolStripMenuItem.Click += new System.EventHandler(this.unregisterProgramToolStripMenuItem_Click);
 			// 
+			// aboutToolStripMenuItem
+			// 
+			this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
+			this.aboutToolStripMenuItem.Size = new System.Drawing.Size(52, 20);
+			this.aboutToolStripMenuItem.Text = "About";
+			this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
+			// 
 			// openFileDialog1
 			// 
 			this.openFileDialog1.Filter = "Godot PCK files and Executables|*.pck;*.exe|Godot PCK files|*.pck|Executables|*.e" +
@@ -180,6 +180,7 @@
 			// dataGridView1
 			// 
 			this.dataGridView1.AllowUserToAddRows = false;
+			this.dataGridView1.AllowUserToDeleteRows = false;
 			this.dataGridView1.AllowUserToResizeRows = false;
 			this.dataGridView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
