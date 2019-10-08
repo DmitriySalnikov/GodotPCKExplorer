@@ -34,9 +34,9 @@ namespace GodotPCKExplorer
 			// help
 			{
 				args = Environment.CommandLine.Split(' ');
-				if(args.Length == 2)
+				if (args.Length == 2)
 				{
-					if(args[1] == "-h" || args[1] == "/?" || args[1] == "--help" || args[1] == "help")
+					if (args[1] == "-h" || args[1] == "/?" || args[1] == "--help" || args[1] == "help")
 					{
 						Console.WriteLine(ValidCommands);
 						return;
@@ -82,6 +82,18 @@ namespace GodotPCKExplorer
 						{
 							path = Path.GetFullPath(strings[1].Value.Replace("\"", ""));
 						}
+					}
+				}
+
+				if (path == null)
+				{
+					try
+					{
+						path = Path.GetFullPath(Environment.CommandLine.Replace(Application.ExecutablePath, "").Replace("\"", ""));
+					}
+					catch
+					{
+
 					}
 				}
 
