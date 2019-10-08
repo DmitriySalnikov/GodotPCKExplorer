@@ -28,7 +28,7 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+			System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
 			this.menuStrip1 = new System.Windows.Forms.MenuStrip();
 			this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.openFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -41,6 +41,9 @@
 			this.extractFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.extractAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.integrationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.registerProgramToOpenPCKInExplorerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.unregisterProgramToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
 			this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
 			this.dataGridView1 = new System.Windows.Forms.DataGridView();
@@ -57,6 +60,7 @@
 			this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fileToolStripMenuItem,
             this.editToolStripMenuItem,
+            this.integrationToolStripMenuItem,
             this.aboutToolStripMenuItem});
 			this.menuStrip1.Location = new System.Drawing.Point(0, 0);
 			this.menuStrip1.Name = "menuStrip1";
@@ -145,6 +149,29 @@
 			this.aboutToolStripMenuItem.Text = "About";
 			this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
 			// 
+			// integrationToolStripMenuItem
+			// 
+			this.integrationToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.registerProgramToOpenPCKInExplorerToolStripMenuItem,
+            this.unregisterProgramToolStripMenuItem});
+			this.integrationToolStripMenuItem.Name = "integrationToolStripMenuItem";
+			this.integrationToolStripMenuItem.Size = new System.Drawing.Size(77, 20);
+			this.integrationToolStripMenuItem.Text = "Integration";
+			// 
+			// registerProgramToOpenPCKInExplorerToolStripMenuItem
+			// 
+			this.registerProgramToOpenPCKInExplorerToolStripMenuItem.Name = "registerProgramToOpenPCKInExplorerToolStripMenuItem";
+			this.registerProgramToOpenPCKInExplorerToolStripMenuItem.Size = new System.Drawing.Size(293, 22);
+			this.registerProgramToOpenPCKInExplorerToolStripMenuItem.Text = "Register program to open PCK in explorer";
+			this.registerProgramToOpenPCKInExplorerToolStripMenuItem.Click += new System.EventHandler(this.registerProgramToOpenPCKInExplorerToolStripMenuItem_Click);
+			// 
+			// unregisterProgramToolStripMenuItem
+			// 
+			this.unregisterProgramToolStripMenuItem.Name = "unregisterProgramToolStripMenuItem";
+			this.unregisterProgramToolStripMenuItem.Size = new System.Drawing.Size(293, 22);
+			this.unregisterProgramToolStripMenuItem.Text = "Unregister program";
+			this.unregisterProgramToolStripMenuItem.Click += new System.EventHandler(this.unregisterProgramToolStripMenuItem_Click);
+			// 
 			// openFileDialog1
 			// 
 			this.openFileDialog1.Filter = "Godot PCK files and Executables|*.pck;*.exe|Godot PCK files|*.pck|Executables|*.e" +
@@ -188,8 +215,8 @@
 			// 
 			// size
 			// 
-			dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
-			this.size.DefaultCellStyle = dataGridViewCellStyle2;
+			dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
+			this.size.DefaultCellStyle = dataGridViewCellStyle1;
 			this.size.FillWeight = 13F;
 			this.size.HeaderText = "Size";
 			this.size.Name = "size";
@@ -235,6 +262,9 @@
 		private System.Windows.Forms.DataGridViewTextBoxColumn path;
 		private System.Windows.Forms.DataGridViewTextBoxColumn offset;
 		private System.Windows.Forms.DataGridViewTextBoxColumn size;
+		private System.Windows.Forms.ToolStripMenuItem integrationToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem registerProgramToOpenPCKInExplorerToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem unregisterProgramToolStripMenuItem;
 	}
 }
 

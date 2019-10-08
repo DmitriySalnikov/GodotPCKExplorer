@@ -124,5 +124,15 @@ namespace GodotPCKExplorer
 		{
 			pckReader.Close();
 		}
+
+		private void registerProgramToOpenPCKInExplorerToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			ShellIntegration.Register();
+		}
+
+		private void unregisterProgramToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			ShellIntegration.Unregister();
+		}
 	}
 }

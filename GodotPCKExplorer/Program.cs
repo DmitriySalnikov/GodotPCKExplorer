@@ -31,14 +31,27 @@ namespace GodotPCKExplorer
 			string[] args = null;
 			bool run_with_args = false;
 
-			// -o Open pack
+			// help
 			{
+				args = Environment.CommandLine.Split(' ');
+				if(args.Length == 2)
+				{
+					if(args[1] == "-h" || args[1] == "/?" || args[1] == "--help" || args[1] == "help")
+					{
+						Console.WriteLine(ValidCommands);
+						return;
+					}
+				}
+			}
+
+			// -o Open pack
+			// and just put file to exe in explorer
+			{
+				string path = null;
+
 				args = Environment.CommandLine.Split(new string[] { " -o " }, StringSplitOptions.None);
 				if (args.Length > 1)
 				{
-					run_with_args = true;
-
-					string path;
 					try
 					{
 						var match = QuoteStringRegEx.Match(args[1]);
@@ -57,21 +70,36 @@ namespace GodotPCKExplorer
 						Console.WriteLine($"Error in file path: {args[1]}\n{e.Message}" + ValidCommands);
 						return;
 					}
+				}
 
-					if (path != null)
+				if (path == null)
+				{
+					var s = Environment.CommandLine.Split(new string[] { "\" \"" }, StringSplitOptions.RemoveEmptyEntries);
+					if (s.Length == 2)
 					{
-						if (File.Exists(path))
+						var strings = QuoteStringRegEx.Matches(Environment.CommandLine);
+						if (strings.Count == 2)
 						{
-							var form = new Form1();
-							form.OpenFile(path);
+							path = Path.GetFullPath(strings[1].Value.Replace("\"", ""));
+						}
+					}
+				}
 
-							Application.Run(form);
-						}
-						else
-						{
-							Console.WriteLine($"Specified file does not exists! {args[1]}\n" + ValidCommands);
-							return;
-						}
+				if (path != null)
+				{
+					run_with_args = true;
+
+					if (File.Exists(path))
+					{
+						var form = new Form1();
+						form.OpenFile(path);
+
+						Application.Run(form);
+					}
+					else
+					{
+						Console.WriteLine($"Specified file does not exists! '{path}'\n" + ValidCommands);
+						return;
 					}
 				}
 			}

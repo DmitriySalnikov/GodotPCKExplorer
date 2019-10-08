@@ -61,6 +61,7 @@
     <Compile Include="BackgroundProgress.Designer.cs">
       <DependentUpon>BackgroundProgress.cs</DependentUpon>
     </Compile>
+    <Compile Include="ContextMenuRegistrator.cs" />
     <Compile Include="CreatePCKFile.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -78,6 +79,7 @@
     <Compile Include="PCKReader.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ShellIntegration.cs" />
     <Compile Include="Utils.cs" />
     <EmbeddedResource Include="AboutBox1.resx">
       <DependentUpon>AboutBox1.cs</DependentUpon>
