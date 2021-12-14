@@ -19,7 +19,7 @@ namespace GodotPCKExplorer.Properties {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -57,6 +57,20 @@ namespace GodotPCKExplorer.Properties {
             }
             set {
                 resourceCulture = value;
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Test Text
+        ///
+        ///Example of valid arguments:
+        ///Open file &apos;-o &quot;C:\Game.pck&quot;&apos;
+        ///Export files &apos;-e &quot;C:\Game.exe&quot; &quot;C:\Export Directory&quot;&apos;
+        ///Pack files (version can be ignored if you have saved &apos;godot_version.save&apos;) &apos;-p &quot;C:\Directory with files&quot; &quot;C:\GameNew.pck&quot; 1.3.2.0&apos;.
+        /// </summary>
+        internal static string HelpText {
+            get {
+                return ResourceManager.GetString("HelpText", resourceCulture);
             }
         }
         

@@ -1,0 +1,37 @@
+Godot can emded '.pck' files inside '.exe' files.
+Therefore, GodotPCKExplorer can open both '.pck' and '.exe' files.
+{} - Optional arguments
+
+Examples of valid commands:
+-o	Open pack file
+	-o [path to pack]
+	-o "C:/Game.exe"
+	-o "C:/Game.pck"
+
+-i	Show pack file info
+	-i [path to pack]
+	-i "C:/Game.exe"
+	-i "C:/Game.pck"
+
+-e	Export content from a pack to a folder. Automatically overwrites existing files.
+	-e [path to pack] [path to output folder]
+	-e "C:/Game.exe" "C:/Export Directory"
+	-e "C:/Game.pck" Output_dir
+
+-es	Export like -e but skip existing files.
+
+-p	Pack content of folder into .pck file
+	-p [path to folder] [output pack file] [version in format PACK_VERSION.GODOT_MINOR._MAJOR._PATCH]
+	-p "C:/Directory with files" "C:/Game_New.pck" 1.3.2.0
+
+NOT FINISHED:
+-pe	Pack embedded. Equal to just -p, but embed '.pck' into '.exe'
+	-p [path to folder] [exe to pack into] [version]
+	-p "C:/Directory with files" "C:/Game.exe" 1.3.2.0
+
+-r	Rip '.pck' from '.exe'. If the output file is not specified, it will just be deleted from the '.exe'
+	Otherwise it will be exported without modifing '.exe'
+	-r [path to exe] {[output pack file]}
+
+-s	Split '.exe' with embedded '.pck' into two separated files.
+	-s [path to exe] {[new name for pair of '.exe' and '.pck']}

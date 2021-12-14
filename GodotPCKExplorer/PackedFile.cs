@@ -1,90 +1,88 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace GodotPCKExplorer
 {
-	public class PackedFile
-	{
-		private BinaryReader reader;
-		public string FilePath;
-		public long Offset;
-		public long Size;
-		public byte[] MD5;
+    public class PackedFile
+    {
+        private BinaryReader reader;
+        public string FilePath;
+        public long Offset;
+        public long Size;
+        public byte[] MD5;
 
-		public PackedFile(BinaryReader _reader, string _Path, long _Offset, long _Size, byte[] _MD5)
-		{
-			reader = _reader;
-			FilePath = _Path;
-			Offset = _Offset;
-			Size = _Size;
-			MD5 = _MD5;
-		}
+        public PackedFile(BinaryReader _reader, string _Path, long _Offset, long _Size, byte[] _MD5)
+        {
+            reader = _reader;
+            FilePath = _Path;
+            Offset = _Offset;
+            Size = _Size;
+            MD5 = _MD5;
+        }
 
-		public delegate void VoidInt(int progress);
-		public event VoidInt OnProgress;
+        public delegate void VoidInt(int progress);
+        public event VoidInt OnProgress;
 
-		public bool ExtractFile(string basePath)
-		{
-			string path = basePath + "/" + FilePath.Replace("res://", "");
-			string dir = Path.GetDirectoryName(path);
-			BinaryWriter file;
+        public bool ExtractFile(string basePath, bool overwriteExisting = true)
+        {
+            string path = basePath + "/" + FilePath.Replace("res://", "");
+            string dir = Path.GetDirectoryName(path);
+            BinaryWriter file;
 
-			try
-			{
-				if (File.Exists(path))
-				{
-					File.Delete(path);
-				}
+            try
+            {
+                if (File.Exists(path))
+                {
+                    if (!overwriteExisting)
+                        return true;
 
-				Directory.CreateDirectory(dir);
-				file = new BinaryWriter(File.OpenWrite(path));
-			}
-			catch (Exception e)
-			{
-				Utils.ShowMessage(e.Message, "Error");
-				return false;
-			}
+                    File.Delete(path);
+                }
 
-			const int buf_max = 65536;
+                Directory.CreateDirectory(dir);
+                file = new BinaryWriter(File.OpenWrite(path));
+            }
+            catch (Exception e)
+            {
+                Utils.ShowMessage(e.Message, "Error");
+                return false;
+            }
 
-			try
-			{
-				if (Size > 0)
-				{
-					reader.BaseStream.Seek(Offset, SeekOrigin.Begin);
-					long to_write = Size;
+            const int buf_max = 65536;
 
-					while (to_write > 0)
-					{
-						var read = reader.ReadBytes(Math.Min(buf_max, (int)to_write));
-						file.Write(read);
-						to_write -= read.Length;
+            try
+            {
+                if (Size > 0)
+                {
+                    reader.BaseStream.Seek(Offset, SeekOrigin.Begin);
+                    long to_write = Size;
 
-						OnProgress?.Invoke(100 - (int)((double)to_write / Size * 100));
-					}
-				}
-			}
-			catch (Exception e)
-			{
-				Utils.ShowMessage(e.Message, "Error");
-				file.Close();
-				try
-				{
-					File.Delete(path);
-				}
-				catch
-				{
+                    while (to_write > 0)
+                    {
+                        var read = reader.ReadBytes(Math.Min(buf_max, (int)to_write));
+                        file.Write(read);
+                        to_write -= read.Length;
 
-				}
-			}
+                        OnProgress?.Invoke(100 - (int)((double)to_write / Size * 100));
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Utils.ShowMessage(e.Message, "Error");
+                file.Close();
+                try
+                {
+                    File.Delete(path);
+                }
+                catch
+                {
 
-			file.Close();
-			return true;
-		}
-	}
+                }
+            }
+
+            file.Close();
+            return true;
+        }
+    }
 }
