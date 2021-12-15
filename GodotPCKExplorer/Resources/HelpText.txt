@@ -3,10 +3,6 @@ Therefore, GodotPCKExplorer can open both '.pck' and '.exe' files.
 "" - Paths and other arguments must be without spaces or inside quotes.
 {} - Optional arguments
 
-To disable "Press any key...", specify the --skip_any_key flag before any command:
-	GodotPCKExpolorer --skip_any_key -i Test.pck
-	GodotPCKExpolorer --skip_any_key -e Test.pck "Output Folder"
-
 Examples of valid commands:
 -o	Open pack file
 	-o [path to pack]

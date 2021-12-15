@@ -75,21 +75,11 @@ namespace GodotPCKExplorer
             }
         }
 
-        public static void ConsoleWaitKey()
-        {
-            if (Program.CMDMode && !Program.skipReadKey)
-            {
-                Console.WriteLine("\nPress any key to exit...");
-                Console.ReadKey(true);
-            }
-        }
-
         #region Console Commands
 
         public static bool HelpRun()
         {
             CommandLog("Help", "Help text", true);
-            ConsoleWaitKey();
             return true;
         }
 
@@ -115,7 +105,6 @@ namespace GodotPCKExplorer
             else
             {
                 CommandLog($"Specified file does not exists! '{path}'", "Error", false);
-                ConsoleWaitKey();
             }
             return false;
         }
@@ -134,7 +123,6 @@ namespace GodotPCKExplorer
             else
             {
                 CommandLog($"Specified file does not exists! '{filePath}'", "Error", false);
-                ConsoleWaitKey();
             }
             return false;
         }
@@ -163,7 +151,6 @@ namespace GodotPCKExplorer
             else
             {
                 CommandLog($"Specified file does not exists! '{filePath}'", "Error", false);
-                ConsoleWaitKey();
             }
             return false;
         }
@@ -177,7 +164,6 @@ namespace GodotPCKExplorer
             else
             {
                 CommandLog($"Specified directory does not exists! '{dirPath}'", "Error", false);
-                ConsoleWaitKey();
             }
             return false;
         }
@@ -187,7 +173,6 @@ namespace GodotPCKExplorer
             if (!files.Any())
             {
                 CommandLog("No files to pack", "Error", false);
-                ConsoleWaitKey();
                 return false;
             }
 
@@ -197,7 +182,6 @@ namespace GodotPCKExplorer
             if (!ver.IsValid)
             {
                 CommandLog("The version is specified incorrectly.", "Error", true);
-                ConsoleWaitKey();
                 return false;
             }
 
@@ -214,7 +198,6 @@ namespace GodotPCKExplorer
                 catch (Exception e)
                 {
                     CommandLog("Unable to create a backup copy of the file:\n" + e.Message, "Error", false);
-                    ConsoleWaitKey();
                     return false;
                 }
             }
@@ -251,14 +234,12 @@ namespace GodotPCKExplorer
                 if (!res)
                 {
                     CommandLog($"The file does not contain '.pck' inside", "Error", false);
-                    ConsoleWaitKey();
                     return false;
                 }
 
                 if (outFile == exeFile)
                 {
                     CommandLog($"The path to the new file cannot be equal to the original file", "Error", false);
-                    ConsoleWaitKey();
                     return false;
                 }
 
@@ -287,7 +268,6 @@ namespace GodotPCKExplorer
                     catch (Exception e)
                     {
                         CommandLog("Unable to create a backup copy of the file:\n" + e.Message, "Error", false);
-                        ConsoleWaitKey();
                         return false;
                     }
 
@@ -326,7 +306,6 @@ namespace GodotPCKExplorer
                         }
 
                         CommandLog(e.Message, "Error", false);
-                        ConsoleWaitKey();
                         return false;
                     }
                     CommandLog($"Removing '.pck' from '.exe' completed. Original file renamed to \"{oldExeFile}\"", "Progress", false);
@@ -340,7 +319,6 @@ namespace GodotPCKExplorer
                     catch (Exception e)
                     {
                         CommandLog(e.Message, "Error", false);
-                        ConsoleWaitKey();
                     }
                 }
 
@@ -349,7 +327,6 @@ namespace GodotPCKExplorer
             else
             {
                 CommandLog($"Specified file does not exists! '{exeFile}'", "Error", false);
-                ConsoleWaitKey();
             }
             return false;
         }
@@ -365,7 +342,6 @@ namespace GodotPCKExplorer
                 {
                     pckReader.Close();
                     CommandLog($"Unable to open PCK file", "Error", false);
-                    ConsoleWaitKey();
                     return false;
                 }
 
@@ -373,7 +349,6 @@ namespace GodotPCKExplorer
                 {
                     pckReader.Close();
                     CommandLog($"The path to the new file cannot be equal to the original file", "Error", false);
-                    ConsoleWaitKey();
                     return false;
                 }
 
@@ -426,7 +401,6 @@ namespace GodotPCKExplorer
                 catch (Exception e)
                 {
                     CommandLog(e.Message, "Error", false);
-                    ConsoleWaitKey();
                 }
 
                 return res;
@@ -434,7 +408,6 @@ namespace GodotPCKExplorer
             else
             {
                 CommandLog($"Specified file does not exists! '{pckFile}'", "Error", false);
-                ConsoleWaitKey();
             }
             return false;
         }
@@ -451,7 +424,6 @@ namespace GodotPCKExplorer
                     if (name == exeFile)
                     {
                         CommandLog($"The new pair cannot be named the same as the original file: {newExeName}", "Error", false);
-                        ConsoleWaitKey();
                         return false;
                     }
 
@@ -469,7 +441,6 @@ namespace GodotPCKExplorer
                     catch (Exception e)
                     {
                         CommandLog(e.Message, "Error", false);
-                        ConsoleWaitKey();
                         return false;
                     }
 
@@ -496,7 +467,6 @@ namespace GodotPCKExplorer
                     catch (Exception e)
                     {
                         CommandLog(e.Message, "Error", false);
-                        ConsoleWaitKey();
                     }
 
                     try
@@ -508,7 +478,6 @@ namespace GodotPCKExplorer
                     catch (Exception e)
                     {
                         CommandLog(e.Message, "Error", false);
-                        ConsoleWaitKey();
                     }
                 }
 
@@ -517,7 +486,6 @@ namespace GodotPCKExplorer
             else
             {
                 CommandLog($"Specified file does not exists! '{exeFile}'", "Error", false);
-                ConsoleWaitKey();
             }
             return false;
         }

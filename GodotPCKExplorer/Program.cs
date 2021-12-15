@@ -16,7 +16,6 @@ namespace GodotPCKExplorer
         static Regex QuoteStringRegEx = new Regex(quote_string_pattern);
 
         public static bool CMDMode = false;
-        public static bool skipReadKey = false;
         static bool runWithArgs = false;
         public static Form1 mainForm = null;
 
@@ -66,12 +65,8 @@ namespace GodotPCKExplorer
 
         static void RunCommandInternal(string args, bool restore_params)
         {
-            var old_skip_state = skipReadKey;
             var old_run_with_args = runWithArgs;
             var old_cmd_mode = CMDMode;
-
-            if (args.Split(new string[] { " --skip_any_key " }, StringSplitOptions.RemoveEmptyEntries).Length > 1)
-                skipReadKey = true;
 
             IterateCommands(
              () => HelpCommand(args.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)),
@@ -88,7 +83,6 @@ namespace GodotPCKExplorer
 
             if (restore_params)
             {
-                skipReadKey = old_skip_state;
                 runWithArgs = old_run_with_args;
                 CMDMode = old_cmd_mode;
             }
@@ -156,14 +150,12 @@ namespace GodotPCKExplorer
                     else
                     {
                         Utils.CommandLog(args[1].ToString(), "Not valid file path", true);
-                        Utils.ConsoleWaitKey();
                         return;
                     }
                 }
                 catch (Exception e)
                 {
                     Utils.CommandLog($"{args[1]}\n{e.Message}", "Error in file path", false);
-                    Utils.ConsoleWaitKey();
                     return;
                 }
 
@@ -189,7 +181,6 @@ namespace GodotPCKExplorer
                     catch (Exception e)
                     {
                         Utils.CommandLog(e.Message, "Error", false);
-                        Utils.ConsoleWaitKey();
                         return;
                     }
                 }
@@ -223,14 +214,12 @@ namespace GodotPCKExplorer
                     else
                     {
                         Utils.CommandLog("Path to file not specified! Or incorrect number of arguments specified!", "Error", true);
-                        Utils.ConsoleWaitKey();
                         return;
                     }
                 }
                 catch (Exception e)
                 {
                     Utils.CommandLog(e.Message, "Error", false);
-                    Utils.ConsoleWaitKey();
                     return;
                 }
 
@@ -259,14 +248,12 @@ namespace GodotPCKExplorer
                     else
                     {
                         Utils.CommandLog($"Incorrect number of arguments specified!", "Error", true);
-                        Utils.ConsoleWaitKey();
                         return;
                     }
                 }
                 catch (Exception e)
                 {
                     Utils.CommandLog(e.Message, "Error", false);
-                    Utils.ConsoleWaitKey();
                     return;
                 }
 
@@ -303,14 +290,12 @@ namespace GodotPCKExplorer
                     else
                     {
                         Utils.CommandLog($"Incorrect number of arguments specified!", "Error", true);
-                        Utils.ConsoleWaitKey();
                         return;
                     }
                 }
                 catch (Exception e)
                 {
                     Utils.CommandLog(e.Message, "Error", false);
-                    Utils.ConsoleWaitKey();
                     return;
                 }
 
@@ -340,21 +325,18 @@ namespace GodotPCKExplorer
                         if (matches.Count > 2)
                         {
                             Utils.CommandLog($"Invalid number of arguments!", "Error", true);
-                            Utils.ConsoleWaitKey();
                             return;
                         }
                     }
                     else
                     {
                         Utils.CommandLog($"Path to file or directory not specified!", "Error", true);
-                        Utils.ConsoleWaitKey();
                         return;
                     }
                 }
                 catch (Exception e)
                 {
                     Utils.CommandLog(e.Message, "Error", false);
-                    Utils.ConsoleWaitKey();
                     return;
                 }
 
@@ -383,14 +365,12 @@ namespace GodotPCKExplorer
                     else
                     {
                         Utils.CommandLog($"Invalid number of arguments!", "Error", true);
-                        Utils.ConsoleWaitKey();
                         return;
                     }
                 }
                 catch (Exception e)
                 {
                     Utils.CommandLog(e.Message, "Error", false);
-                    Utils.ConsoleWaitKey();
                     return;
                 }
 
@@ -421,21 +401,18 @@ namespace GodotPCKExplorer
                         if (matches.Count > 2)
                         {
                             Utils.CommandLog($"Invalid number of arguments!", "Error", true);
-                            Utils.ConsoleWaitKey();
                             return;
                         }
                     }
                     else
                     {
                         Utils.CommandLog($"Path to file not specified!", "Error", true);
-                        Utils.ConsoleWaitKey();
                         return;
                     }
                 }
                 catch (Exception e)
                 {
                     Utils.CommandLog(e.Message, "Error", false);
-                    Utils.ConsoleWaitKey();
                     return;
                 }
 

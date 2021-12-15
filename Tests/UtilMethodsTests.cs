@@ -24,7 +24,6 @@ namespace Tests
         public void GodotPCKInit()
         {
             Program.CMDMode = true;
-            Program.skipReadKey = true;
 
             if (!Directory.Exists(binaries))
                 System.IO.Compression.ZipFile.ExtractToDirectory("../../Test.zip", binaries);
