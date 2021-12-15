@@ -19,15 +19,17 @@ namespace Tests
             Console.WriteLine($"===================={name}====================");
         }
 
+
         [TestInitialize]
         public void GodotPCKInit()
         {
             Program.CMDMode = true;
-            Program.SkipReadKey = true;
+            Program.skipReadKey = true;
 
             if (!Directory.Exists(binaries))
                 System.IO.Compression.ZipFile.ExtractToDirectory("../../Test.zip", binaries);
         }
+
 
         [TestMethod]
         [Ignore]
@@ -37,11 +39,13 @@ namespace Tests
             Assert.IsFalse(Directory.Exists(binaries));
         }
 
+
         [TestMethod]
         public void TestHelpCommand()
         {
             Assert.IsTrue(Utils.HelpRun());
         }
+
 
         [TestMethod]
         public void TestOpenCommand()
@@ -54,6 +58,7 @@ namespace Tests
             Assert.IsFalse(Utils.OpenPCKRun(Path.Combine(binaries, "WrongPath/Test.pck")));
         }
 
+
         [TestMethod]
         public void TestInfoCommand()
         {
@@ -65,14 +70,28 @@ namespace Tests
             Assert.IsFalse(Utils.InfoPCKRun(Path.Combine(binaries, "WrongPath/Test.pck")));
         }
 
+
         [TestMethod]
         public void TestExtractScanPackCommand()
         {
             string exportTestPath = Path.Combine(binaries, "ExportTest");
+            string testEXE = Path.Combine(binaries, "Test.exe");
             string testPCK = Path.Combine(binaries, "Test.pck");
+            string testEmbedPack = Path.Combine(binaries, "TestPack.exe");
+            string selectedFilesPck = Path.Combine(binaries, "SelecetedFiles.pck");
+            string exportTestSelectedPath = Path.Combine(binaries, "ExportTestSelected");
+            string newPckPath = Path.Combine(binaries, "out.pck");
+            string exportTestSelectedWrongPath = Path.Combine(binaries, "ExportTestSelectedWrong");
+            string overwritePath = exportTestPath + "Overwrite";
+            string out_exe = Path.ChangeExtension(newPckPath, ".exe");
 
-            if (Directory.Exists(exportTestPath))
-                Directory.Delete(exportTestPath, true);
+            foreach (var d in new string[] { overwritePath, exportTestSelectedPath, exportTestPath, exportTestSelectedWrongPath })
+                if (Directory.Exists(d))
+                    Directory.Delete(d, true);
+
+            foreach (var f in new string[] { selectedFilesPck, testEmbedPack, out_exe })
+                if (File.Exists(f))
+                    File.Delete(f);
 
             Title("Extract");
             Assert.IsTrue(Utils.ExtractPCKRun(testPCK, exportTestPath, true));
@@ -115,10 +134,6 @@ namespace Tests
             {
                 var export_files = seleceted_files.Select((s) => s.Path);
 
-                string exportTestSelectedPath = Path.Combine(binaries, "ExportTestSelected");
-                if (Directory.Exists(exportTestSelectedPath))
-                    Directory.Delete(exportTestSelectedPath, true);
-
                 Assert.IsTrue(Utils.ExtractPCKRun(testPCK, exportTestSelectedPath, true, export_files));
 
                 var exportedSelectedList = Utils.ScanFoldersForFiles(exportTestSelectedPath);
@@ -128,26 +143,21 @@ namespace Tests
                     Assert.IsTrue(exportedSelectedList.FindIndex((l) => l.Path == f) != -1);
 
 
-                Title("Extract only seleceted files and compare");
+                Title("Extract only seleceted wrong files and compare");
                 var wrong_selected = export_files.ToList();
                 for (int i = 0; i < wrong_selected.Count; i++)
                     wrong_selected[i] = wrong_selected[i] + "WrongFile";
 
-                string exportTestSelectedWrongPath = Path.Combine(binaries, "ExportTestSelectedWrong");
-                if (Directory.Exists(exportTestSelectedWrongPath))
-                    Directory.Delete(exportTestSelectedWrongPath, true);
-
                 Assert.IsTrue(Utils.ExtractPCKRun(testPCK, exportTestSelectedWrongPath, true, wrong_selected));
                 Assert.IsFalse(Directory.Exists(exportTestSelectedWrongPath));
+
+                Title("Extract empty list");
+                Assert.IsFalse(Utils.ExtractPCKRun(testPCK, exportTestSelectedWrongPath, true, new string[] { }));
             }
 
 
             Title("Extract without overwrite");
             {
-                var overwritePath = exportTestPath + "Overwrite";
-                if (Directory.Exists(overwritePath))
-                    Directory.Delete(overwritePath, true);
-
                 Assert.IsTrue(Utils.ExtractPCKRun(testPCK, overwritePath, true));
                 var files = Directory.GetFiles(overwritePath);
                 File.Delete(files[0]);
@@ -177,7 +187,6 @@ namespace Tests
             }
 
 
-            string newPckPath = Path.Combine(exportTestPath, "out.pck");
             {
                 Title("Pack new PCK");
 
@@ -206,13 +215,22 @@ namespace Tests
                 }
             }
 
+            {
+                Title("Pack embedded");
+
+                File.Copy(testEXE, testEmbedPack);
+
+                Assert.IsTrue(Utils.PackPCKRun(exportTestPath, testEmbedPack, ver, true));
+                Assert.IsTrue(File.Exists(Path.ChangeExtension(testEmbedPack, ".old.exe")));
+
+                Title("Pack embedded again");
+                Assert.IsFalse(Utils.PackPCKRun(exportTestPath, testEmbedPack, ver, true));
+                Assert.IsFalse(File.Exists(Path.ChangeExtension(testEmbedPack, ".old.exe")));
+            }
+
 
             {
                 Title("Pack only selected files");
-
-                var selectedFilesPck = Path.Combine(binaries, "SelecetedFiles.pck");
-                if (File.Exists(selectedFilesPck))
-                    File.Delete(selectedFilesPck);
 
                 Assert.IsTrue(Utils.PackPCKRun(seleceted_files, selectedFilesPck, ver));
 
@@ -230,12 +248,14 @@ namespace Tests
             }
 
             Title("Good run");
-            var out_exe = Path.ChangeExtension(newPckPath, ".exe");
-            if (File.Exists(out_exe))
-                File.Delete(out_exe);
-            File.Copy(Path.Combine(binaries, "Test.exe"), out_exe);
+
+            File.Copy(testEXE, out_exe);
 
             using (var r = new RunAppWithOutput(out_exe, "", 1000))
+                Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
+
+            // test embed pack
+            using (var r = new RunAppWithOutput(testEmbedPack, "", 1000))
                 Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
 
             Title("Run without PCK");
@@ -246,14 +266,76 @@ namespace Tests
                 Assert.IsTrue(r.GetConsoleText().Contains(pck_error));
         }
 
+
+        [TestMethod]
+        public void TestMergePCK()
+        {
+            string testEXE = Path.Combine(binaries, "Test.exe");
+            string testPCK = Path.Combine(binaries, "Test.pck");
+            string newEXE = Path.Combine(binaries, "TestMerge.exe");
+            string newEXE_old = Path.Combine(binaries, "TestMerge.old.exe");
+
+            foreach (var f in new string[] { newEXE_old, newEXE })
+                if (File.Exists(f))
+                    File.Delete(f);
+
+            File.Copy(testEXE, newEXE);
+
+            Title("Merge");
+            Assert.IsTrue(Utils.MergePCKRun(testPCK, newEXE));
+            Assert.IsTrue(File.Exists(newEXE_old));
+
+            Title("Again");
+            Assert.IsFalse(Utils.MergePCKRun(testPCK, newEXE));
+
+            File.Delete(newEXE);
+            File.Copy(testEXE, newEXE);
+
+            Title("Merge without backup");
+            Assert.IsTrue(Utils.MergePCKRun(testPCK, newEXE, true));
+            Assert.IsFalse(File.Exists(newEXE_old));
+
+            Title("Locked backup");
+            File.Delete(newEXE);
+            File.Copy(testEXE, newEXE);
+            // creates new old.exe 0kb
+            using (var l = new LockedFile(newEXE_old, false))
+                Assert.IsFalse(Utils.MergePCKRun(testPCK, newEXE, true));
+
+            Title("Locked pck file");
+            using (var l = new LockedFile(testPCK, false))
+                Assert.IsFalse(Utils.MergePCKRun(testPCK, newEXE));
+
+            Title("Wrong Files");
+            Assert.IsFalse(Utils.MergePCKRun(testPCK + "Wrong", newEXE));
+            Assert.IsFalse(Utils.MergePCKRun(testPCK, newEXE + "Wrong", true));
+
+            Title("Same File");
+            Assert.IsFalse(Utils.MergePCKRun(testPCK, testPCK, true));
+
+            Title("Bad run");
+            using (var r = new RunAppWithOutput(newEXE, "", 1000))
+                Assert.IsTrue(r.GetConsoleText().Contains(pck_error));
+
+            Title("Good run");
+            File.Delete(newEXE);
+            File.Copy(testEXE, newEXE);
+            Assert.IsTrue(Utils.MergePCKRun(testPCK, newEXE));
+            using (var r = new RunAppWithOutput(newEXE, "", 1000))
+                Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
+
+        }
+
+
         [TestMethod]
         public void TestRipPCK()
         {
             string new_exe = Path.Combine(binaries, "TestRip.exe");
             string new_exe_old = Path.Combine(binaries, "TestRip.old.exe");
             string new_pck = Path.Combine(binaries, "TestRip.pck");
+            string locked_exe_str = Path.Combine(binaries, "TestLockedRip.exe");
 
-            foreach (var f in new string[] { new_exe, new_pck, new_exe_old })
+            foreach (var f in new string[] { new_exe, new_pck, new_exe_old, locked_exe_str })
                 if (File.Exists(f))
                     File.Delete(f);
 
@@ -286,9 +368,7 @@ namespace Tests
                 Assert.IsTrue(r.GetConsoleText().Contains(pck_error));
 
             Title("Rip locked");
-            string locked_exe_str = Path.Combine(binaries, "TestLockedRip.exe");
-            if (File.Exists(locked_exe_str))
-                File.Delete(locked_exe_str);
+
             File.Copy(Path.Combine(binaries, "TestEmbedded.exe"), locked_exe_str);
 
             using (var locked_exe = File.OpenWrite(locked_exe_str))
@@ -300,6 +380,7 @@ namespace Tests
             Assert.IsTrue(Utils.RipPCKRun(locked_exe_str, null, true));
             Assert.IsFalse(File.Exists(Path.ChangeExtension(locked_exe_str, ".old.exe")));
         }
+
 
         [TestMethod]
         public void TestSplitPCK()

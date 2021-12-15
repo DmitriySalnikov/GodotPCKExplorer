@@ -82,8 +82,8 @@ namespace GodotPCKExplorer
                 var packer = new PCKPacker();
 
                 bool p_res = packer.PackFiles(saveFileDialog1.FileName, files.Values.ToList(), 8,
-                    new PCKVersion(int.Parse((string)cb_ver.SelectedItem), (int)nud_major.Value, (int)nud_minor.Value, (int)nud_revision.Value)
-                    );
+                    new PCKVersion(int.Parse((string)cb_ver.SelectedItem), (int)nud_major.Value, (int)nud_minor.Value, (int)nud_revision.Value),
+                    false);
 
                 try
                 {

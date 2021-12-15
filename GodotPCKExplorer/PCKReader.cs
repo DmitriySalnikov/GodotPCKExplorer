@@ -40,7 +40,7 @@ namespace GodotPCKExplorer
             PCK_Embedded = false;
         }
 
-        public bool OpenFile(string p_path)
+        public bool OpenFile(string p_path, bool show_not_pck_error = true)
         {
             Close();
 
@@ -65,7 +65,8 @@ namespace GodotPCKExplorer
                 if (magic != Program.PCK_MAGIC)
                 {
                     fileStream.Close();
-                    Utils.ShowMessage("Not Godot PCK file!", "Error");
+                    if (show_not_pck_error)
+                        Utils.ShowMessage("Not Godot PCK file!", "Error");
                     return false;
                 }
                 fileStream.BaseStream.Seek(-12, SeekOrigin.Current);
@@ -77,7 +78,8 @@ namespace GodotPCKExplorer
                 if (magic != Program.PCK_MAGIC)
                 {
                     fileStream.Close();
-                    Utils.ShowMessage("Not Godot PCK file!", "Error");
+                    if (show_not_pck_error)
+                        Utils.ShowMessage("Not Godot PCK file!", "Error");
 
                     return false;
                 }
@@ -138,7 +140,7 @@ namespace GodotPCKExplorer
 
             if (!names.Any())
             {
-                Utils.CommandLog("No files to extract", "Error", false);
+                Utils.CommandLog("The list of files to export is empty", "Error", false);
                 return false;
             }
 
@@ -294,7 +296,7 @@ namespace GodotPCKExplorer
                 {
                     Console.WriteLine("Checking file whether it already contains '.pck'");
                     var p = new PCKReader();
-                    if (p.OpenFile(exePath))
+                    if (p.OpenFile(exePath, false))
                     {
                         p.Close();
                         Utils.CommandLog("File already contains '.pck' inside.", "Error", false);

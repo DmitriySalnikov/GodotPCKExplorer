@@ -16,8 +16,9 @@ namespace GodotPCKExplorer
         static Regex QuoteStringRegEx = new Regex(quote_string_pattern);
 
         public static bool CMDMode = false;
-        public static bool SkipReadKey = false;
-        static bool run_with_args = false;
+        public static bool skipReadKey = false;
+        static bool runWithArgs = false;
+        public static Form1 mainForm = null;
 
         // https://stackoverflow.com/a/3571628/8980874
         [DllImport("kernel32.dll")]
@@ -41,37 +42,64 @@ namespace GodotPCKExplorer
             CMDMode = true;
             Console.WriteLine("");
 
-            RunCommands(
-                () => HelpCommand(Environment.CommandLine.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)),
-                () => OpenPCKCommand(SplitArgs(" -o ")),
-                () => InfoPCKCommand(SplitArgs(" -i ")),
-                () => ExtractPCKCommand(SplitArgs(" -e ")),
-                () => ExtractSkipExistingPCKCommand(SplitArgs(" -es ")),
-                () => PackPCKCommand(SplitArgs(" -p ")),
-                () => MergePCKCommand(SplitArgs(" -m ")),
-                () => RipPCKCommand(SplitArgs(" -r ")),
-                () => SplitPCKCommand(SplitArgs(" -s "))
-                );
+            RunCommandInternal(Environment.CommandLine, false);
 
-            if (!run_with_args)
+            if (!runWithArgs)
             {
                 // run..
                 CMDMode = false;
 
                 HideConsole();
-                Application.Run(new Form1());
+
+                mainForm = new Form1();
+                Application.Run(mainForm);
             }
 
             //Environment.ExitCode = 0;
             return;
         }
 
-        static void RunCommands(params Action[] commands)
+        static public void RunCommand(string args)
+        {
+            RunCommandInternal(args, true);
+        }
+
+        static void RunCommandInternal(string args, bool restore_params)
+        {
+            var old_skip_state = skipReadKey;
+            var old_run_with_args = runWithArgs;
+            var old_cmd_mode = CMDMode;
+
+            if (args.Split(new string[] { " --skip_any_key " }, StringSplitOptions.RemoveEmptyEntries).Length > 1)
+                skipReadKey = true;
+
+            IterateCommands(
+             () => HelpCommand(args.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)),
+             () => OpenPCKCommand(SplitArgs(" -o ")),
+             () => InfoPCKCommand(SplitArgs(" -i ")),
+             () => ExtractPCKCommand(SplitArgs(" -e ")),
+             () => ExtractSkipExistingPCKCommand(SplitArgs(" -es ")),
+             () => PackPCKCommand(SplitArgs(" -p "), false),
+             () => PackPCKCommand(SplitArgs(" -pe "), true),
+             () => MergePCKCommand(SplitArgs(" -m ")),
+             () => RipPCKCommand(SplitArgs(" -r ")),
+             () => SplitPCKCommand(SplitArgs(" -s "))
+             );
+
+            if (restore_params)
+            {
+                skipReadKey = old_skip_state;
+                runWithArgs = old_run_with_args;
+                CMDMode = old_cmd_mode;
+            }
+        }
+
+        static void IterateCommands(params Action[] commands)
         {
             foreach (var cmd in commands)
             {
                 cmd();
-                if (run_with_args)
+                if (runWithArgs)
                     return;
             }
         }
@@ -104,7 +132,7 @@ namespace GodotPCKExplorer
                 {
                     if (a.Contains("-h") || a.Contains("/?") || a.Contains("--help"))
                     {
-                        run_with_args = true;
+                        runWithArgs = true;
                         Utils.HelpRun();
                         return;
                     }
@@ -168,7 +196,7 @@ namespace GodotPCKExplorer
 
                 if (path != null)
                 {
-                    run_with_args = true;
+                    runWithArgs = true;
 
                     CMDMode = false;
                     Utils.OpenPCKRun(path);
@@ -182,7 +210,7 @@ namespace GodotPCKExplorer
         {
             if (!string.IsNullOrWhiteSpace(args))
             {
-                run_with_args = true;
+                runWithArgs = true;
 
                 string filePath = "";
                 try
@@ -216,7 +244,7 @@ namespace GodotPCKExplorer
         {
             if (!string.IsNullOrWhiteSpace(args))
             {
-                run_with_args = true;
+                runWithArgs = true;
 
                 string filePath = "";
                 string dirPath = "";
@@ -253,11 +281,11 @@ namespace GodotPCKExplorer
             ExtractPCKCommand(args, false);
         }
 
-        static void PackPCKCommand(string args)
+        static void PackPCKCommand(string args, bool embed)
         {
             if (!string.IsNullOrWhiteSpace(args))
             {
-                run_with_args = true;
+                runWithArgs = true;
 
                 string dirPath = "";
                 string filePath = "";
@@ -286,7 +314,7 @@ namespace GodotPCKExplorer
                     return;
                 }
 
-                Utils.PackPCKRun(dirPath, filePath, strVer);
+                Utils.PackPCKRun(dirPath, filePath, strVer, embed);
             }
 
             return;
@@ -296,7 +324,7 @@ namespace GodotPCKExplorer
         {
             if (!string.IsNullOrWhiteSpace(args))
             {
-                run_with_args = true;
+                runWithArgs = true;
 
                 string exeFile = "";
                 string outFile = null;
@@ -340,7 +368,7 @@ namespace GodotPCKExplorer
         {
             if (!string.IsNullOrWhiteSpace(args))
             {
-                run_with_args = true;
+                runWithArgs = true;
 
                 string pckFile = "";
                 string exeFile = "";
@@ -376,7 +404,7 @@ namespace GodotPCKExplorer
         {
             if (!string.IsNullOrWhiteSpace(args))
             {
-                run_with_args = true;
+                runWithArgs = true;
 
                 string exeFile = "";
                 string pairName = null;

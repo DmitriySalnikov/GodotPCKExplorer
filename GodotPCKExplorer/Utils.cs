@@ -77,7 +77,7 @@ namespace GodotPCKExplorer
 
         public static void ConsoleWaitKey()
         {
-            if (Program.CMDMode && !Program.SkipReadKey)
+            if (Program.CMDMode && !Program.skipReadKey)
             {
                 Console.WriteLine("\nPress any key to exit...");
                 Console.ReadKey(true);
@@ -98,11 +98,18 @@ namespace GodotPCKExplorer
             Program.CMDMode = false;
             if (File.Exists(path))
             {
-                var form = new Form1();
-                form.OpenFile(path);
+                if (Program.mainForm == null)
+                {
+                    Program.mainForm = new Form1();
+                    Program.mainForm.OpenFile(path);
 
-                Program.HideConsole();
-                Application.Run(form);
+                    Program.HideConsole();
+                    Application.Run(Program.mainForm);
+                }
+                else
+                {
+                    Program.mainForm.OpenFile(path);
+                }
                 return true;
             }
             else
@@ -137,15 +144,21 @@ namespace GodotPCKExplorer
             if (File.Exists(filePath))
             {
                 var pckReader = new PCKReader();
-                pckReader.OpenFile(filePath);
-
-                if (files != null)
-                    pckReader.ExtractFiles(files, dirPath, overwriteExisting);
+                bool res;
+                if (pckReader.OpenFile(filePath))
+                {
+                    if (files != null)
+                        res = pckReader.ExtractFiles(files, dirPath, overwriteExisting);
+                    else
+                        res = pckReader.ExtractAllFiles(dirPath, overwriteExisting);
+                }
                 else
-                    pckReader.ExtractAllFiles(dirPath, overwriteExisting);
+                {
+                    return false;
+                }
 
                 pckReader.Close();
-                return true;
+                return res;
             }
             else
             {
@@ -155,11 +168,11 @@ namespace GodotPCKExplorer
             return false;
         }
 
-        public static bool PackPCKRun(string dirPath, string filePath, string strVer)
+        public static bool PackPCKRun(string dirPath, string filePath, string strVer, bool embed = false)
         {
             if (Directory.Exists(dirPath))
             {
-                return PackPCKRun(ScanFoldersForFiles(dirPath), filePath, strVer);
+                return PackPCKRun(ScanFoldersForFiles(dirPath), filePath, strVer, embed);
             }
             else
             {
@@ -169,11 +182,12 @@ namespace GodotPCKExplorer
             return false;
         }
 
-        public static bool PackPCKRun(IEnumerable<PCKPacker.FileToPack> files, string filePath, string strVer)
+        public static bool PackPCKRun(IEnumerable<PCKPacker.FileToPack> files, string filePath, string strVer, bool embed = false)
         {
             if (!files.Any())
             {
                 CommandLog("No files to pack", "Error", false);
+                ConsoleWaitKey();
                 return false;
             }
 
@@ -187,7 +201,43 @@ namespace GodotPCKExplorer
                 return false;
             }
 
-            return pckPacker.PackFiles(filePath, files, 8, ver); ;
+            // create backup
+            var oldPCKFile = Path.ChangeExtension(filePath, "old" + Path.GetExtension(filePath));
+            if (embed)
+            {
+                try
+                {
+                    if (File.Exists(oldPCKFile))
+                        File.Delete(oldPCKFile);
+                    File.Copy(filePath, oldPCKFile);
+                }
+                catch (Exception e)
+                {
+                    CommandLog("Unable to create a backup copy of the file:\n" + e.Message, "Error", false);
+                    ConsoleWaitKey();
+                    return false;
+                }
+            }
+
+            if (pckPacker.PackFiles(filePath, files, 8, ver, embed))
+            {
+                return true;
+            }
+            else
+            {
+                // restore backup
+                try
+                {
+                    if (File.Exists(filePath))
+                        File.Delete(filePath);
+                    File.Move(oldPCKFile, filePath);
+                }
+                catch (Exception ex)
+                {
+                    CommandLog("Can't restore backup file.\n" + ex.Message, "Error", false);
+                }
+            }
+            return false;
         }
 
         public static bool RipPCKRun(string exeFile, string outFile = null, bool removeBackup = false)
@@ -195,8 +245,15 @@ namespace GodotPCKExplorer
             if (File.Exists(exeFile))
             {
                 var pckReader = new PCKReader();
-                bool res = pckReader.OpenFile(exeFile);
+                bool res = pckReader.OpenFile(exeFile, false);
                 long to_write = pckReader.PCK_StartPosition;
+
+                if (!res)
+                {
+                    CommandLog($"The file does not contain '.pck' inside", "Error", false);
+                    ConsoleWaitKey();
+                    return false;
+                }
 
                 if (outFile == exeFile)
                 {
@@ -229,7 +286,7 @@ namespace GodotPCKExplorer
                     }
                     catch (Exception e)
                     {
-                        CommandLog(e.Message, "Error", false);
+                        CommandLog("Unable to create a backup copy of the file:\n" + e.Message, "Error", false);
                         ConsoleWaitKey();
                         return false;
                     }
@@ -283,6 +340,7 @@ namespace GodotPCKExplorer
                     catch (Exception e)
                     {
                         CommandLog(e.Message, "Error", false);
+                        ConsoleWaitKey();
                     }
                 }
 
@@ -303,8 +361,17 @@ namespace GodotPCKExplorer
                 var pckReader = new PCKReader();
                 bool res = pckReader.OpenFile(pckFile);
 
+                if (!res)
+                {
+                    pckReader.Close();
+                    CommandLog($"Unable to open PCK file", "Error", false);
+                    ConsoleWaitKey();
+                    return false;
+                }
+
                 if (exeFile == pckFile)
                 {
+                    pckReader.Close();
                     CommandLog($"The path to the new file cannot be equal to the original file", "Error", false);
                     ConsoleWaitKey();
                     return false;
@@ -320,8 +387,8 @@ namespace GodotPCKExplorer
                 }
                 catch (Exception e)
                 {
-                    CommandLog(e.Message, "Error", false);
-                    ConsoleWaitKey();
+                    pckReader.Close();
+                    CommandLog("Unable to create a backup copy of the file:\n" + e.Message, "Error", false);
                     return false;
                 }
 
@@ -359,6 +426,7 @@ namespace GodotPCKExplorer
                 catch (Exception e)
                 {
                     CommandLog(e.Message, "Error", false);
+                    ConsoleWaitKey();
                 }
 
                 return res;
@@ -401,6 +469,7 @@ namespace GodotPCKExplorer
                     catch (Exception e)
                     {
                         CommandLog(e.Message, "Error", false);
+                        ConsoleWaitKey();
                         return false;
                     }
 
@@ -427,6 +496,7 @@ namespace GodotPCKExplorer
                     catch (Exception e)
                     {
                         CommandLog(e.Message, "Error", false);
+                        ConsoleWaitKey();
                     }
 
                     try
@@ -438,6 +508,7 @@ namespace GodotPCKExplorer
                     catch (Exception e)
                     {
                         CommandLog(e.Message, "Error", false);
+                        ConsoleWaitKey();
                     }
                 }
 
