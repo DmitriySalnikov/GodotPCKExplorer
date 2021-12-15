@@ -80,6 +80,7 @@
     <Compile Include="PackedFile.cs" />
     <Compile Include="PCKPacker.cs" />
     <Compile Include="PCKReader.cs" />
+    <Compile Include="PCKVersion.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ShellIntegration.cs" />

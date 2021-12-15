@@ -8,15 +8,17 @@ namespace GodotPCKExplorer
         private BinaryReader reader;
         public string FilePath;
         public long Offset;
+        public long OffsetPosition;
         public long Size;
         public byte[] MD5;
 
-        public PackedFile(BinaryReader _reader, string _Path, long _Offset, long _Size, byte[] _MD5)
+        public PackedFile(BinaryReader reader, string path, long offset, long offsetPosition, long size, byte[] _MD5)
         {
-            reader = _reader;
-            FilePath = _Path;
-            Offset = _Offset;
-            Size = _Size;
+            this.reader = reader;
+            FilePath = path;
+            Offset = offset;
+            OffsetPosition = offsetPosition;
+            Size = size;
             MD5 = _MD5;
         }
 

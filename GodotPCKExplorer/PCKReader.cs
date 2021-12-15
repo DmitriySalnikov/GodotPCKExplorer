@@ -112,11 +112,12 @@ namespace GodotPCKExplorer
             for (int i = 0; i < file_count; i++)
             {
                 string path = Encoding.UTF8.GetString(fileStream.ReadBytes(fileStream.ReadInt32())).Replace("\0", "");
+                long ofs_p = fileStream.BaseStream.Position;
                 long ofs = fileStream.ReadInt64();
                 long size = fileStream.ReadInt64();
                 byte[] md5 = fileStream.ReadBytes(16);
 
-                Files.Add(path, new PackedFile(fileStream, path, ofs, size, md5));
+                Files.Add(path, new PackedFile(fileStream, path, ofs, ofs_p, size, md5));
             };
 
             PackPath = p_path;
@@ -128,25 +129,38 @@ namespace GodotPCKExplorer
             return ExtractFiles(Files.Keys.ToList(), folder, overwriteExisting);
         }
 
-        public bool ExtractFiles(List<string> names, string folder, bool overwriteExisting = true)
+        public bool ExtractFiles(IEnumerable<string> names, string folder, bool overwriteExisting = true)
         {
             var bp = new BackgroundProgress();
             var bw = bp.backgroundWorker1;
             bool result = true;
+            int files_count = names.Count();
+
+            if (!names.Any())
+            {
+                Utils.CommandLog("No files to extract", "Error", false);
+                return false;
+            }
 
             bw.DoWork += (sender, ev) =>
             {
                 string basePath = folder;
 
                 int count = 0;
-                double one_file_in_progress_line = 1.0 / names.Count;
+                double one_file_in_progress_line = 1.0 / files_count;
                 foreach (var path in names)
                 {
                     if (path != null)
                     {
+                        if (!Files.ContainsKey(path))
+                        {
+                            Utils.CommandLog($"File not found in PCK: {path}", "Error", false);
+                            continue;
+                        }
+
                         PackedFile.VoidInt upd = (p) =>
                         {
-                            bw.ReportProgress((int)(((double)count / names.Count * 100) + (p * one_file_in_progress_line)));
+                            bw.ReportProgress((int)(((double)count / files_count * 100) + (p * one_file_in_progress_line)));
                         };
                         Files[path].OnProgress += upd;
 
@@ -161,7 +175,7 @@ namespace GodotPCKExplorer
                     }
 
                     count++;
-                    bw.ReportProgress((int)((double)count / names.Count * 100));
+                    bw.ReportProgress((int)((double)count / files_count * 100));
 
                     if (bw.CancellationPending)
                     {
@@ -202,21 +216,20 @@ namespace GodotPCKExplorer
                     if (File.Exists(outPath))
                         File.Delete(outPath);
 
-                    Directory.CreateDirectory(dir);
+                    if (!Directory.Exists(dir))
+                        Directory.CreateDirectory(dir);
                     file = new BinaryWriter(File.OpenWrite(outPath));
                 }
                 catch (Exception e)
                 {
-                    Utils.ShowMessage(e.Message, "Error");
-                    result = false;
-                    return;
+                    Utils.ShowMessage(e.Message, "Error"); result = false; return;
                 }
 
                 const int buf_max = 65536;
+                long size = PCK_EndPosition - PCK_StartPosition;
 
                 try
                 {
-                    long size = PCK_EndPosition - PCK_StartPosition;
                     if (size > 0)
                     {
                         fileStream.BaseStream.Seek(PCK_StartPosition, SeekOrigin.Begin);
@@ -250,56 +263,132 @@ namespace GodotPCKExplorer
                     return;
                 }
 
-                // Update offsets
+                foreach (var p in Files.Values)
+                {
+                    file.BaseStream.Seek(p.OffsetPosition - PCK_StartPosition, SeekOrigin.Begin);
+                    file.Write(p.Offset - PCK_StartPosition);
+                }
+
                 file.Close();
+            };
 
-                // TODO move first scan before cloning pck to get real size of file
+            bw.RunWorkerAsync();
+            bp.ShowDialog();
 
-                // First scan 
-                BinaryReader fileReader;
+            if (result)
+                Utils.ShowMessage("Completed!", "Progress");
+
+            return result;
+        }
+
+        public bool MergePCKFileIntoExe(string exePath, PCKVersion? version = null)
+        {
+            var bp = new BackgroundProgress();
+            var bw = bp.backgroundWorker1;
+            bool result = true;
+
+            bw.DoWork += (sender, ev) =>
+            {
+                BinaryWriter file;
+
+                {
+                    Console.WriteLine("Checking file whether it already contains '.pck'");
+                    var p = new PCKReader();
+                    if (p.OpenFile(exePath))
+                    {
+                        p.Close();
+                        Utils.CommandLog("File already contains '.pck' inside.", "Error", false);
+                        result = false;
+                        return;
+                    }
+                    p.Close();
+                }
+
                 try
                 {
-                    fileReader = new BinaryReader(File.OpenRead(outPath));
+                    file = new BinaryWriter(File.OpenWrite(exePath));
+                    file.BaseStream.Seek(0, SeekOrigin.End);
+                }
+                catch (Exception e)
+                {
+                    Utils.ShowMessage(e.Message, "Error"); result = false; return;
+                }
+
+                var embed_start = file.BaseStream.Position;
+                var offset_delta = embed_start - PCK_StartPosition;
+
+                // Godot's 779a5e56218b7fa2ab34ab22ab5b1b2aaa19346f editor_export.cpp:994
+                // Ensure embedded PCK starts at a 64-bit multiple
+                try
+                {
+                    int pad = (int)(file.BaseStream.Position % 8);
+                    for (int i = 0; i < pad; i++)
+                    {
+                        file.Write((byte)0);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Utils.ShowMessage(e.Message, "Error"); result = false; return;
+                }
+
+                const int buf_max = 65536;
+                long pck_start = file.BaseStream.Position;
+                long size = PCK_EndPosition - PCK_StartPosition;
+
+                try
+                {
+                    if (size > 0)
+                    {
+                        fileStream.BaseStream.Seek(PCK_StartPosition, SeekOrigin.Begin);
+                        long to_write = size;
+
+                        while (to_write > 0)
+                        {
+                            var read = fileStream.ReadBytes(Math.Min(buf_max, (int)to_write));
+                            file.Write(read);
+                            to_write -= read.Length;
+
+                            bw.ReportProgress(100 - (int)((double)to_write / size * 100));
+
+                            if (bw.CancellationPending)
+                            {
+                                result = false;
+                                return;
+                            }
+                        }
+
+                        // Godot's 779a5e56218b7fa2ab34ab22ab5b1b2aaa19346f editor_export.cpp:1073
+                        // Ensure embedded data ends at a 64-bit multiple
+                        long embed_end = file.BaseStream.Position - embed_start + 12;
+                        long pad = embed_end % 8;
+                        for (long i = 0; i < pad; i++)
+                        {
+                            file.Write((byte)0);
+                        }
+
+                        long pck_size = file.BaseStream.Position - pck_start;
+                        file.Write((long)pck_size);
+                        file.Write((int)Program.PCK_MAGIC);
+                    }
                 }
                 catch (Exception e)
                 {
                     Utils.ShowMessage(e.Message, "Error");
-                    result = false;
+                    file.Close();
+                    try
+                    {
+                        File.Delete(exePath);
+                    }
+                    catch { }
                     return;
                 }
 
-                // 21 = 1 Magic, 4 Version numbers + 16 reserved
-                fileReader.BaseStream.Seek(21 * 4, SeekOrigin.Begin);
-                var offsetMap = new Dictionary<long, long>();
 
-                var filesCount = fileReader.ReadInt32();
-                for (int i = 0; i < filesCount; i++)
+                foreach (var p in Files.Values)
                 {
-                    var strSize = fileReader.ReadInt32();
-                    fileReader.BaseStream.Seek(strSize, SeekOrigin.Current);
-                    offsetMap.Add(fileReader.BaseStream.Position, fileReader.ReadInt64());
-                    // skip size and md5
-                    fileReader.BaseStream.Seek(8 + 16, SeekOrigin.Current);
-                }
-
-                // Then modify
-                fileReader.Close();
-
-                try
-                {
-                    file = new BinaryWriter(File.OpenWrite(outPath));
-                }
-                catch (Exception e)
-                {
-                    Utils.ShowMessage(e.Message, "Error");
-                    result = false;
-                    return;
-                }
-
-                foreach (var p in offsetMap)
-                {
-                    file.BaseStream.Seek(p.Key, SeekOrigin.Begin);
-                    file.Write(p.Value - PCK_StartPosition);
+                    file.BaseStream.Seek(p.OffsetPosition + offset_delta, SeekOrigin.Begin);
+                    file.Write(p.Offset + offset_delta);
                 }
 
                 file.Close();

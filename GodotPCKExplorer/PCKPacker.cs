@@ -9,35 +9,19 @@ namespace GodotPCKExplorer
 {
     public class PCKPacker
     {
-        public struct PCKVersion
-        {
-            public int PackVersion;
-            public int Major;
-            public int Minor;
-            public int Revision;
-
-            public PCKVersion(int pck_version, int minor, int major, int revision)
-            {
-                PackVersion = pck_version;
-                Major = minor;
-                Minor = major;
-                Revision = revision;
-            }
-        }
-
         public class FileToPack
         {
             public string Path;
             public string OriginalPath;
             public long Size;
-            public long Offset_Offset;
+            public long OffsetPosition;
 
             public FileToPack(string o_path, string path, long size)
             {
                 OriginalPath = o_path;
                 Path = path;
                 Size = size;
-                Offset_Offset = 0;
+                OffsetPosition = 0;
             }
         }
 
@@ -60,15 +44,22 @@ namespace GodotPCKExplorer
 
         void CloseAndDeleteFile(BinaryWriter writer, string out_pck)
         {
-            writer.Close();
+            writer?.Close();
             File.Delete(out_pck);
         }
 
-        public bool PackFiles(string out_pck, List<FileToPack> files, int alignment, PCKVersion godotVersion)
+        public bool PackFiles(string out_pck, IEnumerable<FileToPack> files, int alignment, PCKVersion godotVersion)
         {
             var bp = new BackgroundProgress();
             var bw = bp.backgroundWorker1;
             bool result = false;
+
+            if (!godotVersion.IsValid)
+            {
+                bp.Dispose();
+                Utils.ShowMessage("Incorrect version is specified!", "Error");
+                return false;
+            }
 
             bw.DoWork += (sender, ev) =>
             {
@@ -92,6 +83,7 @@ namespace GodotPCKExplorer
                 }
                 catch (Exception e)
                 {
+                    writer?.Close();
                     Utils.ShowMessage(e.Message, "Error");
                     result = false;
                     return;
@@ -112,7 +104,7 @@ namespace GodotPCKExplorer
 
                     // write the index
 
-                    writer.Write((int)files.Count);
+                    writer.Write((int)files.Count());
 
                     long total_size = 0;
                     // write pck header
@@ -121,7 +113,7 @@ namespace GodotPCKExplorer
                         var str = Encoding.UTF8.GetBytes(file.Path).ToList();
                         writer.Write((int)str.Count); // write str size beacause of original function "store_pascal_string" store size and after actual data
                         writer.Write(str.ToArray());
-                        file.Offset_Offset = writer.BaseStream.Position;
+                        file.OffsetPosition = writer.BaseStream.Position;
                         writer.Write((long)0); // offset
                         writer.Write((long)file.Size); // size
 
@@ -176,7 +168,7 @@ namespace GodotPCKExplorer
                         };
 
                         long pos = writer.BaseStream.Position;
-                        writer.BaseStream.Seek(file.Offset_Offset, SeekOrigin.Begin); // go back to store the writer's offset
+                        writer.BaseStream.Seek(file.OffsetPosition, SeekOrigin.Begin); // go back to store the writer's offset
                         writer.Write((long)ofs);
                         writer.BaseStream.Seek(pos, SeekOrigin.Begin);
 

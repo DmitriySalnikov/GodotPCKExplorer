@@ -41,9 +41,7 @@ namespace GodotPCKExplorer
 
         public void SetFolderPath(string path)
         {
-            var scanned_files = new List<PCKPacker.FileToPack>();
-            Utils.ScanFoldersForFiles(path, scanned_files, ref path);
-            files = scanned_files.ToDictionary((f) => f.OriginalPath);
+            files = Utils.ScanFoldersForFiles(path).ToDictionary((f) => f.OriginalPath);
 
             dataGridView1.Rows.Clear();
             foreach (var f in files)
@@ -84,7 +82,7 @@ namespace GodotPCKExplorer
                 var packer = new PCKPacker();
 
                 bool p_res = packer.PackFiles(saveFileDialog1.FileName, files.Values.ToList(), 8,
-                    new PCKPacker.PCKVersion(int.Parse((string)cb_ver.SelectedItem), (int)nud_major.Value, (int)nud_minor.Value, (int)nud_revision.Value)
+                    new PCKVersion(int.Parse((string)cb_ver.SelectedItem), (int)nud_major.Value, (int)nud_minor.Value, (int)nud_revision.Value)
                     );
 
                 try

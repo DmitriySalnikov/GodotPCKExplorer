@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Linq;
 using System.IO;
 using GodotPCKExplorer;
 using System.Windows.Forms;
@@ -69,6 +70,7 @@ namespace Tests
         {
             string exportTestPath = Path.Combine(binaries, "ExportTest");
             string testPCK = Path.Combine(binaries, "Test.pck");
+
             if (Directory.Exists(exportTestPath))
                 Directory.Delete(exportTestPath, true);
 
@@ -79,23 +81,66 @@ namespace Tests
             Assert.IsFalse(Utils.ExtractPCKRun(Path.Combine(binaries, "WrongPath/Test.pck"), exportTestPath, true));
 
             Title("Compare content with folder");
-            var new_list = new List<PCKPacker.FileToPack>();
+            var list_of_files = Utils.ScanFoldersForFiles(Path.GetFullPath(exportTestPath));
             {
-
                 var pck = new PCKReader();
-                Assert.IsTrue(pck.OpenFile(Path.Combine(binaries, "Test.pck")));
-                var files = pck.Files;
+                Assert.IsTrue(pck.OpenFile(testPCK));
+                Assert.AreEqual(pck.Files.Count, list_of_files.Count);
 
-                var abs_path = Path.GetFullPath(exportTestPath);
-                Utils.ScanFoldersForFiles(abs_path, new_list, ref abs_path);
-
-                Assert.AreEqual(files.Count, new_list.Count);
-
-                foreach (var f in new_list)
-                    Assert.IsTrue(files.ContainsKey(f.Path));
+                foreach (var f in list_of_files)
+                    Assert.IsTrue(pck.Files.ContainsKey(f.Path));
 
                 pck.Close();
             }
+
+            Title("Extract without overwrite");
+
+
+            Assert.IsTrue(Utils.ExtractPCKRun(testPCK, exportTestPath, true));
+
+            // select at least one file
+            var rnd = new Random();
+            var first = false;
+            var seleceted_files = list_of_files.Where((f) =>
+            {
+                if (!first)
+                {
+                    first = true;
+                    return true;
+                }
+                return rnd.NextDouble() > 0.5;
+            }).ToList();
+
+            Title("Extract only seleceted files and compare");
+            {
+                var export_files = seleceted_files.Select((s) => s.Path);
+
+                string exportTestSelectedPath = Path.Combine(binaries, "ExportTestSelected");
+                if (Directory.Exists(exportTestSelectedPath))
+                    Directory.Delete(exportTestSelectedPath, true);
+
+                Assert.IsTrue(Utils.ExtractPCKRun(testPCK, exportTestSelectedPath, true, export_files));
+
+                var exportedSelectedList = Utils.ScanFoldersForFiles(exportTestSelectedPath);
+                Assert.AreEqual(exportedSelectedList.Count, seleceted_files.Count);
+
+                foreach (var f in export_files)
+                    Assert.IsTrue(exportedSelectedList.FindIndex((l) => l.Path == f) != -1);
+
+
+                Title("Extract only seleceted files and compare");
+                var wrong_selected = export_files.ToList();
+                for (int i = 0; i < wrong_selected.Count; i++)
+                    wrong_selected[i] = wrong_selected[i] + "WrongFile";
+
+                string exportTestSelectedWrongPath = Path.Combine(binaries, "ExportTestSelectedWrong");
+                if (Directory.Exists(exportTestSelectedWrongPath))
+                    Directory.Delete(exportTestSelectedWrongPath, true);
+
+                Assert.IsTrue(Utils.ExtractPCKRun(testPCK, exportTestSelectedWrongPath, true, wrong_selected));
+                Assert.IsFalse(Directory.Exists(exportTestSelectedWrongPath));
+            }
+
 
             Title("Extract without overwrite");
             {
@@ -116,37 +161,72 @@ namespace Tests
             }
 
 
-            Title("Get original version");
             string ver = "";
-            using (var output = new ConsoleOutputRedirect())
             {
-                Assert.IsTrue(Utils.InfoPCKRun(testPCK));
-                var lines = output.GetOuput().Replace("\r", "").Split('\n');
-                ver = lines[lines.Length - 2].Split(':')[1]; ;
+                Title("Get original version");
+                string console_output = "";
+                using (var output = new ConsoleOutputRedirect())
+                {
+                    Assert.IsTrue(Utils.InfoPCKRun(testPCK));
+                    console_output = output.GetOuput();
+                    var lines = console_output.Replace("\r", "").Split('\n');
+                    ver = lines[lines.Length - 2].Split(':')[1];
+                }
+                Console.WriteLine(console_output);
+                Console.WriteLine($"Found version: {ver}");
             }
 
-            Title("Pack new PCK");
+
             string newPckPath = Path.Combine(exportTestPath, "out.pck");
-            Assert.IsTrue(Utils.PackPCKRun(exportTestPath, newPckPath, ver));
-
-            Title("Locked file");
-            string locked_file = Path.Combine(exportTestPath, "out.lock");
-            using (var f = new LockedFile(locked_file))
-                Assert.IsFalse(Utils.PackPCKRun(exportTestPath, locked_file, ver));
-
-            Title("Wrong version and directory");
-            Assert.IsFalse(Utils.PackPCKRun(exportTestPath, newPckPath, "1234"));
-            Assert.IsFalse(Utils.PackPCKRun(exportTestPath + "WrongPath", newPckPath, ver));
-
-            // Compare new PCK content with alredy existing trusted list of files 'new_list'
-            Title("Compare files to original list");
             {
-                var pck = new PCKReader();
-                Assert.IsTrue(pck.OpenFile(Path.Combine(binaries, "Test.pck")));
-                foreach (var f in pck.Files.Keys)
-                    Assert.IsTrue(new_list.FindIndex((l) => l.Path == f) != -1);
+                Title("Pack new PCK");
 
-                pck.Close();
+                Assert.IsTrue(Utils.PackPCKRun(exportTestPath, newPckPath, ver));
+
+                Title("Locked file");
+                string locked_file = Path.Combine(exportTestPath, "out.lock");
+                using (var f = new LockedFile(locked_file))
+                    Assert.IsFalse(Utils.PackPCKRun(exportTestPath, locked_file, ver));
+
+                Title("Wrong version and directory");
+                Assert.IsFalse(Utils.PackPCKRun(exportTestPath, newPckPath, "1234"));
+                Assert.IsFalse(Utils.PackPCKRun(exportTestPath, newPckPath, "123.33.2.1"));
+                Assert.IsFalse(Utils.PackPCKRun(exportTestPath, newPckPath, "-1.0.2.1"));
+                Assert.IsFalse(Utils.PackPCKRun(exportTestPath + "WrongPath", newPckPath, ver));
+
+                // Compare new PCK content with alredy existing trusted list of files 'list_of_files'
+                Title("Compare files to original list");
+                {
+                    var pck = new PCKReader();
+                    Assert.IsTrue(pck.OpenFile(testPCK));
+                    foreach (var f in pck.Files.Keys)
+                        Assert.IsTrue(list_of_files.FindIndex((l) => l.Path == f) != -1);
+
+                    pck.Close();
+                }
+            }
+
+
+            {
+                Title("Pack only selected files");
+
+                var selectedFilesPck = Path.Combine(binaries, "SelecetedFiles.pck");
+                if (File.Exists(selectedFilesPck))
+                    File.Delete(selectedFilesPck);
+
+                Assert.IsTrue(Utils.PackPCKRun(seleceted_files, selectedFilesPck, ver));
+
+                Title("Compare selected to pack content with new pck");
+                {
+                    var pck = new PCKReader();
+                    Assert.IsTrue(pck.OpenFile(selectedFilesPck));
+                    Assert.AreEqual(pck.Files.Count, seleceted_files.Count);
+
+                    foreach (var f in pck.Files.Keys)
+                        Assert.IsTrue(seleceted_files.FindIndex((l) => l.Path == f) != -1);
+
+                    pck.Close();
+                }
             }
 
             Title("Good run");
@@ -191,9 +271,9 @@ namespace Tests
             using (var f = new LockedFile(locked_file))
                 Assert.IsFalse(Utils.RipPCKRun(new_exe, locked_file));
 
-
             Title("Rip PCK from exe");
-            Assert.IsTrue(Utils.RipPCKRun(new_exe));
+            Assert.IsTrue(Utils.RipPCKRun(new_exe, null, true));
+            Assert.IsFalse(File.Exists(new_exe_old));
 
             Title("Good run");
             using (var r = new RunAppWithOutput(new_exe, "", 1000))
@@ -226,8 +306,8 @@ namespace Tests
         {
             string exe = Path.Combine(binaries, "TestSplit.exe");
             string pck = Path.Combine(binaries, "TestSplit.pck");
-            string new_exe = Path.Combine(binaries, "Split.exe");
-            string new_pck = Path.Combine(binaries, "Split.pck");
+            string new_exe = Path.Combine(binaries, "SplitFolder", "Split.exe");
+            string new_pck = Path.Combine(binaries, "SplitFolder", "Split.pck");
 
             foreach (var f in new string[] { exe, pck, new_exe, new_pck })
                 if (File.Exists(f))
@@ -236,13 +316,13 @@ namespace Tests
             File.Copy(Path.Combine(binaries, "TestEmbedded.exe"), exe);
 
             Title("Split with custom pair name and check files");
-            Assert.IsTrue(Utils.SplitPCKRun(exe, "Split"));
+            Assert.IsTrue(Utils.SplitPCKRun(exe, new_exe));
             Assert.IsTrue(File.Exists(new_exe));
             Assert.IsTrue(File.Exists(new_pck));
             Assert.IsFalse(File.Exists(Path.ChangeExtension(new_exe, ".old.exe")));
 
             Title("Can't copy with same name");
-            Assert.IsFalse(Utils.SplitPCKRun(exe, "TestSplit"));
+            Assert.IsFalse(Utils.SplitPCKRun(exe, exe));
 
             Title("Split with same name");
             Assert.IsTrue(Utils.SplitPCKRun(exe));
@@ -270,6 +350,18 @@ namespace Tests
 
             using (var r = new RunAppWithOutput(new_exe, "", 1000))
                 Assert.IsTrue(r.GetConsoleText().Contains(pck_error));
+
+            Title("Split with locked output");
+            foreach (var f in new string[] { new_exe, new_pck })
+                if (File.Exists(f))
+                    File.Delete(f);
+            File.Copy(Path.Combine(binaries, "Test.pck"), new_pck);
+
+            using (var l = new LockedFile(new_pck, false))
+                Assert.IsFalse(Utils.SplitPCKRun(Path.Combine(binaries, "TestEmbedded.exe"), new_exe));
+
+            Assert.IsFalse(File.Exists(new_exe));
+            Assert.IsTrue(File.Exists(new_pck));
         }
     }
 }

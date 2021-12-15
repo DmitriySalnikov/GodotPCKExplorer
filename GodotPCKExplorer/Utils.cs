@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
@@ -8,9 +9,6 @@ namespace GodotPCKExplorer
 {
     public class Utils
     {
-        const string version_string_pattern = @"([0-9]{1,2})\.([0-9]{1,2})\.([0-9]{1,2})\.([0-9]{1,2})";
-        static Regex VersionStringRegEx = new Regex(version_string_pattern);
-
         // Source: https://stackoverflow.com/a/14488941
         static readonly string[] SizeSuffixes = { "bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" };
 
@@ -56,11 +54,18 @@ namespace GodotPCKExplorer
                 ShowMessage(text, title);
         }
 
-        static public void ScanFoldersForFiles(string folder, List<PCKPacker.FileToPack> files, ref string basePath)
+        static public List<PCKPacker.FileToPack> ScanFoldersForFiles(string folder)
+        {
+            var files = new List<PCKPacker.FileToPack>();
+            ScanFoldersForFilesInternal(folder, files, ref folder);
+            return files;
+        }
+
+        static void ScanFoldersForFilesInternal(string folder, List<PCKPacker.FileToPack> files, ref string basePath)
         {
             foreach (string d in Directory.EnumerateDirectories(folder))
             {
-                ScanFoldersForFiles(d, files, ref basePath);
+                ScanFoldersForFilesInternal(d, files, ref basePath);
             }
 
             foreach (string f in Directory.EnumerateFiles(folder))
@@ -127,13 +132,18 @@ namespace GodotPCKExplorer
             return false;
         }
 
-        public static bool ExtractPCKRun(string filePath, string dirPath, bool overwriteExisting = true)
+        public static bool ExtractPCKRun(string filePath, string dirPath, bool overwriteExisting = true, IEnumerable<string> files = null)
         {
             if (File.Exists(filePath))
             {
                 var pckReader = new PCKReader();
                 pckReader.OpenFile(filePath);
-                pckReader.ExtractAllFiles(dirPath, overwriteExisting);
+
+                if (files != null)
+                    pckReader.ExtractFiles(files, dirPath, overwriteExisting);
+                else
+                    pckReader.ExtractAllFiles(dirPath, overwriteExisting);
+
                 pckReader.Close();
                 return true;
             }
@@ -149,30 +159,7 @@ namespace GodotPCKExplorer
         {
             if (Directory.Exists(dirPath))
             {
-                var pckPacker = new PCKPacker();
-
-                var files = new List<PCKPacker.FileToPack>();
-                ScanFoldersForFiles(dirPath, files, ref dirPath);
-
-                var ver = new PCKPacker.PCKVersion();
-
-                var tmpCheck = VersionStringRegEx.Match(strVer);
-                if (tmpCheck.Success)
-                {
-                    var digits = tmpCheck.Value.Split('.');
-                    ver.PackVersion = int.Parse(digits[0]);
-                    ver.Major = int.Parse(digits[1]);
-                    ver.Minor = int.Parse(digits[2]);
-                    ver.Revision = int.Parse(digits[3]);
-                }
-                else
-                {
-                    CommandLog("The version is specified incorrectly.", "Error", true);
-                    ConsoleWaitKey();
-                    return false;
-                }
-
-                return pckPacker.PackFiles(filePath, files, 8, ver); ;
+                return PackPCKRun(ScanFoldersForFiles(dirPath), filePath, strVer);
             }
             else
             {
@@ -180,6 +167,27 @@ namespace GodotPCKExplorer
                 ConsoleWaitKey();
             }
             return false;
+        }
+
+        public static bool PackPCKRun(IEnumerable<PCKPacker.FileToPack> files, string filePath, string strVer)
+        {
+            if (!files.Any())
+            {
+                CommandLog("No files to pack", "Error", false);
+                return false;
+            }
+
+            var pckPacker = new PCKPacker();
+            var ver = new PCKVersion(strVer);
+
+            if (!ver.IsValid)
+            {
+                CommandLog("The version is specified incorrectly.", "Error", true);
+                ConsoleWaitKey();
+                return false;
+            }
+
+            return pckPacker.PackFiles(filePath, files, 8, ver); ;
         }
 
         public static bool RipPCKRun(string exeFile, string outFile = null, bool removeBackup = false)
@@ -197,6 +205,7 @@ namespace GodotPCKExplorer
                     return false;
                 }
 
+                // rip pck
                 if (outFile != null)
                     if (pckReader.RipPCKFileFromExe(outFile))
                         CommandLog($"Extracting '.pck' from '.exe' completed.", "Progress", false);
@@ -210,6 +219,7 @@ namespace GodotPCKExplorer
 
                 if (res && outFile == null)
                 {
+                    // create backup
                     var oldExeFile = Path.ChangeExtension(exeFile, "old" + Path.GetExtension(exeFile));
                     try
                     {
@@ -227,6 +237,7 @@ namespace GodotPCKExplorer
                     BinaryReader exeOld = null;
                     BinaryWriter exeNew = null;
 
+                    // copy only exe part
                     try
                     {
                         exeOld = new BinaryReader(File.OpenRead(oldExeFile));
@@ -244,12 +255,26 @@ namespace GodotPCKExplorer
                     {
                         exeOld?.Close();
                         exeNew?.Close();
+
+                        // restore backup
+                        try
+                        {
+                            if (File.Exists(exeFile))
+                                File.Delete(exeFile);
+                            File.Move(oldExeFile, exeFile);
+                        }
+                        catch (Exception ex)
+                        {
+                            CommandLog("Can't restore backup file.\n" + ex.Message, "Error", false);
+                        }
+
                         CommandLog(e.Message, "Error", false);
                         ConsoleWaitKey();
                         return false;
                     }
                     CommandLog($"Removing '.pck' from '.exe' completed. Original file renamed to \"{oldExeFile}\"", "Progress", false);
 
+                    // remove backup
                     try
                     {
                         if (removeBackup)
@@ -271,24 +296,102 @@ namespace GodotPCKExplorer
             return false;
         }
 
-        public static bool SplitPCKRun(string exeFile, string newPairName = null)
+        public static bool MergePCKRun(string pckFile, string exeFile, bool removeBackup = false)
+        {
+            if (File.Exists(pckFile))
+            {
+                var pckReader = new PCKReader();
+                bool res = pckReader.OpenFile(pckFile);
+
+                if (exeFile == pckFile)
+                {
+                    CommandLog($"The path to the new file cannot be equal to the original file", "Error", false);
+                    ConsoleWaitKey();
+                    return false;
+                }
+
+                // create backup
+                var oldExeFile = Path.ChangeExtension(exeFile, "old" + Path.GetExtension(exeFile));
+                try
+                {
+                    if (File.Exists(oldExeFile))
+                        File.Delete(oldExeFile);
+                    File.Copy(exeFile, oldExeFile);
+                }
+                catch (Exception e)
+                {
+                    CommandLog(e.Message, "Error", false);
+                    ConsoleWaitKey();
+                    return false;
+                }
+
+                // merge
+                if (exeFile != null)
+                    if (pckReader.MergePCKFileIntoExe(exeFile))
+                        CommandLog($"Merging '.pck' into '.exe' completed.", "Progress", false);
+                    else
+                    {
+                        pckReader.Close();
+
+                        // restore backup
+                        try
+                        {
+                            if (File.Exists(exeFile))
+                                File.Delete(exeFile);
+                            File.Move(oldExeFile, exeFile);
+                        }
+                        catch (Exception e)
+                        {
+                            CommandLog("Can't restore backup file.\n" + e.Message, "Error", false);
+                        }
+
+                        return false;
+                    }
+
+                pckReader.Close();
+
+                // remove backup
+                try
+                {
+                    if (removeBackup)
+                        File.Delete(oldExeFile);
+                }
+                catch (Exception e)
+                {
+                    CommandLog(e.Message, "Error", false);
+                }
+
+                return res;
+            }
+            else
+            {
+                CommandLog($"Specified file does not exists! '{pckFile}'", "Error", false);
+                ConsoleWaitKey();
+            }
+            return false;
+        }
+
+        public static bool SplitPCKRun(string exeFile, string newExeName = null)
         {
             if (File.Exists(exeFile))
             {
                 var name = exeFile;
-                if (newPairName != null)
+                if (newExeName != null)
                 {
-                    name = Path.Combine(Path.GetDirectoryName(exeFile), newPairName + Path.GetExtension(exeFile));
+                    name = newExeName;
 
                     if (name == exeFile)
                     {
-                        CommandLog($"The new pair cannot be named the same as the original file: {newPairName}", "Error", false);
+                        CommandLog($"The new pair cannot be named the same as the original file: {newExeName}", "Error", false);
                         ConsoleWaitKey();
                         return false;
                     }
 
                     try
                     {
+                        if (!Directory.Exists(Path.GetDirectoryName(name)))
+                            Directory.CreateDirectory(Path.GetDirectoryName(name));
+
                         if (File.Exists(name))
                             File.Delete(name);
 
@@ -305,11 +408,39 @@ namespace GodotPCKExplorer
 
                 var pckName = Path.ChangeExtension(name, ".pck");
                 if (RipPCKRun(name, pckName))
+                {
                     if (RipPCKRun(name, null, true))
                     {
                         CommandLog($"Split finished. Original file: \"{exeFile}\".\nNew files: \"{name}\" and \"{pckName}\"", "Progress", false);
                         return true;
                     }
+                }
+
+                if (newExeName != null)
+                {
+                    try
+                    {
+                        if (File.Exists(name))
+                            File.Delete(name);
+
+                    }
+                    catch (Exception e)
+                    {
+                        CommandLog(e.Message, "Error", false);
+                    }
+
+                    try
+                    {
+                        if (File.Exists(pckName))
+                            File.Delete(pckName);
+
+                    }
+                    catch (Exception e)
+                    {
+                        CommandLog(e.Message, "Error", false);
+                    }
+                }
+
                 return false;
             }
             else

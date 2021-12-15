@@ -48,6 +48,7 @@ namespace GodotPCKExplorer
                 () => ExtractPCKCommand(SplitArgs(" -e ")),
                 () => ExtractSkipExistingPCKCommand(SplitArgs(" -es ")),
                 () => PackPCKCommand(SplitArgs(" -p ")),
+                () => MergePCKCommand(SplitArgs(" -m ")),
                 () => RipPCKCommand(SplitArgs(" -r ")),
                 () => SplitPCKCommand(SplitArgs(" -s "))
                 );
@@ -335,6 +336,42 @@ namespace GodotPCKExplorer
             return;
         }
 
+        static void MergePCKCommand(string args)
+        {
+            if (!string.IsNullOrWhiteSpace(args))
+            {
+                run_with_args = true;
+
+                string pckFile = "";
+                string exeFile = "";
+                try
+                {
+                    var matches = QuoteStringRegEx.Matches(args);
+                    if (matches.Count == 2)
+                    {
+                        pckFile = Path.GetFullPath(matches[0].Value.Replace("\"", ""));
+                        exeFile = Path.GetFullPath(matches[1].Value.Replace("\"", ""));
+                    }
+                    else
+                    {
+                        Utils.CommandLog($"Invalid number of arguments!", "Error", true);
+                        Utils.ConsoleWaitKey();
+                        return;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Utils.CommandLog(e.Message, "Error", false);
+                    Utils.ConsoleWaitKey();
+                    return;
+                }
+
+                Utils.MergePCKRun(pckFile, exeFile);
+            }
+
+            return;
+        }
+
         static void SplitPCKCommand(string args)
         {
             if (!string.IsNullOrWhiteSpace(args))
@@ -351,7 +388,7 @@ namespace GodotPCKExplorer
                         exeFile = Path.GetFullPath(matches[0].Value.Replace("\"", ""));
 
                         if (matches.Count == 2)
-                            pairName = matches[1].Value;
+                            pairName = Path.GetFullPath(matches[1].Value.Replace("\"", ""));
 
                         if (matches.Count > 2)
                         {

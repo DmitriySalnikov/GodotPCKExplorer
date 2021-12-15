@@ -6,17 +6,21 @@ namespace Tests
     internal class LockedFile : IDisposable
     {
         private FileStream file;
+        bool DeleteAfterDispose = true;
 
-        public LockedFile(string path)
+        public LockedFile(string path, bool deleteAfterDispose = true)
         {
             file = File.OpenWrite(path);
+            DeleteAfterDispose = deleteAfterDispose;
         }
 
         public void Dispose()
         {
             var path = file.Name;
             file.Close();
-            File.Delete(path);
+
+            if (DeleteAfterDispose)
+                File.Delete(path);
         }
     }
 }

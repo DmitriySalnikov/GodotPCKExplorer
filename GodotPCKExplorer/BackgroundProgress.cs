@@ -10,41 +10,39 @@ using System.Windows.Forms;
 
 namespace GodotPCKExplorer
 {
-	public partial class BackgroundProgress : Form
-	{
+    public partial class BackgroundProgress : Form
+    {
+        public BackgroundProgress()
+        {
+            InitializeComponent();
+            Icon = Properties.Resources.icon;
+        }
 
+        private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            if (!backgroundWorker1.CancellationPending)
+            {
+                progressBar1.Value = Math.Max(0, Math.Min(100, e.ProgressPercentage));
+            }
+            else
+            {
+                progressBar1.Style = ProgressBarStyle.Marquee;
+            }
+        }
 
-		public BackgroundProgress()
-		{
-			InitializeComponent();
-			Icon = Properties.Resources.icon;
-		}
+        private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            Close();
+        }
 
-		private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
-		{
-			if (!backgroundWorker1.CancellationPending)
-			{
-				progressBar1.Value = e.ProgressPercentage;
-			}
-			else
-			{
-				progressBar1.Style = ProgressBarStyle.Marquee;
-			}
-		}
+        private void btn_cancel_Click(object sender, EventArgs e)
+        {
+            backgroundWorker1.CancelAsync();
+        }
 
-		private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-		{
-			Close();
-		}
-
-		private void btn_cancel_Click(object sender, EventArgs e)
-		{
-			backgroundWorker1.CancelAsync();
-		}
-
-		private void BackgroundProgress_FormClosing(object sender, FormClosingEventArgs e)
-		{
-			backgroundWorker1.CancelAsync();
-		}
-	}
+        private void BackgroundProgress_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            backgroundWorker1.CancelAsync();
+        }
+    }
 }
