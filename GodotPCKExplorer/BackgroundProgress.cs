@@ -12,6 +12,9 @@ namespace GodotPCKExplorer
 {
     public partial class BackgroundProgress : Form
     {
+        DateTime prevUpdateTime = DateTime.Now;
+        int prevPercent = 0;
+
         public BackgroundProgress()
         {
             InitializeComponent();
@@ -22,7 +25,17 @@ namespace GodotPCKExplorer
         {
             if (!backgroundWorker1.CancellationPending)
             {
-                progressBar1.Value = Math.Max(0, Math.Min(100, e.ProgressPercentage));
+                var prct = Math.Max(0, Math.Min(100, e.ProgressPercentage));
+                if (Program.CMDMode)
+                {
+                    if ((DateTime.Now - prevUpdateTime).TotalSeconds > 2 || (prct - prevPercent) > 10)
+                    {
+                        Console.WriteLine($"{prct}%");
+                        prevUpdateTime = DateTime.Now;
+                        prevPercent = prct;
+                    }
+                }
+                progressBar1.Value = prct;
             }
             else
             {

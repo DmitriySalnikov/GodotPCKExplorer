@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.ConstrainedExecution;
 using System.Text;
@@ -17,6 +18,8 @@ namespace GodotPCKExplorer
         public int Major { get; set; }
         public int Minor { get; set; }
         public int Revision { get; set; }
+
+        [Newtonsoft.Json.JsonIgnore]
         public bool IsValid
         {
             get

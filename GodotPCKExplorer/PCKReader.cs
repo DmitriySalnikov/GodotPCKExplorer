@@ -18,6 +18,8 @@ namespace GodotPCKExplorer
         public long PCK_StartPosition = 0;
         public long PCK_EndPosition = 0;
         public bool PCK_Embedded = false;
+        
+        public bool IsOpened { get { return fileStream != null; } }
 
         ~PCKReader()
         {
@@ -185,6 +187,7 @@ namespace GodotPCKExplorer
                         return;
                     }
                 }
+                bw.ReportProgress(100);
             };
 
             bw.RunWorkerAsync();
@@ -272,6 +275,7 @@ namespace GodotPCKExplorer
                 }
 
                 file.Close();
+                bw.ReportProgress(100);
             };
 
             bw.RunWorkerAsync();
@@ -283,7 +287,7 @@ namespace GodotPCKExplorer
             return result;
         }
 
-        public bool MergePCKFileIntoExe(string exePath, PCKVersion? version = null)
+        public bool MergePCKFileIntoExe(string exePath)
         {
             var bp = new BackgroundProgress();
             var bw = bp.backgroundWorker1;
@@ -317,7 +321,6 @@ namespace GodotPCKExplorer
                 }
 
                 var embed_start = file.BaseStream.Position;
-                var offset_delta = embed_start - PCK_StartPosition;
 
                 // Godot's 779a5e56218b7fa2ab34ab22ab5b1b2aaa19346f editor_export.cpp:994
                 // Ensure embedded PCK starts at a 64-bit multiple
@@ -337,6 +340,8 @@ namespace GodotPCKExplorer
                 const int buf_max = 65536;
                 long pck_start = file.BaseStream.Position;
                 long size = PCK_EndPosition - PCK_StartPosition;
+
+                long offset_delta = pck_start - PCK_StartPosition;
 
                 try
                 {
@@ -394,6 +399,7 @@ namespace GodotPCKExplorer
                 }
 
                 file.Close();
+                bw.ReportProgress(100);
             };
 
             bw.RunWorkerAsync();

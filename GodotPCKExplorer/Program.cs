@@ -12,8 +12,6 @@ namespace GodotPCKExplorer
     public static class Program
     {
         public const int PCK_MAGIC = 0x43504447;
-        const string quote_string_pattern = @"(("".*"")|([^""\s]+))";
-        static Regex QuoteStringRegEx = new Regex(quote_string_pattern);
 
         public static bool CMDMode = false;
         static bool runWithArgs = false;
@@ -32,7 +30,7 @@ namespace GodotPCKExplorer
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
@@ -41,7 +39,7 @@ namespace GodotPCKExplorer
             CMDMode = true;
             Console.WriteLine("");
 
-            RunCommandInternal(Environment.CommandLine, false);
+            RunCommandInternal(args, false);
 
             if (!runWithArgs)
             {
@@ -58,28 +56,41 @@ namespace GodotPCKExplorer
             return;
         }
 
-        static public void RunCommand(string args)
+        static public void RunCommand(string[] args)
         {
             RunCommandInternal(args, true);
         }
 
-        static void RunCommandInternal(string args, bool restore_params)
+        static void RunCommandInternal(string[] args, bool restore_params)
         {
             var old_run_with_args = runWithArgs;
             var old_cmd_mode = CMDMode;
 
-            IterateCommands(
-             () => HelpCommand(args.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)),
-             () => OpenPCKCommand(SplitArgs(" -o ")),
-             () => InfoPCKCommand(SplitArgs(" -i ")),
-             () => ExtractPCKCommand(SplitArgs(" -e ")),
-             () => ExtractSkipExistingPCKCommand(SplitArgs(" -es ")),
-             () => PackPCKCommand(SplitArgs(" -p "), false),
-             () => PackPCKCommand(SplitArgs(" -pe "), true),
-             () => MergePCKCommand(SplitArgs(" -m ")),
-             () => RipPCKCommand(SplitArgs(" -r ")),
-             () => SplitPCKCommand(SplitArgs(" -s "))
-             );
+            // Skip exe path
+            try
+            {
+                if (args.Length > 0)
+                    if (Path.GetFullPath(args[0]) == Application.ExecutablePath)
+                        args = args.Skip(1).ToArray();
+            }
+            catch (Exception e)
+            {
+                Utils.CommandLog(e.Message, "Error", false);
+            }
+
+            if (args.Length >= 2)
+                IterateCommands(
+                 () => { if (args[0] == "-h" || args[0] == "/?" || args[0] == "--help") HelpCommand(); },
+                 () => { if (args[0] == "-o") OpenPCKCommand(args); },
+                 () => { if (args[0] == "-i") InfoPCKCommand(args); },
+                 () => { if (args[0] == "-e") ExtractPCKCommand(args); },
+                 () => { if (args[0] == "-es") ExtractSkipExistingPCKCommand(args); },
+                 () => { if (args[0] == "-p") PackPCKCommand(args, false); },
+                 () => { if (args[0] == "-pe") PackPCKCommand(args, true); },
+                 () => { if (args[0] == "-m") MergePCKCommand(args); },
+                 () => { if (args[0] == "-r") RipPCKCommand(args); },
+                 () => { if (args[0] == "-s") SplitPCKCommand(args); }
+                 );
 
             if (restore_params)
             {
@@ -118,308 +129,259 @@ namespace GodotPCKExplorer
             ShowWindow(GetConsoleWindow(), SW_HIDE);
         }
 
-        static void HelpCommand(string[] args)
+        static void HelpCommand()
         {
-            if (args.Length > 1)
-            {
-                foreach (var a in args)
-                {
-                    if (a.Contains("-h") || a.Contains("/?") || a.Contains("--help"))
-                    {
-                        runWithArgs = true;
-                        Utils.HelpRun();
-                        return;
-                    }
-                }
-            }
+            runWithArgs = true;
+            PCKActions.HelpRun();
             return;
+
         }
 
-        static void OpenPCKCommand(string args)
+        static void OpenPCKCommand(string[] args)
         {
-            if (!string.IsNullOrWhiteSpace(args))
+            string path = null;
+
+            try
             {
-                string path = null;
-                try
+                if (args.Length == 2)
                 {
-                    var match = QuoteStringRegEx.Match(args);
-                    if (match.Success)
-                    {
-                        path = Path.GetFullPath(match.Value.Replace("\"", ""));
-                    }
-                    else
-                    {
-                        Utils.CommandLog(args[1].ToString(), "Not valid file path", true);
-                        return;
-                    }
+                    path = Path.GetFullPath(args[1]);
                 }
-                catch (Exception e)
+                else
                 {
-                    Utils.CommandLog($"{args[1]}\n{e.Message}", "Error in file path", false);
+                    Utils.CommandLog(args[1].ToString(), "Not valid file path", true);
                     return;
                 }
-
-                if (path == null)
+            }
+            catch (Exception e)
+            {
+                Utils.CommandLog(e.Message, "Error", false);
+                return;
+            }
+            /* // TODO
+            if (path == null)
+            {
+                var s = Environment.CommandLine.Split(new string[] { "\" \"" }, StringSplitOptions.RemoveEmptyEntries);
+                if (s.Length == 2)
                 {
-                    var s = Environment.CommandLine.Split(new string[] { "\" \"" }, StringSplitOptions.RemoveEmptyEntries);
-                    if (s.Length == 2)
+                    var strings = QuoteStringRegEx.Matches(Environment.CommandLine);
+                    if (strings.Count == 2)
                     {
-                        var strings = QuoteStringRegEx.Matches(Environment.CommandLine);
-                        if (strings.Count == 2)
-                        {
-                            path = Path.GetFullPath(strings[1].Value.Replace("\"", ""));
-                        }
+                        path = Path.GetFullPath(strings[1].Value.Replace("\"", ""));
                     }
-                }
-
-                if (path == null)
-                {
-                    try
-                    {
-                        path = Path.GetFullPath(Environment.CommandLine.Replace(Application.ExecutablePath, "").Replace("\"", ""));
-                    }
-                    catch (Exception e)
-                    {
-                        Utils.CommandLog(e.Message, "Error", false);
-                        return;
-                    }
-                }
-
-                if (path != null)
-                {
-                    runWithArgs = true;
-
-                    CMDMode = false;
-                    Utils.OpenPCKRun(path);
                 }
             }
+            */
 
-            return;
-        }
-
-        static void InfoPCKCommand(string args)
-        {
-            if (!string.IsNullOrWhiteSpace(args))
+            if (path == null)
             {
-                runWithArgs = true;
-
-                string filePath = "";
                 try
                 {
-                    var matches = QuoteStringRegEx.Matches(args);
-                    if (matches.Count == 1)
-                    {
-                        filePath = Path.GetFullPath(matches[0].Value.Replace("\"", ""));
-                    }
-                    else
-                    {
-                        Utils.CommandLog("Path to file not specified! Or incorrect number of arguments specified!", "Error", true);
-                        return;
-                    }
+                    path = Path.GetFullPath(Environment.CommandLine.Replace(Application.ExecutablePath, "").Replace("\"", ""));
                 }
                 catch (Exception e)
                 {
                     Utils.CommandLog(e.Message, "Error", false);
                     return;
                 }
-
-                Utils.InfoPCKRun(filePath);
             }
 
-            return;
-        }
-
-        static void ExtractPCKCommand(string args, bool overwriteExisting = true)
-        {
-            if (!string.IsNullOrWhiteSpace(args))
+            if (path != null)
             {
                 runWithArgs = true;
 
-                string filePath = "";
-                string dirPath = "";
-                try
-                {
-                    var matches = QuoteStringRegEx.Matches(args);
-                    if (matches.Count == 2)
-                    {
-                        filePath = Path.GetFullPath(matches[0].Value.Replace("\"", ""));
-                        dirPath = Path.GetFullPath(matches[1].Value.Replace("\"", ""));
-                    }
-                    else
-                    {
-                        Utils.CommandLog($"Incorrect number of arguments specified!", "Error", true);
-                        return;
-                    }
-                }
-                catch (Exception e)
-                {
-                    Utils.CommandLog(e.Message, "Error", false);
-                    return;
-                }
-
-                Utils.ExtractPCKRun(filePath, dirPath, overwriteExisting);
+                CMDMode = false;
+                PCKActions.OpenPCKRun(path);
             }
-
-            return;
         }
 
-        static void ExtractSkipExistingPCKCommand(string args)
+        static void InfoPCKCommand(string[] args)
+        {
+            runWithArgs = true;
+
+            string filePath = "";
+            try
+            {
+                if (args.Length == 2)
+                {
+                    filePath = Path.GetFullPath(args[1].Replace("\"", ""));
+                }
+                else
+                {
+                    Utils.CommandLog("Path to file not specified! Or incorrect number of arguments specified!", "Error", true);
+                    return;
+                }
+            }
+            catch (Exception e)
+            {
+                Utils.CommandLog(e.Message, "Error", false);
+                return;
+            }
+
+            PCKActions.InfoPCKRun(filePath);
+        }
+
+        static void ExtractPCKCommand(string[] args, bool overwriteExisting = true)
+        {
+            runWithArgs = true;
+
+            string filePath = "";
+            string dirPath = "";
+            try
+            {
+                if (args.Length == 3)
+                {
+                    filePath = Path.GetFullPath(args[1].Replace("\"", ""));
+                    dirPath = Path.GetFullPath(args[2].Replace("\"", ""));
+                }
+                else
+                {
+                    Utils.CommandLog($"Invalid number of arguments! Expected 3, but got {args.Length}", "Error", true);
+                    return;
+                }
+            }
+            catch (Exception e)
+            {
+                Utils.CommandLog(e.Message, "Error", false);
+                return;
+            }
+
+            PCKActions.ExtractPCKRun(filePath, dirPath, overwriteExisting);
+        }
+
+        static void ExtractSkipExistingPCKCommand(string[] args)
         {
             ExtractPCKCommand(args, false);
         }
 
-        static void PackPCKCommand(string args, bool embed)
+        static void PackPCKCommand(string[] args, bool embed)
         {
-            if (!string.IsNullOrWhiteSpace(args))
+            runWithArgs = true;
+
+            string dirPath = "";
+            string filePath = "";
+            string strVer = "";
+
+            try
             {
-                runWithArgs = true;
-
-                string dirPath = "";
-                string filePath = "";
-                string strVer = "";
-
-                try
+                if (args.Length == 4)
                 {
-                    var matches = QuoteStringRegEx.Matches(args);
-                    if (matches.Count == 3)
-                    {
-                        dirPath = Path.GetFullPath(matches[0].Value.Replace("\"", ""));
-                        filePath = Path.GetFullPath(matches[1].Value.Replace("\"", ""));
-                        strVer = matches[2].Value;
-                    }
-                    else
-                    {
-                        Utils.CommandLog($"Incorrect number of arguments specified!", "Error", true);
-                        return;
-                    }
+                    dirPath = Path.GetFullPath(args[1].Replace("\"", ""));
+                    filePath = Path.GetFullPath(args[2].Replace("\"", ""));
+                    strVer = args[3];
                 }
-                catch (Exception e)
+                else
                 {
-                    Utils.CommandLog(e.Message, "Error", false);
+                    Utils.CommandLog($"Invalid number of arguments! Expected 4, but got {args.Length}", "Error", true);
                     return;
                 }
-
-                Utils.PackPCKRun(dirPath, filePath, strVer, embed);
+            }
+            catch (Exception e)
+            {
+                Utils.CommandLog(e.Message, "Error", false);
+                return;
             }
 
-            return;
+            PCKActions.PackPCKRun(dirPath, filePath, strVer, embed);
         }
 
-        static void RipPCKCommand(string args)
+        static void RipPCKCommand(string[] args)
         {
-            if (!string.IsNullOrWhiteSpace(args))
+            runWithArgs = true;
+
+            string exeFile = "";
+            string outFile = null;
+            try
             {
-                runWithArgs = true;
-
-                string exeFile = "";
-                string outFile = null;
-                try
+                if (args.Length >= 2)
                 {
-                    var matches = QuoteStringRegEx.Matches(args);
-                    if (matches.Count >= 1)
-                    {
-                        exeFile = Path.GetFullPath(matches[0].Value.Replace("\"", ""));
-                        if (matches.Count == 2)
-                            outFile = Path.GetFullPath(matches[1].Value.Replace("\"", ""));
+                    exeFile = Path.GetFullPath(args[1].Replace("\"", ""));
+                    if (args.Length == 3)
+                        outFile = Path.GetFullPath(args[2].Replace("\"", ""));
 
-                        if (matches.Count > 2)
-                        {
-                            Utils.CommandLog($"Invalid number of arguments!", "Error", true);
-                            return;
-                        }
-                    }
-                    else
+                    if (args.Length > 4)
                     {
-                        Utils.CommandLog($"Path to file or directory not specified!", "Error", true);
+                        Utils.CommandLog($"Invalid number of arguments! Expected 2 or 3, but got {args.Length}", "Error", true);
                         return;
                     }
                 }
-                catch (Exception e)
+                else
                 {
-                    Utils.CommandLog(e.Message, "Error", false);
+                    Utils.CommandLog($"Path to file or directory not specified!", "Error", true);
                     return;
                 }
-
-                Utils.RipPCKRun(exeFile, outFile);
+            }
+            catch (Exception e)
+            {
+                Utils.CommandLog(e.Message, "Error", false);
+                return;
             }
 
-            return;
+            PCKActions.RipPCKRun(exeFile, outFile);
         }
 
-        static void MergePCKCommand(string args)
+        static void MergePCKCommand(string[] args)
         {
-            if (!string.IsNullOrWhiteSpace(args))
-            {
-                runWithArgs = true;
+            runWithArgs = true;
 
-                string pckFile = "";
-                string exeFile = "";
-                try
+            string pckFile = "";
+            string exeFile = "";
+            try
+            {
+                if (args.Length == 3)
                 {
-                    var matches = QuoteStringRegEx.Matches(args);
-                    if (matches.Count == 2)
-                    {
-                        pckFile = Path.GetFullPath(matches[0].Value.Replace("\"", ""));
-                        exeFile = Path.GetFullPath(matches[1].Value.Replace("\"", ""));
-                    }
-                    else
-                    {
-                        Utils.CommandLog($"Invalid number of arguments!", "Error", true);
-                        return;
-                    }
+                    pckFile = Path.GetFullPath(args[1].Replace("\"", ""));
+                    exeFile = Path.GetFullPath(args[2].Replace("\"", ""));
                 }
-                catch (Exception e)
+                else
                 {
-                    Utils.CommandLog(e.Message, "Error", false);
+                    Utils.CommandLog($"Invalid number of arguments! Expected 3, but got {args.Length}", "Error", true);
                     return;
                 }
-
-                Utils.MergePCKRun(pckFile, exeFile);
+            }
+            catch (Exception e)
+            {
+                Utils.CommandLog(e.Message, "Error", false);
+                return;
             }
 
-            return;
+            PCKActions.MergePCKRun(pckFile, exeFile);
         }
 
-        static void SplitPCKCommand(string args)
+        static void SplitPCKCommand(string[] args)
         {
-            if (!string.IsNullOrWhiteSpace(args))
+            runWithArgs = true;
+
+            string exeFile = "";
+            string pairName = null;
+            try
             {
-                runWithArgs = true;
-
-                string exeFile = "";
-                string pairName = null;
-                try
+                if (args.Length >= 2)
                 {
-                    var matches = QuoteStringRegEx.Matches(args);
-                    if (matches.Count >= 1)
-                    {
-                        exeFile = Path.GetFullPath(matches[0].Value.Replace("\"", ""));
+                    exeFile = Path.GetFullPath(args[1].Replace("\"", ""));
 
-                        if (matches.Count == 2)
-                            pairName = Path.GetFullPath(matches[1].Value.Replace("\"", ""));
+                    if (args.Length == 3)
+                        pairName = Path.GetFullPath(args[2].Replace("\"", ""));
 
-                        if (matches.Count > 2)
-                        {
-                            Utils.CommandLog($"Invalid number of arguments!", "Error", true);
-                            return;
-                        }
-                    }
-                    else
+                    if (args.Length > 3)
                     {
-                        Utils.CommandLog($"Path to file not specified!", "Error", true);
+                        Utils.CommandLog($"Invalid number of arguments! Expected 2 or 3, but got {args.Length}", "Error", true);
                         return;
                     }
                 }
-                catch (Exception e)
+                else
                 {
-                    Utils.CommandLog(e.Message, "Error", false);
+                    Utils.CommandLog($"Path to file not specified!", "Error", true);
                     return;
                 }
-
-                Utils.SplitPCKRun(exeFile, pairName);
+            }
+            catch (Exception e)
+            {
+                Utils.CommandLog(e.Message, "Error", false);
+                return;
             }
 
-            return;
+            PCKActions.SplitPCKRun(exeFile, pairName);
         }
     }
 }

@@ -34,13 +34,15 @@
             this.size = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.btn_create = new System.Windows.Forms.Button();
             this.l_total_size = new System.Windows.Forms.Label();
-            this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
+            this.sfd_save_pack = new System.Windows.Forms.SaveFileDialog();
             this.label1 = new System.Windows.Forms.Label();
             this.nud_major = new System.Windows.Forms.NumericUpDown();
             this.nud_minor = new System.Windows.Forms.NumericUpDown();
             this.nud_revision = new System.Windows.Forms.NumericUpDown();
             this.cb_ver = new System.Windows.Forms.ComboBox();
             this.label2 = new System.Windows.Forms.Label();
+            this.cb_embed = new System.Windows.Forms.CheckBox();
+            this.ofd_pack_into = new System.Windows.Forms.OpenFileDialog();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_major)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_minor)).BeginInit();
@@ -62,7 +64,7 @@
             this.dataGridView1.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
             this.dataGridView1.Name = "dataGridView1";
             this.dataGridView1.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dataGridView1.Size = new System.Drawing.Size(800, 393);
+            this.dataGridView1.Size = new System.Drawing.Size(800, 370);
             this.dataGridView1.TabIndex = 0;
             this.dataGridView1.SortCompare += new System.Windows.Forms.DataGridViewSortCompareEventHandler(this.dataGridView1_SortCompare);
             this.dataGridView1.UserDeletedRow += new System.Windows.Forms.DataGridViewRowEventHandler(this.dataGridView1_UserDeletedRow);
@@ -87,9 +89,9 @@
             // btn_create
             // 
             this.btn_create.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btn_create.Location = new System.Drawing.Point(722, 424);
+            this.btn_create.Location = new System.Drawing.Point(722, 401);
             this.btn_create.Name = "btn_create";
-            this.btn_create.Size = new System.Drawing.Size(75, 20);
+            this.btn_create.Size = new System.Drawing.Size(75, 43);
             this.btn_create.TabIndex = 1;
             this.btn_create.Text = "Create";
             this.btn_create.UseVisualStyleBackColor = true;
@@ -105,9 +107,11 @@
             this.l_total_size.TabIndex = 2;
             this.l_total_size.Text = "label1";
             // 
-            // saveFileDialog1
+            // sfd_save_pack
             // 
-            this.saveFileDialog1.Filter = "Godot PCK|*.pck";
+            this.sfd_save_pack.CheckFileExists = true;
+            this.sfd_save_pack.DefaultExt = "pck";
+            this.sfd_save_pack.Filter = "Godot PCK|*.pck";
             // 
             // label1
             // 
@@ -191,11 +195,23 @@
             this.label2.Text = "*You can delete files from the table by selecting them and pressing Delete. To se" +
     "lect several separate rows, hold Control";
             // 
+            // cb_embed
+            // 
+            this.cb_embed.AutoSize = true;
+            this.cb_embed.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.cb_embed.Location = new System.Drawing.Point(542, 401);
+            this.cb_embed.Name = "cb_embed";
+            this.cb_embed.Size = new System.Drawing.Size(174, 17);
+            this.cb_embed.TabIndex = 14;
+            this.cb_embed.Text = "Embed .pck into executable file";
+            this.cb_embed.UseVisualStyleBackColor = true;
+            // 
             // CreatePCKFile
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.cb_embed);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.cb_ver);
             this.Controls.Add(this.nud_revision);
@@ -207,7 +223,7 @@
             this.Controls.Add(this.dataGridView1);
             this.MinimumSize = new System.Drawing.Size(816, 489);
             this.Name = "CreatePCKFile";
-            this.Text = "Create PCK File";
+            this.Text = "Pack or Embed folder";
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_major)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_minor)).EndInit();
@@ -222,7 +238,7 @@
 		private System.Windows.Forms.DataGridView dataGridView1;
 		private System.Windows.Forms.Button btn_create;
 		private System.Windows.Forms.Label l_total_size;
-		private System.Windows.Forms.SaveFileDialog saveFileDialog1;
+		private System.Windows.Forms.SaveFileDialog sfd_save_pack;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.NumericUpDown nud_major;
 		private System.Windows.Forms.NumericUpDown nud_minor;
@@ -231,5 +247,7 @@
 		private System.Windows.Forms.DataGridViewTextBoxColumn size;
 		private System.Windows.Forms.ComboBox cb_ver;
         private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.CheckBox cb_embed;
+        private System.Windows.Forms.OpenFileDialog ofd_pack_into;
     }
 }

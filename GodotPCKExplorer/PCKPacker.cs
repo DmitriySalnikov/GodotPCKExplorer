@@ -248,6 +248,8 @@ namespace GodotPCKExplorer
                         pck.Write((long)pck_size);
                         pck.Write((int)Program.PCK_MAGIC);
                     }
+
+                    bw.ReportProgress(100);
                 }
                 catch (Exception e)
                 {

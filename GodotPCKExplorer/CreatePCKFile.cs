@@ -1,19 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace GodotPCKExplorer
 {
     public partial class CreatePCKFile : Form
     {
-        public string GodotVersionSave = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "godot_version.save");
         Dictionary<string, PCKPacker.FileToPack> files = new Dictionary<string, PCKPacker.FileToPack>();
 
         public CreatePCKFile()
@@ -21,22 +14,14 @@ namespace GodotPCKExplorer
             InitializeComponent();
             Icon = Properties.Resources.icon;
 
-            if (File.Exists(GodotVersionSave))
-            {
-                try
-                {
-                    var reader = new BinaryReader(File.OpenRead(GodotVersionSave));
-                    cb_ver.SelectedItem = reader.ReadByte().ToString();
-                    nud_major.Value = reader.ReadByte();
-                    nud_minor.Value = reader.ReadByte();
-                    nud_revision.Value = reader.ReadByte();
-                    reader.Close();
-                }
-                catch
-                {
+            var ver = GUIConfig.Instance.PackedVersion;
 
-                }
-            }
+            cb_ver.SelectedItem = ver.PackVersion.ToString();
+            nud_major.Value = ver.Major;
+            nud_minor.Value = ver.Minor;
+            nud_revision.Value = ver.Revision;
+
+            cb_embed.Checked = GUIConfig.Instance.EmbedPCK;
         }
 
         public void SetFolderPath(string path)
@@ -76,33 +61,28 @@ namespace GodotPCKExplorer
 
         private void btn_create_Click(object sender, EventArgs e)
         {
-            var res = saveFileDialog1.ShowDialog();
+            var ver = new PCKVersion(int.Parse((string)cb_ver.SelectedItem), (int)nud_major.Value, (int)nud_minor.Value, (int)nud_revision.Value);
+            DialogResult res = DialogResult.No;
+            string file = "";
+
+            if (cb_embed.Checked)
+            {
+                res = ofd_pack_into.ShowDialog();
+                file = ofd_pack_into.FileName;
+            }
+            else
+            {
+                res = sfd_save_pack.ShowDialog();
+                file = sfd_save_pack.FileName;
+            }
+
             if (res == DialogResult.OK)
             {
-                var packer = new PCKPacker();
+                bool p_res = PCKActions.PackPCKRun(files.Values, file, ver.ToString(), cb_embed.Checked);
 
-                bool p_res = packer.PackFiles(saveFileDialog1.FileName, files.Values.ToList(), 8,
-                    new PCKVersion(int.Parse((string)cb_ver.SelectedItem), (int)nud_major.Value, (int)nud_minor.Value, (int)nud_revision.Value),
-                    false);
-
-                try
-                {
-                    if (File.Exists(GodotVersionSave))
-                    {
-                        File.Delete(GodotVersionSave);
-                    }
-
-                    var writer = new BinaryWriter(File.OpenWrite(GodotVersionSave));
-                    writer.Write((byte)int.Parse((string)cb_ver.SelectedItem));
-                    writer.Write((byte)nud_major.Value);
-                    writer.Write((byte)nud_minor.Value);
-                    writer.Write((byte)nud_revision.Value);
-                    writer.Close();
-                }
-                catch
-                {
-                    Console.WriteLine($"Warning: Can't create 'godot_version.save' file at {GodotVersionSave}");
-                }
+                GUIConfig.Instance.PackedVersion = ver;
+                GUIConfig.Instance.EmbedPCK = cb_embed.Checked;
+                GUIConfig.Instance.Save();
             }
         }
 
