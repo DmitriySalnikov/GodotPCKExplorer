@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
@@ -11,6 +12,8 @@ namespace GodotPCKExplorer
         PCKReader pckReader = new PCKReader();
         string FormBaseTitle = "";
         long TotalOpenedSize = 0;
+        Font MatchCaseNormal = null;
+        Font MatchCaseStrikeout = null;
 
         public Form1()
         {
@@ -20,10 +23,14 @@ namespace GodotPCKExplorer
             Icon = Properties.Resources.icon;
             FormBaseTitle = Text;
 
+            MatchCaseNormal = tsmi_match_case_filter.Font;
+            MatchCaseStrikeout = new Font(tsmi_match_case_filter.Font, FontStyle.Strikeout);
+
             overwriteExported.Checked = GUIConfig.Instance.OverwriteExtracted;
             UpdateStatuStrip();
             UpdateRecentList();
             UpdateListOfPCKContent();
+            UpdateMatchCaseFilterButton();
 
             dataGridView1.SelectionChanged += (o, e) => UpdateStatuStrip();
             extractToolStripMenuItem.Enabled = false;
@@ -139,7 +146,7 @@ namespace GodotPCKExplorer
                 foreach (var f in pckReader.Files)
                 {
                     if (string.IsNullOrEmpty(searchText.Text) ||
-                        (!string.IsNullOrEmpty(searchText.Text) && Utils.IsMatchWildCard(f.Key, searchText.Text)))
+                        (!string.IsNullOrEmpty(searchText.Text) && Utils.IsMatchWildCard(f.Key, searchText.Text, GUIConfig.Instance.MatchCaseFilterMainForm)))
                     {
                         var tmpRow = new DataGridViewRow();
                         tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.FilePath });
@@ -177,6 +184,14 @@ namespace GodotPCKExplorer
                 tssl_selected_size.Text = "";
                 tssl_version_and_stats.Text = "";
             }
+        }
+
+        void UpdateMatchCaseFilterButton()
+        {
+            if (GUIConfig.Instance.MatchCaseFilterMainForm)
+                tsmi_match_case_filter.Font = MatchCaseNormal;
+            else
+                tsmi_match_case_filter.Font = MatchCaseStrikeout;
         }
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
@@ -254,10 +269,13 @@ namespace GodotPCKExplorer
                 {
                     var pck = new PCKReader();
 
-                    if (pck.OpenFile(files[0], false))
+                    if (File.Exists(files[0]))
                     {
-                        e.Effect = DragDropEffects.Copy;
-                        return;
+                        if (pck.OpenFile(files[0], false))
+                        {
+                            e.Effect = DragDropEffects.Copy;
+                            return;
+                        }
                     }
                 }
             }
@@ -391,12 +409,20 @@ namespace GodotPCKExplorer
 
         private void changePackVersionToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if(ofd_change_version.ShowDialog() == DialogResult.OK)
+            if (ofd_change_version.ShowDialog() == DialogResult.OK)
             {
                 var cv = new ChangePCKVersion();
                 cv.ShowAndOpenFile(ofd_change_version.FileName);
                 cv.Dispose();
             }
+        }
+
+        private void tsmi_match_case_filter_Click(object sender, EventArgs e)
+        {
+            GUIConfig.Instance.MatchCaseFilterMainForm = !GUIConfig.Instance.MatchCaseFilterMainForm;
+            GUIConfig.Instance.Save();
+            UpdateMatchCaseFilterButton();
+            UpdateListOfPCKContent();
         }
     }
 }

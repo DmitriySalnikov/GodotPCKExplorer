@@ -42,12 +42,18 @@ namespace GodotPCKExplorer
 
         public static string WildCardToRegular(string value)
         {
+            if (!(value.Contains("*") || value.Contains("?")))
+                value = $"*{value}*";
+
             return "^" + Regex.Escape(value).Replace("\\?", ".").Replace("\\*", ".*") + "$";
         }
 
-        public static bool IsMatchWildCard(string input, string wildcard)
+        public static bool IsMatchWildCard(string input, string wildcard, bool matchCase)
         {
-            return Regex.IsMatch(input, WildCardToRegular(wildcard));
+            if (matchCase)
+                return Regex.IsMatch(input, WildCardToRegular(wildcard));
+            else
+                return Regex.IsMatch(input.ToLower(), WildCardToRegular(wildcard.ToLower()));
         }
 
         public static DialogResult ShowMessage(string text, string title, MessageBoxButtons boxButtons = MessageBoxButtons.OK)

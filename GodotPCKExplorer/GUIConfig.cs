@@ -2,9 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace GodotPCKExplorer
@@ -22,6 +19,7 @@ namespace GodotPCKExplorer
         public PCKVersion PackedVersion { get; set; } = new PCKVersion(1, 3, 4, 0);
         public bool EmbedPCK { get; set; } = false;
         public string FolderPath { get; set; } = "";
+        public bool MatchCaseFilterPackingForm { get; set; } = true;
 
         #endregion
 
@@ -34,6 +32,7 @@ namespace GodotPCKExplorer
         #region Main Window
 
         public List<string> RecentOpenedFiles { get; set; } = new List<string>();
+        public bool MatchCaseFilterMainForm { get; set; } = true;
 
         #endregion
 

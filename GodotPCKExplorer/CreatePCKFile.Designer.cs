@@ -28,7 +28,9 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            this.components = new System.ComponentModel.Container();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(CreatePCKFile));
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
             this.filePath = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.size = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -49,7 +51,10 @@
             this.fbd_pack_folder = new System.Windows.Forms.FolderBrowserDialog();
             this.btn_refresh = new System.Windows.Forms.Button();
             this.btn_filter = new System.Windows.Forms.Button();
+            this.btn_match_case = new System.Windows.Forms.Button();
+            this.l_total_count = new System.Windows.Forms.Label();
             this.searchText = new TextBoxWithPlaceholder();
+            this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_major)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_minor)).BeginInit();
@@ -86,8 +91,8 @@
             // 
             // size
             // 
-            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
-            this.size.DefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
+            this.size.DefaultCellStyle = dataGridViewCellStyle1;
             this.size.FillWeight = 15F;
             this.size.HeaderText = "Size";
             this.size.Name = "size";
@@ -110,9 +115,9 @@
             this.l_total_size.AutoSize = true;
             this.l_total_size.Location = new System.Drawing.Point(12, 428);
             this.l_total_size.Name = "l_total_size";
-            this.l_total_size.Size = new System.Drawing.Size(35, 13);
+            this.l_total_size.Size = new System.Drawing.Size(54, 13);
             this.l_total_size.TabIndex = 2;
-            this.l_total_size.Text = "label1";
+            this.l_total_size.Text = "Total Size";
             // 
             // sfd_save_pack
             // 
@@ -275,14 +280,38 @@
             this.btn_filter.UseVisualStyleBackColor = true;
             this.btn_filter.Click += new System.EventHandler(this.btn_filter_Click);
             // 
+            // btn_match_case
+            // 
+            this.btn_match_case.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btn_match_case.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.btn_match_case.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.btn_match_case.Location = new System.Drawing.Point(388, 30);
+            this.btn_match_case.Name = "btn_match_case";
+            this.btn_match_case.Size = new System.Drawing.Size(30, 24);
+            this.btn_match_case.TabIndex = 21;
+            this.btn_match_case.Text = "Aa";
+            this.btn_match_case.UseVisualStyleBackColor = true;
+            this.btn_match_case.Click += new System.EventHandler(this.btn_match_case_Click);
+            // 
+            // l_total_count
+            // 
+            this.l_total_count.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.l_total_count.AutoSize = true;
+            this.l_total_count.Location = new System.Drawing.Point(12, 405);
+            this.l_total_count.Name = "l_total_count";
+            this.l_total_count.Size = new System.Drawing.Size(59, 13);
+            this.l_total_count.TabIndex = 22;
+            this.l_total_count.Text = "Files Count";
+            // 
             // searchText
             // 
             this.searchText.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.searchText.CueBanner = "Filter text (? and * allowed)";
-            this.searchText.Location = new System.Drawing.Point(410, 32);
+            this.searchText.Location = new System.Drawing.Point(424, 32);
             this.searchText.Name = "searchText";
-            this.searchText.Size = new System.Drawing.Size(297, 20);
+            this.searchText.Size = new System.Drawing.Size(283, 20);
             this.searchText.TabIndex = 20;
+            this.toolTip1.SetToolTip(this.searchText, resources.GetString("searchText.ToolTip"));
             this.searchText.KeyDown += new System.Windows.Forms.KeyEventHandler(this.textBoxWithPlaceholder1_KeyDown);
             // 
             // CreatePCKFile
@@ -290,6 +319,8 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.l_total_count);
+            this.Controls.Add(this.btn_match_case);
             this.Controls.Add(this.searchText);
             this.Controls.Add(this.btn_filter);
             this.Controls.Add(this.btn_refresh);
@@ -341,5 +372,8 @@
         private System.Windows.Forms.Button btn_refresh;
         private System.Windows.Forms.Button btn_filter;
         private TextBoxWithPlaceholder searchText;
+        private System.Windows.Forms.Button btn_match_case;
+        private System.Windows.Forms.Label l_total_count;
+        private System.Windows.Forms.ToolTip toolTip1;
     }
 }

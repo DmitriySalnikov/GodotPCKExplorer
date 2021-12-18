@@ -130,10 +130,10 @@
   </data>
   <data name="searchText.ToolTipText" xml:space="preserve">
     <value>Examples:
-res://icon.png.import - find the exact file
+player - find all names containing "player"
+*player* - find all names containing "player"
 res://.import/* - find everything inside the .import folder
 *.png.import - find all import files for png's
-*player* - find all names containing "player"
 */???.png.import - find all png.import's with a name of 3 characters.</value>
   </data>
   <metadata name="ofd_open_pack.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
@@ -188,6 +188,6 @@ res://.import/* - find everything inside the .import folder
     <value>744, 56</value>
   </metadata>
   <metadata name="$this.TrayHeight" type="System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-    <value>137</value>
+    <value>95</value>
   </metadata>
 </root>

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
@@ -9,6 +10,8 @@ namespace GodotPCKExplorer
     public partial class CreatePCKFile : Form
     {
         Dictionary<string, PCKPacker.FileToPack> files = new Dictionary<string, PCKPacker.FileToPack>();
+        Font MatchCaseNormal = null;
+        Font MatchCaseStrikeout = null;
 
         public CreatePCKFile()
         {
@@ -17,6 +20,10 @@ namespace GodotPCKExplorer
 
             tb_folder_path.Text = GUIConfig.Instance.FolderPath;
             SetFolderPath(tb_folder_path.Text);
+
+            MatchCaseNormal = btn_match_case.Font;
+            MatchCaseStrikeout = new Font(btn_match_case.Font, FontStyle.Strikeout);
+            UpdateMatchCaseFilterButton();
 
             var ver = GUIConfig.Instance.PackedVersion;
 
@@ -30,7 +37,6 @@ namespace GodotPCKExplorer
 
         public void SetFolderPath(string path)
         {
-            //files = Utils.ScanFoldersForFiles(path).ToDictionary((f) => f.OriginalPath);
             var bp = new BackgroundProgress();
             var bw = bp.bg_worker;
             var filesScan = new List<PCKPacker.FileToPack>();
@@ -70,6 +76,7 @@ namespace GodotPCKExplorer
             }
 
             l_total_size.Text = $"Total size: ~{Utils.SizeSuffix(size)}";
+            l_total_count.Text = $"Files count: {files.Count}";
         }
 
         void UpdateTableContent()
@@ -78,7 +85,7 @@ namespace GodotPCKExplorer
             foreach (var f in files)
             {
                 if (string.IsNullOrEmpty(searchText.Text) ||
-                    (!string.IsNullOrEmpty(searchText.Text) && Utils.IsMatchWildCard(f.Key, searchText.Text)))
+                    (!string.IsNullOrEmpty(searchText.Text) && Utils.IsMatchWildCard(f.Key, searchText.Text, GUIConfig.Instance.MatchCaseFilterPackingForm)))
                 {
                     var tmpRow = new DataGridViewRow();
                     tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Key });
@@ -87,6 +94,14 @@ namespace GodotPCKExplorer
                     dataGridView1.Rows.Add(tmpRow);
                 }
             }
+        }
+
+        void UpdateMatchCaseFilterButton()
+        {
+            if (GUIConfig.Instance.MatchCaseFilterPackingForm)
+                btn_match_case.Font = MatchCaseNormal;
+            else
+                btn_match_case.Font = MatchCaseStrikeout;
         }
 
         private void dataGridView1_UserDeletedRow(object sender, DataGridViewRowEventArgs e)
@@ -170,6 +185,14 @@ namespace GodotPCKExplorer
 
         private void btn_filter_Click(object sender, EventArgs e)
         {
+            UpdateTableContent();
+        }
+
+        private void btn_match_case_Click(object sender, EventArgs e)
+        {
+            GUIConfig.Instance.MatchCaseFilterPackingForm = !GUIConfig.Instance.MatchCaseFilterPackingForm;
+            GUIConfig.Instance.Save();
+            UpdateMatchCaseFilterButton();
             UpdateTableContent();
         }
     }

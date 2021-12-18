@@ -39,6 +39,7 @@
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.packFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.mergePackIntoFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.changePackVersionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
             this.ripPackFromFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.removePackFromFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -56,6 +57,7 @@
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.searchText = new ToolStripTextBoxWithPlaceholder();
+            this.tsmi_match_case_filter = new System.Windows.Forms.ToolStripMenuItem();
             this.ofd_open_pack = new System.Windows.Forms.OpenFileDialog();
             this.fbd_extract_folder = new System.Windows.Forms.FolderBrowserDialog();
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
@@ -80,7 +82,6 @@
             this.ofd_split_exe_open = new System.Windows.Forms.OpenFileDialog();
             this.ofd_merge_pck = new System.Windows.Forms.OpenFileDialog();
             this.ofd_merge_target = new System.Windows.Forms.OpenFileDialog();
-            this.changePackVersionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ofd_change_version = new System.Windows.Forms.OpenFileDialog();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
@@ -96,7 +97,8 @@
             this.integrationToolStripMenuItem,
             this.aboutToolStripMenuItem,
             this.toolStripMenuItem1,
-            this.searchText});
+            this.searchText,
+            this.tsmi_match_case_filter});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.ShowItemToolTips = true;
@@ -167,6 +169,13 @@
             this.mergePackIntoFileToolStripMenuItem.ToolTipText = "Embed the entire \'.pck\' file into another file\r\n1. Select the \'.pck\' file\r\n2. Sel" +
     "ect the file to embed it in";
             this.mergePackIntoFileToolStripMenuItem.Click += new System.EventHandler(this.mergePackIntoFileToolStripMenuItem_Click);
+            // 
+            // changePackVersionToolStripMenuItem
+            // 
+            this.changePackVersionToolStripMenuItem.Name = "changePackVersionToolStripMenuItem";
+            this.changePackVersionToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.changePackVersionToolStripMenuItem.Text = "Change Pack Version";
+            this.changePackVersionToolStripMenuItem.Click += new System.EventHandler(this.changePackVersionToolStripMenuItem_Click);
             // 
             // toolStripSeparator3
             // 
@@ -297,9 +306,20 @@
             this.searchText.CueBanner = "Filter text (? and * allowed)";
             this.searchText.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.searchText.Name = "searchText";
-            this.searchText.Size = new System.Drawing.Size(150, 23);
+            this.searchText.Size = new System.Drawing.Size(200, 23);
             this.searchText.ToolTipText = resources.GetString("searchText.ToolTipText");
             this.searchText.KeyDown += new System.Windows.Forms.KeyEventHandler(this.searchText_KeyDown);
+            // 
+            // tsmi_match_case_filter
+            // 
+            this.tsmi_match_case_filter.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
+            this.tsmi_match_case_filter.CheckOnClick = true;
+            this.tsmi_match_case_filter.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.tsmi_match_case_filter.Name = "tsmi_match_case_filter";
+            this.tsmi_match_case_filter.Size = new System.Drawing.Size(33, 23);
+            this.tsmi_match_case_filter.Text = "Aa";
+            this.tsmi_match_case_filter.ToolTipText = "Match Case";
+            this.tsmi_match_case_filter.Click += new System.EventHandler(this.tsmi_match_case_filter_Click);
             // 
             // ofd_open_pack
             // 
@@ -464,13 +484,6 @@
             // 
             this.ofd_merge_target.Title = "Select the file to which \'.pck\' will be added";
             // 
-            // changePackVersionToolStripMenuItem
-            // 
-            this.changePackVersionToolStripMenuItem.Name = "changePackVersionToolStripMenuItem";
-            this.changePackVersionToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.changePackVersionToolStripMenuItem.Text = "Change Pack Version";
-            this.changePackVersionToolStripMenuItem.Click += new System.EventHandler(this.changePackVersionToolStripMenuItem_Click);
-            // 
             // ofd_change_version
             // 
             this.ofd_change_version.Title = "Select the file containing .pck";
@@ -555,6 +568,7 @@
         private System.Windows.Forms.OpenFileDialog ofd_merge_target;
         private System.Windows.Forms.ToolStripMenuItem changePackVersionToolStripMenuItem;
         private System.Windows.Forms.OpenFileDialog ofd_change_version;
+        private System.Windows.Forms.ToolStripMenuItem tsmi_match_case_filter;
     }
 }
 

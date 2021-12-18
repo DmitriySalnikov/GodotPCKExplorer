@@ -27,6 +27,9 @@ namespace Tests
             Program.CMDMode = true;
             Program.ForceConsoleMode = true;
 
+            if(!Directory.Exists(binaries))
+                Directory.CreateDirectory(binaries);
+
             using (var z = System.IO.Compression.ZipFile.OpenRead("../../Test.zip"))
             {
                 OriginalTestFiles.Clear();
