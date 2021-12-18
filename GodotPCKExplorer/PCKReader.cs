@@ -6,22 +6,28 @@ using System.IO;
 
 namespace GodotPCKExplorer
 {
-    public class PCKReader
+    public class PCKReader : IDisposable
     {
         BinaryReader fileStream = null;
         public Dictionary<string, PackedFile> Files = new Dictionary<string, PackedFile>();
         public string PackPath = "";
-        public int PCK_VersionPack = 0;
-        public int PCK_VersionMajor = 0;
-        public int PCK_VersionMinor = 0;
-        public int PCK_VersionRevision = 0;
+        public int PCK_VersionPack = -1;
+        public int PCK_VersionMajor = -1;
+        public int PCK_VersionMinor = -1;
+        public int PCK_VersionRevision = -1;
         public long PCK_StartPosition = 0;
         public long PCK_EndPosition = 0;
         public bool PCK_Embedded = false;
-        
+
+        public PCKVersion PCK_Version { get { return new PCKVersion(PCK_VersionPack, PCK_VersionMajor, PCK_VersionMinor, PCK_VersionRevision); } }
         public bool IsOpened { get { return fileStream != null; } }
 
         ~PCKReader()
+        {
+            Close();
+        }
+
+        public void Dispose()
         {
             Close();
         }
@@ -33,10 +39,10 @@ namespace GodotPCKExplorer
 
             Files.Clear();
             PackPath = "";
-            PCK_VersionPack = 0;
-            PCK_VersionMajor = 0;
-            PCK_VersionMinor = 0;
-            PCK_VersionRevision = 0;
+            PCK_VersionPack = -1;
+            PCK_VersionMajor = -1;
+            PCK_VersionMinor = -1;
+            PCK_VersionRevision = -1;
             PCK_StartPosition = 0;
             PCK_EndPosition = 0;
             PCK_Embedded = false;
@@ -57,72 +63,81 @@ namespace GodotPCKExplorer
                 return false;
             }
 
-            int magic = fileStream.ReadInt32();
-
-            if (magic != Program.PCK_MAGIC)
+            try
             {
-                //maybe at the end.... self contained exe
-                fileStream.BaseStream.Seek(-4, SeekOrigin.End);
-                magic = fileStream.ReadInt32();
+                int magic = fileStream.ReadInt32();
+
                 if (magic != Program.PCK_MAGIC)
                 {
-                    fileStream.Close();
-                    if (show_not_pck_error)
-                        Utils.ShowMessage("Not Godot PCK file!", "Error");
-                    return false;
-                }
-                fileStream.BaseStream.Seek(-12, SeekOrigin.Current);
+                    //maybe at the end.... self contained exe
+                    fileStream.BaseStream.Seek(-4, SeekOrigin.End);
+                    magic = fileStream.ReadInt32();
+                    if (magic != Program.PCK_MAGIC)
+                    {
+                        fileStream.Close();
+                        if (show_not_pck_error)
+                            Utils.ShowMessage("Not Godot PCK file!", "Error");
+                        return false;
+                    }
+                    fileStream.BaseStream.Seek(-12, SeekOrigin.Current);
 
-                long ds = fileStream.ReadInt64();
-                fileStream.BaseStream.Seek(-ds - 8, SeekOrigin.Current);
+                    long ds = fileStream.ReadInt64();
+                    fileStream.BaseStream.Seek(-ds - 8, SeekOrigin.Current);
 
-                magic = fileStream.ReadInt32();
-                if (magic != Program.PCK_MAGIC)
-                {
-                    fileStream.Close();
-                    if (show_not_pck_error)
-                        Utils.ShowMessage("Not Godot PCK file!", "Error");
+                    magic = fileStream.ReadInt32();
+                    if (magic != Program.PCK_MAGIC)
+                    {
+                        fileStream.Close();
+                        if (show_not_pck_error)
+                            Utils.ShowMessage("Not Godot PCK file!", "Error");
 
-                    return false;
+                        return false;
+                    }
+                    else
+                    {
+                        // If embedded PCK
+                        PCK_Embedded = true;
+                        PCK_StartPosition = fileStream.BaseStream.Position - 4;
+                        PCK_EndPosition = fileStream.BaseStream.Length - 12;
+                    }
                 }
                 else
                 {
-                    // If embedded PCK
-                    PCK_Embedded = true;
-                    PCK_StartPosition = fileStream.BaseStream.Position - 4;
-                    PCK_EndPosition = fileStream.BaseStream.Length - 12;
+                    // If regular PCK
+                    PCK_StartPosition = 0;
+                    PCK_EndPosition = fileStream.BaseStream.Length;
                 }
+
+                PCK_VersionPack = fileStream.ReadInt32();
+                PCK_VersionMajor = fileStream.ReadInt32();
+                PCK_VersionMinor = fileStream.ReadInt32();
+                PCK_VersionRevision = fileStream.ReadInt32();
+
+                for (int i = 0; i < 16; i++)
+                {
+                    //reserved
+                    fileStream.ReadInt32();
+                }
+
+                int file_count = fileStream.ReadInt32();
+
+                for (int i = 0; i < file_count; i++)
+                {
+                    string path = Encoding.UTF8.GetString(fileStream.ReadBytes(fileStream.ReadInt32())).Replace("\0", "");
+                    long ofs_p = fileStream.BaseStream.Position;
+                    long ofs = fileStream.ReadInt64();
+                    long size = fileStream.ReadInt64();
+                    byte[] md5 = fileStream.ReadBytes(16);
+
+                    Files.Add(path, new PackedFile(fileStream, path, ofs, ofs_p, size, md5));
+                };
             }
-            else
+            catch (Exception e)
             {
-                // If regular PCK
-                PCK_StartPosition = 0;
-                PCK_EndPosition = fileStream.BaseStream.Length;
+                fileStream.Close();
+                Utils.ShowMessage($"Can't read PCK file: {p_path}\n" + e.Message, "Error");
+                return false;
             }
-
-            PCK_VersionPack = fileStream.ReadInt32();
-            PCK_VersionMajor = fileStream.ReadInt32();
-            PCK_VersionMinor = fileStream.ReadInt32();
-            PCK_VersionRevision = fileStream.ReadInt32();
-
-            for (int i = 0; i < 16; i++)
-            {
-                //reserved
-                fileStream.ReadInt32();
-            }
-
-            int file_count = fileStream.ReadInt32();
-
-            for (int i = 0; i < file_count; i++)
-            {
-                string path = Encoding.UTF8.GetString(fileStream.ReadBytes(fileStream.ReadInt32())).Replace("\0", "");
-                long ofs_p = fileStream.BaseStream.Position;
-                long ofs = fileStream.ReadInt64();
-                long size = fileStream.ReadInt64();
-                byte[] md5 = fileStream.ReadBytes(16);
-
-                Files.Add(path, new PackedFile(fileStream, path, ofs, ofs_p, size, md5));
-            };
 
             PackPath = p_path;
             return true;
@@ -136,7 +151,7 @@ namespace GodotPCKExplorer
         public bool ExtractFiles(IEnumerable<string> names, string folder, bool overwriteExisting = true)
         {
             var bp = new BackgroundProgress();
-            var bw = bp.backgroundWorker1;
+            var bw = bp.bg_worker;
             bool result = true;
             int files_count = names.Count();
 
@@ -193,9 +208,6 @@ namespace GodotPCKExplorer
             bw.RunWorkerAsync();
             bp.ShowDialog();
 
-            if (result)
-                Utils.ShowMessage("Completed!", "Progress");
-
             return result;
         }
 
@@ -208,7 +220,7 @@ namespace GodotPCKExplorer
             }
 
             var bp = new BackgroundProgress();
-            var bw = bp.backgroundWorker1;
+            var bw = bp.bg_worker;
             bool result = true;
 
             bw.DoWork += (sender, ev) =>
@@ -281,16 +293,13 @@ namespace GodotPCKExplorer
             bw.RunWorkerAsync();
             bp.ShowDialog();
 
-            if (result)
-                Utils.ShowMessage("Completed!", "Progress");
-
             return result;
         }
 
         public bool MergePCKFileIntoExe(string exePath)
         {
             var bp = new BackgroundProgress();
-            var bw = bp.backgroundWorker1;
+            var bw = bp.bg_worker;
             bool result = true;
 
             bw.DoWork += (sender, ev) =>
@@ -404,9 +413,6 @@ namespace GodotPCKExplorer
 
             bw.RunWorkerAsync();
             bp.ShowDialog();
-
-            if (result)
-                Utils.ShowMessage("Completed!", "Progress");
 
             return result;
         }

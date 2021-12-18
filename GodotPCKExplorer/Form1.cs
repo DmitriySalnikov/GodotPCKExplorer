@@ -20,12 +20,18 @@ namespace GodotPCKExplorer
             Icon = Properties.Resources.icon;
             FormBaseTitle = Text;
 
-            overwriteExported.Checked = GUIConfig.Instance.OverwriteExported;
+            overwriteExported.Checked = GUIConfig.Instance.OverwriteExtracted;
             UpdateStatuStrip();
             UpdateRecentList();
+            UpdateListOfPCKContent();
 
             dataGridView1.SelectionChanged += (o, e) => UpdateStatuStrip();
             extractToolStripMenuItem.Enabled = false;
+
+            copyPathToolStripMenuItem.Click += (o, e) => { if (cms_table_row.Tag != null) Clipboard.SetText(dataGridView1.Rows[(int)cms_table_row.Tag].Cells[0].Value as string); };
+            copyOffsetToolStripMenuItem.Click += (o, e) => { if (cms_table_row.Tag != null) Clipboard.SetText(dataGridView1.Rows[(int)cms_table_row.Tag].Cells[1].Value.ToString()); };
+            copySizeToolStripMenuItem.Click += (o, e) => { if (cms_table_row.Tag != null) Clipboard.SetText(dataGridView1.Rows[(int)cms_table_row.Tag].Cells[2].Value.ToString()); };
+            copySizeInBytesToolStripMenuItem.Click += (o, e) => { if (cms_table_row.Tag != null) Clipboard.SetText(dataGridView1.Rows[(int)cms_table_row.Tag].Cells[2].Tag.ToString()); };
         }
 
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
@@ -40,7 +46,6 @@ namespace GodotPCKExplorer
 
             if (res == DialogResult.OK)
             {
-                dataGridView1.Rows.Clear();
                 OpenFile(ofd_open_pack.FileName);
             }
         }
@@ -72,17 +77,7 @@ namespace GodotPCKExplorer
             path = Path.GetFullPath(path);
             if (pckReader.OpenFile(path))
             {
-                foreach (var f in pckReader.Files)
-                {
-                    var tmpRow = new DataGridViewRow();
-                    tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.FilePath });
-                    tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.Offset });
-                    tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = Utils.SizeSuffix(f.Value.Size), Tag = f.Value.Size });
-
-                    dataGridView1.Rows.Add(tmpRow);
-
-                    Text = $"\"{Utils.GetShortPath(pckReader.PackPath, 50)}\" Pack version: {pckReader.PCK_VersionPack}. Godot Version: {pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}";
-                }
+                Text = $"\"{Utils.GetShortPath(pckReader.PackPath, 50)}\" Pack version: {pckReader.PCK_VersionPack}. Godot Version: {pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}";
 
                 // update recent files
                 var list = GUIConfig.Instance.RecentOpenedFiles;
@@ -106,11 +101,13 @@ namespace GodotPCKExplorer
                     TotalOpenedSize += f.Size;
                 }
 
+                searchText.Text = "";
                 extractToolStripMenuItem.Enabled = true;
 
                 GUIConfig.Instance.Save();
                 UpdateRecentList();
                 UpdateStatuStrip();
+                UpdateListOfPCKContent();
             }
             else
             {
@@ -126,12 +123,33 @@ namespace GodotPCKExplorer
         {
             extractToolStripMenuItem.Enabled = false;
 
-            dataGridView1.Rows.Clear();
             pckReader.Close();
             Text = FormBaseTitle;
             TotalOpenedSize = 0;
 
+            UpdateListOfPCKContent();
             UpdateStatuStrip();
+        }
+
+        public void UpdateListOfPCKContent()
+        {
+            dataGridView1.Rows.Clear();
+            if (pckReader.IsOpened)
+            {
+                foreach (var f in pckReader.Files)
+                {
+                    if (string.IsNullOrEmpty(searchText.Text) ||
+                        (!string.IsNullOrEmpty(searchText.Text) && Utils.IsMatchWildCard(f.Key, searchText.Text)))
+                    {
+                        var tmpRow = new DataGridViewRow();
+                        tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.FilePath });
+                        tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.Offset });
+                        tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = Utils.SizeSuffix(f.Value.Size), Tag = f.Value.Size });
+
+                        dataGridView1.Rows.Add(tmpRow);
+                    }
+                }
+            }
         }
 
         void UpdateStatuStrip()
@@ -190,13 +208,9 @@ namespace GodotPCKExplorer
 
         private void packFolderToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var res = fbd_pack_folder.ShowDialog();
-            if (res == DialogResult.OK)
-            {
-                var dlg = new CreatePCKFile();
-                dlg.SetFolderPath(fbd_pack_folder.SelectedPath);
-                dlg.ShowDialog();
-            }
+            var dlg = new CreatePCKFile();
+            dlg.ShowDialog();
+            dlg.Dispose();
         }
 
         private void closeFileToolStripMenuItem_Click(object sender, EventArgs e)
@@ -265,21 +279,123 @@ namespace GodotPCKExplorer
 
         private void overwriteExported_Click(object sender, EventArgs e)
         {
-            GUIConfig.Instance.OverwriteExported = overwriteExported.Checked;
+            GUIConfig.Instance.OverwriteExtracted = overwriteExported.Checked;
             GUIConfig.Instance.Save();
         }
 
-        private void searchText_TextChanged(object sender, EventArgs e)
+        private void ripPackFromFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // TODO search
-            //dataGridView1.so
+            if (ofd_rip_select_pck.ShowDialog() == DialogResult.OK)
+            {
+                using (var pck = new PCKReader())
+                    if (!pck.OpenFile(ofd_rip_select_pck.FileName))
+                    {
+                        return;
+                    }
+                    else if (!pck.PCK_Embedded)
+                    {
+                        Utils.ShowMessage("The selected file must contain an embedded '.pck' file", "Error");
+                        return;
+                    }
+
+                if (sfd_rip_save_pack.ShowDialog() == DialogResult.OK)
+                {
+                    PCKActions.RipPCKRun(ofd_rip_select_pck.FileName, sfd_rip_save_pack.FileName);
+                }
+            }
+        }
+
+        private void splitExeToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (ofd_split_exe_open.ShowDialog() == DialogResult.OK)
+            {
+                using (var pck = new PCKReader())
+                    if (!pck.OpenFile(ofd_split_exe_open.FileName))
+                    {
+                        return;
+                    }
+                    else if (!pck.PCK_Embedded)
+                    {
+                        Utils.ShowMessage("The selected file must contain an embedded '.pck' file", "Error");
+                        return;
+                    }
+
+                sfd_split_new_file.Filter = $"Original file extension|*{Path.GetExtension(ofd_split_exe_open.FileName)}|All Files|*.*";
+                if (sfd_split_new_file.ShowDialog() == DialogResult.OK)
+                {
+                    PCKActions.SplitPCKRun(ofd_split_exe_open.FileName, sfd_split_new_file.FileName);
+                }
+            }
+        }
+
+        private void mergePackIntoFileToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (ofd_merge_pck.ShowDialog() == DialogResult.OK)
+            {
+                using (var pck = new PCKReader())
+                    if (!pck.OpenFile(ofd_merge_pck.FileName))
+                    {
+                        return;
+                    }
+
+                if (ofd_merge_target.ShowDialog() == DialogResult.OK)
+                {
+                    PCKActions.MergePCKRun(ofd_merge_pck.FileName, ofd_merge_target.FileName);
+                }
+            }
         }
 
         private void removePackFromFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if(ofd_remove_pck_from_exe.ShowDialog() == DialogResult.OK)
+            if (ofd_remove_pck_from_exe.ShowDialog() == DialogResult.OK)
             {
                 PCKActions.RipPCKRun(ofd_remove_pck_from_exe.FileName);
+            }
+        }
+
+        private void splitExeInPlaceToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (ofd_split_in_place.ShowDialog() == DialogResult.OK)
+            {
+                PCKActions.SplitPCKRun(ofd_split_in_place.FileName, null, false);
+            }
+        }
+
+        private void searchText_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                e.SuppressKeyPress = true;
+                UpdateListOfPCKContent();
+            }
+        }
+
+        private void toolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            UpdateListOfPCKContent();
+        }
+
+        private void dataGridView1_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                if (dataGridView1.SelectedRows.Count <= 1)
+                {
+                    dataGridView1.ClearSelection();
+                    dataGridView1.Rows[e.RowIndex].Selected = true;
+                }
+                cms_table_row.Show(MousePosition);
+                cms_table_row.Tag = e.RowIndex;
+            }
+        }
+
+        private void changePackVersionToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if(ofd_change_version.ShowDialog() == DialogResult.OK)
+            {
+                var cv = new ChangePCKVersion();
+                cv.ShowAndOpenFile(ofd_change_version.FileName);
+                cv.Dispose();
             }
         }
     }

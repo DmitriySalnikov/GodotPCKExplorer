@@ -28,7 +28,7 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
             this.filePath = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.size = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -43,6 +43,13 @@
             this.label2 = new System.Windows.Forms.Label();
             this.cb_embed = new System.Windows.Forms.CheckBox();
             this.ofd_pack_into = new System.Windows.Forms.OpenFileDialog();
+            this.tb_folder_path = new System.Windows.Forms.TextBox();
+            this.label3 = new System.Windows.Forms.Label();
+            this.btn_browse = new System.Windows.Forms.Button();
+            this.fbd_pack_folder = new System.Windows.Forms.FolderBrowserDialog();
+            this.btn_refresh = new System.Windows.Forms.Button();
+            this.btn_filter = new System.Windows.Forms.Button();
+            this.searchText = new TextBoxWithPlaceholder();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_major)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_minor)).BeginInit();
@@ -60,11 +67,11 @@
             this.filePath,
             this.size});
             this.dataGridView1.EditMode = System.Windows.Forms.DataGridViewEditMode.EditProgrammatically;
-            this.dataGridView1.Location = new System.Drawing.Point(0, 25);
+            this.dataGridView1.Location = new System.Drawing.Point(0, 59);
             this.dataGridView1.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
             this.dataGridView1.Name = "dataGridView1";
             this.dataGridView1.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dataGridView1.Size = new System.Drawing.Size(800, 370);
+            this.dataGridView1.Size = new System.Drawing.Size(800, 336);
             this.dataGridView1.TabIndex = 0;
             this.dataGridView1.SortCompare += new System.Windows.Forms.DataGridViewSortCompareEventHandler(this.dataGridView1_SortCompare);
             this.dataGridView1.UserDeletedRow += new System.Windows.Forms.DataGridViewRowEventHandler(this.dataGridView1_UserDeletedRow);
@@ -79,8 +86,8 @@
             // 
             // size
             // 
-            dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
-            this.size.DefaultCellStyle = dataGridViewCellStyle3;
+            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
+            this.size.DefaultCellStyle = dataGridViewCellStyle2;
             this.size.FillWeight = 15F;
             this.size.HeaderText = "Size";
             this.size.Name = "size";
@@ -109,9 +116,9 @@
             // 
             // sfd_save_pack
             // 
-            this.sfd_save_pack.CheckFileExists = true;
             this.sfd_save_pack.DefaultExt = "pck";
             this.sfd_save_pack.Filter = "Godot PCK|*.pck";
+            this.sfd_save_pack.Title = "Select the path to the new \'.pck\' file";
             // 
             // label1
             // 
@@ -180,6 +187,7 @@
             "0",
             "1"});
             this.cb_ver.Location = new System.Drawing.Point(546, 424);
+            this.cb_ver.MaxLength = 2;
             this.cb_ver.Name = "cb_ver";
             this.cb_ver.Size = new System.Drawing.Size(38, 21);
             this.cb_ver.TabIndex = 12;
@@ -188,15 +196,16 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(12, 9);
+            this.label2.Location = new System.Drawing.Point(12, 29);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(571, 13);
+            this.label2.Size = new System.Drawing.Size(356, 26);
             this.label2.TabIndex = 13;
-            this.label2.Text = "*You can delete files from the table by selecting them and pressing Delete. To se" +
-    "lect several separate rows, hold Control";
+            this.label2.Text = "*You can delete files from the table by selecting them and pressing Delete.\r\nTo s" +
+    "elect several separate rows, hold Control";
             // 
             // cb_embed
             // 
+            this.cb_embed.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cb_embed.AutoSize = true;
             this.cb_embed.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.cb_embed.Location = new System.Drawing.Point(542, 401);
@@ -206,11 +215,87 @@
             this.cb_embed.Text = "Embed .pck into executable file";
             this.cb_embed.UseVisualStyleBackColor = true;
             // 
+            // ofd_pack_into
+            // 
+            this.ofd_pack_into.Title = "Select the file to embed the package into";
+            // 
+            // tb_folder_path
+            // 
+            this.tb_folder_path.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.tb_folder_path.Location = new System.Drawing.Point(148, 6);
+            this.tb_folder_path.Name = "tb_folder_path";
+            this.tb_folder_path.Size = new System.Drawing.Size(478, 20);
+            this.tb_folder_path.TabIndex = 15;
+            this.tb_folder_path.KeyDown += new System.Windows.Forms.KeyEventHandler(this.tb_folder_path_KeyDown);
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(12, 9);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(130, 13);
+            this.label3.TabIndex = 16;
+            this.label3.Text = "Path to the folder to pack:";
+            // 
+            // btn_browse
+            // 
+            this.btn_browse.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btn_browse.Location = new System.Drawing.Point(632, 6);
+            this.btn_browse.Name = "btn_browse";
+            this.btn_browse.Size = new System.Drawing.Size(75, 20);
+            this.btn_browse.TabIndex = 17;
+            this.btn_browse.Text = "Browse...";
+            this.btn_browse.UseVisualStyleBackColor = true;
+            this.btn_browse.Click += new System.EventHandler(this.btn_browse_Click);
+            // 
+            // fbd_pack_folder
+            // 
+            this.fbd_pack_folder.Tag = "";
+            // 
+            // btn_refresh
+            // 
+            this.btn_refresh.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btn_refresh.Location = new System.Drawing.Point(713, 6);
+            this.btn_refresh.Name = "btn_refresh";
+            this.btn_refresh.Size = new System.Drawing.Size(75, 20);
+            this.btn_refresh.TabIndex = 18;
+            this.btn_refresh.Text = "Refresh List";
+            this.btn_refresh.UseVisualStyleBackColor = true;
+            this.btn_refresh.Click += new System.EventHandler(this.btn_refresh_Click);
+            // 
+            // btn_filter
+            // 
+            this.btn_filter.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btn_filter.Location = new System.Drawing.Point(713, 32);
+            this.btn_filter.Name = "btn_filter";
+            this.btn_filter.Size = new System.Drawing.Size(75, 20);
+            this.btn_filter.TabIndex = 18;
+            this.btn_filter.Text = "Filter";
+            this.btn_filter.UseVisualStyleBackColor = true;
+            this.btn_filter.Click += new System.EventHandler(this.btn_filter_Click);
+            // 
+            // searchText
+            // 
+            this.searchText.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.searchText.CueBanner = "Filter text (? and * allowed)";
+            this.searchText.Location = new System.Drawing.Point(410, 32);
+            this.searchText.Name = "searchText";
+            this.searchText.Size = new System.Drawing.Size(297, 20);
+            this.searchText.TabIndex = 20;
+            this.searchText.KeyDown += new System.Windows.Forms.KeyEventHandler(this.textBoxWithPlaceholder1_KeyDown);
+            // 
             // CreatePCKFile
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.searchText);
+            this.Controls.Add(this.btn_filter);
+            this.Controls.Add(this.btn_refresh);
+            this.Controls.Add(this.btn_browse);
+            this.Controls.Add(this.label3);
+            this.Controls.Add(this.tb_folder_path);
             this.Controls.Add(this.cb_embed);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.cb_ver);
@@ -249,5 +334,12 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.CheckBox cb_embed;
         private System.Windows.Forms.OpenFileDialog ofd_pack_into;
+        private System.Windows.Forms.TextBox tb_folder_path;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Button btn_browse;
+        private System.Windows.Forms.FolderBrowserDialog fbd_pack_folder;
+        private System.Windows.Forms.Button btn_refresh;
+        private System.Windows.Forms.Button btn_filter;
+        private TextBoxWithPlaceholder searchText;
     }
 }

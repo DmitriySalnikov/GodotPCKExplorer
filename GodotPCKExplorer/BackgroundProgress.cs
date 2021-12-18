@@ -12,6 +12,8 @@ namespace GodotPCKExplorer
 {
     public partial class BackgroundProgress : Form
     {
+        public bool UnknowPercents { get; set; } = false;
+
         DateTime prevUpdateTime = DateTime.Now;
         int prevPercent = 0;
 
@@ -19,27 +21,39 @@ namespace GodotPCKExplorer
         {
             InitializeComponent();
             Icon = Properties.Resources.icon;
+            l_status.Text = "";
         }
 
         private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            if (!backgroundWorker1.CancellationPending)
+            if (!bg_worker.CancellationPending && !UnknowPercents)
             {
                 var prct = Math.Max(0, Math.Min(100, e.ProgressPercentage));
-                if (Program.CMDMode)
+                if ((DateTime.Now - prevUpdateTime).TotalSeconds > 2 || (prct - prevPercent) > 10)
                 {
-                    if ((DateTime.Now - prevUpdateTime).TotalSeconds > 2 || (prct - prevPercent) > 10)
+                    prevUpdateTime = DateTime.Now;
+                    if (Program.CMDMode)
                     {
                         Console.WriteLine($"{prct}%");
-                        prevUpdateTime = DateTime.Now;
                         prevPercent = prct;
                     }
+
+                    l_status.Text = $"Progress: {prct}%";
                 }
                 progressBar1.Value = prct;
             }
             else
             {
                 progressBar1.Style = ProgressBarStyle.Marquee;
+
+                if (e.UserState != null && e.UserState is string)
+                {
+                    if ((DateTime.Now - prevUpdateTime).TotalSeconds > 0.25)
+                    {
+                        prevUpdateTime = DateTime.Now;
+                        l_status.Text = e.UserState as string;
+                    }
+                }
             }
         }
 
@@ -50,12 +64,12 @@ namespace GodotPCKExplorer
 
         private void btn_cancel_Click(object sender, EventArgs e)
         {
-            backgroundWorker1.CancelAsync();
+            bg_worker.CancelAsync();
         }
 
         private void BackgroundProgress_FormClosing(object sender, FormClosingEventArgs e)
         {
-            backgroundWorker1.CancelAsync();
+            bg_worker.CancelAsync();
         }
     }
 }

@@ -28,47 +28,64 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.closeFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.recentToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.packFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.mergePackIntoFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
+            this.ripPackFromFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.removePackFromFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.splitExeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.splitExeInPlaceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.extractToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.extractFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.extractAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.overwriteExported = new System.Windows.Forms.ToolStripMenuItem();
             this.integrationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.registerProgramToOpenPCKInExplorerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.unregisterProgramToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.searchText = new ToolStripTextBoxWithPlaceholder();
             this.ofd_open_pack = new System.Windows.Forms.OpenFileDialog();
             this.fbd_extract_folder = new System.Windows.Forms.FolderBrowserDialog();
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
             this.path = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.offset = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.size = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.fbd_pack_folder = new System.Windows.Forms.FolderBrowserDialog();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
-            this.recentToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.tssl_version_and_stats = new System.Windows.Forms.ToolStripStatusLabel();
-            this.overwriteExported = new System.Windows.Forms.ToolStripMenuItem();
-            this.searchText = new ToolStripTextBoxWithPlaceholder();
             this.tssl_selected_size = new System.Windows.Forms.ToolStripStatusLabel();
-            this.mergePackIntoFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.ripPackFromFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.removePackFromFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.splitExeInPlaceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.splitExeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
-            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.tssl_version_and_stats = new System.Windows.Forms.ToolStripStatusLabel();
             this.ofd_remove_pck_from_exe = new System.Windows.Forms.OpenFileDialog();
+            this.ofd_split_in_place = new System.Windows.Forms.OpenFileDialog();
+            this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
+            this.cms_table_row = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.copyPathToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.copyOffsetToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.copySizeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.copySizeInBytesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.ofd_rip_select_pck = new System.Windows.Forms.OpenFileDialog();
+            this.sfd_rip_save_pack = new System.Windows.Forms.SaveFileDialog();
+            this.sfd_split_new_file = new System.Windows.Forms.SaveFileDialog();
+            this.ofd_split_exe_open = new System.Windows.Forms.OpenFileDialog();
+            this.ofd_merge_pck = new System.Windows.Forms.OpenFileDialog();
+            this.ofd_merge_target = new System.Windows.Forms.OpenFileDialog();
+            this.changePackVersionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.ofd_change_version = new System.Windows.Forms.OpenFileDialog();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.statusStrip1.SuspendLayout();
+            this.cms_table_row.SuspendLayout();
             this.SuspendLayout();
             // 
             // menuStrip1
@@ -82,6 +99,7 @@
             this.searchText});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
+            this.menuStrip1.ShowItemToolTips = true;
             this.menuStrip1.Size = new System.Drawing.Size(800, 27);
             this.menuStrip1.TabIndex = 0;
             this.menuStrip1.Text = "menuStrip1";
@@ -95,6 +113,7 @@
             this.toolStripSeparator1,
             this.packFolderToolStripMenuItem,
             this.mergePackIntoFileToolStripMenuItem,
+            this.changePackVersionToolStripMenuItem,
             this.toolStripSeparator3,
             this.ripPackFromFileToolStripMenuItem,
             this.removePackFromFileToolStripMenuItem,
@@ -120,6 +139,13 @@
             this.closeFileToolStripMenuItem.Text = "Close File";
             this.closeFileToolStripMenuItem.Click += new System.EventHandler(this.closeFileToolStripMenuItem_Click);
             // 
+            // recentToolStripMenuItem
+            // 
+            this.recentToolStripMenuItem.Enabled = false;
+            this.recentToolStripMenuItem.Name = "recentToolStripMenuItem";
+            this.recentToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.recentToolStripMenuItem.Text = "Recent Files";
+            // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
@@ -129,8 +155,59 @@
             // 
             this.packFolderToolStripMenuItem.Name = "packFolderToolStripMenuItem";
             this.packFolderToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.packFolderToolStripMenuItem.Text = "Pack or Embed folder";
+            this.packFolderToolStripMenuItem.Text = "Pack or Embed Folder";
+            this.packFolderToolStripMenuItem.ToolTipText = resources.GetString("packFolderToolStripMenuItem.ToolTipText");
             this.packFolderToolStripMenuItem.Click += new System.EventHandler(this.packFolderToolStripMenuItem_Click);
+            // 
+            // mergePackIntoFileToolStripMenuItem
+            // 
+            this.mergePackIntoFileToolStripMenuItem.Name = "mergePackIntoFileToolStripMenuItem";
+            this.mergePackIntoFileToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.mergePackIntoFileToolStripMenuItem.Text = "Merge Pack Into File";
+            this.mergePackIntoFileToolStripMenuItem.ToolTipText = "Embed the entire \'.pck\' file into another file\r\n1. Select the \'.pck\' file\r\n2. Sel" +
+    "ect the file to embed it in";
+            this.mergePackIntoFileToolStripMenuItem.Click += new System.EventHandler(this.mergePackIntoFileToolStripMenuItem_Click);
+            // 
+            // toolStripSeparator3
+            // 
+            this.toolStripSeparator3.Name = "toolStripSeparator3";
+            this.toolStripSeparator3.Size = new System.Drawing.Size(192, 6);
+            // 
+            // ripPackFromFileToolStripMenuItem
+            // 
+            this.ripPackFromFileToolStripMenuItem.Name = "ripPackFromFileToolStripMenuItem";
+            this.ripPackFromFileToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.ripPackFromFileToolStripMenuItem.Text = "Rip Pack from File";
+            this.ripPackFromFileToolStripMenuItem.ToolTipText = "Extract the whole embedded \'.pck\' file from the selected file\r\n1. Select the file" +
+    " with embedded \'.pck\'\r\n2. Select the path for the new \'.pck\' file";
+            this.ripPackFromFileToolStripMenuItem.Click += new System.EventHandler(this.ripPackFromFileToolStripMenuItem_Click);
+            // 
+            // removePackFromFileToolStripMenuItem
+            // 
+            this.removePackFromFileToolStripMenuItem.Name = "removePackFromFileToolStripMenuItem";
+            this.removePackFromFileToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.removePackFromFileToolStripMenuItem.Text = "Remove Pack from File";
+            this.removePackFromFileToolStripMenuItem.ToolTipText = "Remove the \'.pck\' package from the target file";
+            this.removePackFromFileToolStripMenuItem.Click += new System.EventHandler(this.removePackFromFileToolStripMenuItem_Click);
+            // 
+            // splitExeToolStripMenuItem
+            // 
+            this.splitExeToolStripMenuItem.Name = "splitExeToolStripMenuItem";
+            this.splitExeToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.splitExeToolStripMenuItem.Text = "Split File";
+            this.splitExeToolStripMenuItem.ToolTipText = "Split the target file into two in the new location\r\n1. Choose which file you want" +
+    " to split\r\n2. Select a new name and path to the file\r\n3. \'.pck\' will be created " +
+    "with the same name";
+            this.splitExeToolStripMenuItem.Click += new System.EventHandler(this.splitExeToolStripMenuItem_Click);
+            // 
+            // splitExeInPlaceToolStripMenuItem
+            // 
+            this.splitExeInPlaceToolStripMenuItem.Name = "splitExeInPlaceToolStripMenuItem";
+            this.splitExeInPlaceToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.splitExeInPlaceToolStripMenuItem.Text = "Split File in Place";
+            this.splitExeInPlaceToolStripMenuItem.ToolTipText = "Split the target file into two: a target file without \'.pck\' and a separate \'.pck" +
+    "\'";
+            this.splitExeInPlaceToolStripMenuItem.Click += new System.EventHandler(this.splitExeInPlaceToolStripMenuItem_Click);
             // 
             // toolStripSeparator2
             // 
@@ -168,6 +245,14 @@
             this.extractAllToolStripMenuItem.Text = "Extract All";
             this.extractAllToolStripMenuItem.Click += new System.EventHandler(this.extractAllToolStripMenuItem_Click);
             // 
+            // overwriteExported
+            // 
+            this.overwriteExported.CheckOnClick = true;
+            this.overwriteExported.Name = "overwriteExported";
+            this.overwriteExported.Size = new System.Drawing.Size(204, 22);
+            this.overwriteExported.Text = "Overwrite exported files?";
+            this.overwriteExported.Click += new System.EventHandler(this.overwriteExported_Click);
+            // 
             // integrationToolStripMenuItem
             // 
             this.integrationToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -198,10 +283,26 @@
             this.aboutToolStripMenuItem.Text = "About";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
             // 
+            // toolStripMenuItem1
+            // 
+            this.toolStripMenuItem1.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
+            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(45, 23);
+            this.toolStripMenuItem1.Text = "Filter";
+            this.toolStripMenuItem1.Click += new System.EventHandler(this.toolStripMenuItem1_Click);
+            // 
+            // searchText
+            // 
+            this.searchText.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
+            this.searchText.CueBanner = "Filter text (? and * allowed)";
+            this.searchText.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.searchText.Name = "searchText";
+            this.searchText.Size = new System.Drawing.Size(150, 23);
+            this.searchText.ToolTipText = resources.GetString("searchText.ToolTipText");
+            this.searchText.KeyDown += new System.Windows.Forms.KeyEventHandler(this.searchText_KeyDown);
+            // 
             // ofd_open_pack
             // 
-            this.ofd_open_pack.Filter = "Godot PCK files and Executables|*.pck;*.exe|Godot PCK files|*.pck|Executables|*.e" +
-    "xe|All files|*.*";
             this.ofd_open_pack.Title = "Select the file containing .pck";
             // 
             // fbd_extract_folder
@@ -229,6 +330,7 @@
             this.dataGridView1.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.dataGridView1.Size = new System.Drawing.Size(800, 403);
             this.dataGridView1.TabIndex = 2;
+            this.dataGridView1.CellMouseClick += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.dataGridView1_CellMouseClick);
             this.dataGridView1.SortCompare += new System.Windows.Forms.DataGridViewSortCompareEventHandler(this.dataGridView1_SortCompare);
             // 
             // path
@@ -248,16 +350,12 @@
             // 
             // size
             // 
-            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
-            this.size.DefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
+            this.size.DefaultCellStyle = dataGridViewCellStyle1;
             this.size.FillWeight = 13F;
             this.size.HeaderText = "Size";
             this.size.Name = "size";
             this.size.ReadOnly = true;
-            // 
-            // fbd_pack_folder
-            // 
-            this.fbd_pack_folder.Tag = "";
             // 
             // statusStrip1
             // 
@@ -280,12 +378,11 @@
             this.toolStripStatusLabel1.Text = "*To select several separate rows, hold Control";
             this.toolStripStatusLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // recentToolStripMenuItem
+            // tssl_selected_size
             // 
-            this.recentToolStripMenuItem.Enabled = false;
-            this.recentToolStripMenuItem.Name = "recentToolStripMenuItem";
-            this.recentToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.recentToolStripMenuItem.Text = "Recent Files";
+            this.tssl_selected_size.Name = "tssl_selected_size";
+            this.tssl_selected_size.Size = new System.Drawing.Size(72, 17);
+            this.tssl_selected_size.Text = "selected size";
             // 
             // tssl_version_and_stats
             // 
@@ -293,75 +390,90 @@
             this.tssl_version_and_stats.Size = new System.Drawing.Size(101, 17);
             this.tssl_version_and_stats.Text = "version count size";
             // 
-            // overwriteExported
-            // 
-            this.overwriteExported.CheckOnClick = true;
-            this.overwriteExported.Name = "overwriteExported";
-            this.overwriteExported.Size = new System.Drawing.Size(204, 22);
-            this.overwriteExported.Text = "Overwrite exported files?";
-            this.overwriteExported.Click += new System.EventHandler(this.overwriteExported_Click);
-            // 
-            // searchText
-            // 
-            this.searchText.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
-            this.searchText.CueBanner = "Filter text";
-            this.searchText.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.searchText.Name = "searchText";
-            this.searchText.Size = new System.Drawing.Size(150, 23);
-            this.searchText.TextChanged += new System.EventHandler(this.searchText_TextChanged);
-            // 
-            // tssl_selected_size
-            // 
-            this.tssl_selected_size.Name = "tssl_selected_size";
-            this.tssl_selected_size.Size = new System.Drawing.Size(72, 17);
-            this.tssl_selected_size.Text = "selected size";
-            // 
-            // mergePackIntoFileToolStripMenuItem
-            // 
-            this.mergePackIntoFileToolStripMenuItem.Name = "mergePackIntoFileToolStripMenuItem";
-            this.mergePackIntoFileToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.mergePackIntoFileToolStripMenuItem.Text = "Merge pack into exe";
-            // 
-            // ripPackFromFileToolStripMenuItem
-            // 
-            this.ripPackFromFileToolStripMenuItem.Name = "ripPackFromFileToolStripMenuItem";
-            this.ripPackFromFileToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.ripPackFromFileToolStripMenuItem.Text = "Rip pack from exe";
-            // 
-            // removePackFromFileToolStripMenuItem
-            // 
-            this.removePackFromFileToolStripMenuItem.Name = "removePackFromFileToolStripMenuItem";
-            this.removePackFromFileToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.removePackFromFileToolStripMenuItem.Text = "Remove pack from exe";
-            this.removePackFromFileToolStripMenuItem.Click += new System.EventHandler(this.removePackFromFileToolStripMenuItem_Click);
-            // 
-            // splitExeInPlaceToolStripMenuItem
-            // 
-            this.splitExeInPlaceToolStripMenuItem.Name = "splitExeInPlaceToolStripMenuItem";
-            this.splitExeInPlaceToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.splitExeInPlaceToolStripMenuItem.Text = "Split exe in place";
-            // 
-            // splitExeToolStripMenuItem
-            // 
-            this.splitExeToolStripMenuItem.Name = "splitExeToolStripMenuItem";
-            this.splitExeToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.splitExeToolStripMenuItem.Text = "Split exe";
-            // 
-            // toolStripSeparator3
-            // 
-            this.toolStripSeparator3.Name = "toolStripSeparator3";
-            this.toolStripSeparator3.Size = new System.Drawing.Size(192, 6);
-            // 
-            // toolStripMenuItem1
-            // 
-            this.toolStripMenuItem1.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
-            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(45, 23);
-            this.toolStripMenuItem1.Text = "Filter";
-            // 
             // ofd_remove_pck_from_exe
             // 
-            this.ofd_remove_pck_from_exe.Title = "Select the file containing .pck";
+            this.ofd_remove_pck_from_exe.Title = "Removing \'.pck\' from file";
+            // 
+            // ofd_split_in_place
+            // 
+            this.ofd_split_in_place.Title = "Select the file containing .pck to separate it";
+            // 
+            // toolTip1
+            // 
+            this.toolTip1.ShowAlways = true;
+            // 
+            // cms_table_row
+            // 
+            this.cms_table_row.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.copyPathToolStripMenuItem,
+            this.copyOffsetToolStripMenuItem,
+            this.copySizeToolStripMenuItem,
+            this.copySizeInBytesToolStripMenuItem});
+            this.cms_table_row.Name = "cms_table_row";
+            this.cms_table_row.Size = new System.Drawing.Size(170, 92);
+            // 
+            // copyPathToolStripMenuItem
+            // 
+            this.copyPathToolStripMenuItem.Name = "copyPathToolStripMenuItem";
+            this.copyPathToolStripMenuItem.Size = new System.Drawing.Size(169, 22);
+            this.copyPathToolStripMenuItem.Text = "Copy Path";
+            // 
+            // copyOffsetToolStripMenuItem
+            // 
+            this.copyOffsetToolStripMenuItem.Name = "copyOffsetToolStripMenuItem";
+            this.copyOffsetToolStripMenuItem.Size = new System.Drawing.Size(169, 22);
+            this.copyOffsetToolStripMenuItem.Text = "Copy Offset";
+            // 
+            // copySizeToolStripMenuItem
+            // 
+            this.copySizeToolStripMenuItem.Name = "copySizeToolStripMenuItem";
+            this.copySizeToolStripMenuItem.Size = new System.Drawing.Size(169, 22);
+            this.copySizeToolStripMenuItem.Text = "Copy Size";
+            // 
+            // copySizeInBytesToolStripMenuItem
+            // 
+            this.copySizeInBytesToolStripMenuItem.Name = "copySizeInBytesToolStripMenuItem";
+            this.copySizeInBytesToolStripMenuItem.Size = new System.Drawing.Size(169, 22);
+            this.copySizeInBytesToolStripMenuItem.Text = "Copy Size in bytes";
+            // 
+            // ofd_rip_select_pck
+            // 
+            this.ofd_rip_select_pck.Title = "Select the file containing .pck";
+            // 
+            // sfd_rip_save_pack
+            // 
+            this.sfd_rip_save_pack.DefaultExt = "pck";
+            this.sfd_rip_save_pack.Filter = "Godot PCK|*.pck";
+            this.sfd_rip_save_pack.Title = "Select the path to the new \'.pck\' file";
+            // 
+            // sfd_split_new_file
+            // 
+            this.sfd_split_new_file.DefaultExt = "pck";
+            this.sfd_split_new_file.Filter = "Godot PCK|*.pck";
+            this.sfd_split_new_file.Title = "Select the path to the new \'.pck\' file";
+            // 
+            // ofd_split_exe_open
+            // 
+            this.ofd_split_exe_open.Title = "Select the file containing .pck";
+            // 
+            // ofd_merge_pck
+            // 
+            this.ofd_merge_pck.Title = "Select the file containing .pck";
+            // 
+            // ofd_merge_target
+            // 
+            this.ofd_merge_target.Title = "Select the file to which \'.pck\' will be added";
+            // 
+            // changePackVersionToolStripMenuItem
+            // 
+            this.changePackVersionToolStripMenuItem.Name = "changePackVersionToolStripMenuItem";
+            this.changePackVersionToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.changePackVersionToolStripMenuItem.Text = "Change Pack Version";
+            this.changePackVersionToolStripMenuItem.Click += new System.EventHandler(this.changePackVersionToolStripMenuItem_Click);
+            // 
+            // ofd_change_version
+            // 
+            this.ofd_change_version.Title = "Select the file containing .pck";
             // 
             // Form1
             // 
@@ -384,6 +496,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
+            this.cms_table_row.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -402,7 +515,6 @@
 		private System.Windows.Forms.DataGridView dataGridView1;
 		private System.Windows.Forms.ToolStripMenuItem extractAllToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem packFolderToolStripMenuItem;
-		private System.Windows.Forms.FolderBrowserDialog fbd_pack_folder;
 		private System.Windows.Forms.ToolStripMenuItem closeFileToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
@@ -428,6 +540,21 @@
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
         private System.Windows.Forms.OpenFileDialog ofd_remove_pck_from_exe;
+        private System.Windows.Forms.OpenFileDialog ofd_split_in_place;
+        private System.Windows.Forms.ToolTip toolTip1;
+        private System.Windows.Forms.ContextMenuStrip cms_table_row;
+        private System.Windows.Forms.ToolStripMenuItem copyPathToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem copyOffsetToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem copySizeToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem copySizeInBytesToolStripMenuItem;
+        private System.Windows.Forms.OpenFileDialog ofd_rip_select_pck;
+        private System.Windows.Forms.SaveFileDialog sfd_rip_save_pack;
+        private System.Windows.Forms.SaveFileDialog sfd_split_new_file;
+        private System.Windows.Forms.OpenFileDialog ofd_split_exe_open;
+        private System.Windows.Forms.OpenFileDialog ofd_merge_pck;
+        private System.Windows.Forms.OpenFileDialog ofd_merge_target;
+        private System.Windows.Forms.ToolStripMenuItem changePackVersionToolStripMenuItem;
+        private System.Windows.Forms.OpenFileDialog ofd_change_version;
     }
 }
 

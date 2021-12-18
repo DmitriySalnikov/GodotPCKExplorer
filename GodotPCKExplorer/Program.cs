@@ -14,6 +14,7 @@ namespace GodotPCKExplorer
         public const int PCK_MAGIC = 0x43504447;
 
         public static bool CMDMode = false;
+        public static bool ForceConsoleMode = false;
         static bool runWithArgs = false;
         public static Form1 mainForm = null;
 
@@ -78,10 +79,9 @@ namespace GodotPCKExplorer
                 Utils.CommandLog(e.Message, "Error", false);
             }
 
-            if (args.Length >= 2)
+            if (args.Length > 0)
                 IterateCommands(
                  () => { if (args[0] == "-h" || args[0] == "/?" || args[0] == "--help") HelpCommand(); },
-                 () => { if (args[0] == "-o") OpenPCKCommand(args); },
                  () => { if (args[0] == "-i") InfoPCKCommand(args); },
                  () => { if (args[0] == "-e") ExtractPCKCommand(args); },
                  () => { if (args[0] == "-es") ExtractSkipExistingPCKCommand(args); },
@@ -89,7 +89,9 @@ namespace GodotPCKExplorer
                  () => { if (args[0] == "-pe") PackPCKCommand(args, true); },
                  () => { if (args[0] == "-m") MergePCKCommand(args); },
                  () => { if (args[0] == "-r") RipPCKCommand(args); },
-                 () => { if (args[0] == "-s") SplitPCKCommand(args); }
+                 () => { if (args[0] == "-s") SplitPCKCommand(args); },
+                 () => { if (args[0] == "-c") ChangeVersionPCKCommand(args); },
+                 () => { if (args[0] == "-o" || args.Length == 1) OpenPCKCommand(args); }
                  );
 
             if (restore_params)
@@ -107,16 +109,6 @@ namespace GodotPCKExplorer
                 if (runWithArgs)
                     return;
             }
-        }
-
-        static string SplitArgs(string separator)
-        {
-            var args = Environment.CommandLine.Split(new string[] { separator }, StringSplitOptions.RemoveEmptyEntries);
-            if (args.Length > 1)
-            {
-                return args[1];
-            }
-            return "";
         }
 
         static public void ShowConsole()
@@ -147,37 +139,21 @@ namespace GodotPCKExplorer
                 {
                     path = Path.GetFullPath(args[1]);
                 }
-                else
-                {
-                    Utils.CommandLog(args[1].ToString(), "Not valid file path", true);
-                    return;
-                }
             }
             catch (Exception e)
             {
                 Utils.CommandLog(e.Message, "Error", false);
                 return;
             }
-            /* // TODO
-            if (path == null)
-            {
-                var s = Environment.CommandLine.Split(new string[] { "\" \"" }, StringSplitOptions.RemoveEmptyEntries);
-                if (s.Length == 2)
-                {
-                    var strings = QuoteStringRegEx.Matches(Environment.CommandLine);
-                    if (strings.Count == 2)
-                    {
-                        path = Path.GetFullPath(strings[1].Value.Replace("\"", ""));
-                    }
-                }
-            }
-            */
 
             if (path == null)
             {
                 try
                 {
-                    path = Path.GetFullPath(Environment.CommandLine.Replace(Application.ExecutablePath, "").Replace("\"", ""));
+                    if (args.Length == 1)
+                    {
+                        path = Path.GetFullPath(args[0]);
+                    }
                 }
                 catch (Exception e)
                 {
@@ -382,6 +358,34 @@ namespace GodotPCKExplorer
             }
 
             PCKActions.SplitPCKRun(exeFile, pairName);
+        }
+
+        static void ChangeVersionPCKCommand(string[] args)
+        {
+            runWithArgs = true;
+
+            string pckFile = "";
+            string strVer = "";
+            try
+            {
+                if (args.Length == 3)
+                {
+                    pckFile = Path.GetFullPath(args[1].Replace("\"", ""));
+                    strVer = args[2];
+                }
+                else
+                {
+                    Utils.CommandLog($"Invalid number of arguments! Expected 3, but got {args.Length}", "Error", true);
+                    return;
+                }
+            }
+            catch (Exception e)
+            {
+                Utils.CommandLog(e.Message, "Error", false);
+                return;
+            }
+
+            PCKActions.ChangePCKVersion(pckFile, strVer);
         }
     }
 }

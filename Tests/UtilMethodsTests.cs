@@ -14,6 +14,8 @@ namespace Tests
         const string binaries = "TestBinaries";
         const string pck_error = "Error: Couldn't load project data at path \".\". Is the .pck file missing?";
 
+        List<string> OriginalTestFiles = new List<string>();
+
         void Title(string name)
         {
             Console.WriteLine($"===================={name}====================");
@@ -23,18 +25,39 @@ namespace Tests
         public void GodotPCKInit()
         {
             Program.CMDMode = true;
+            Program.ForceConsoleMode = true;
 
-            if (!Directory.Exists(binaries))
+            using (var z = System.IO.Compression.ZipFile.OpenRead("../../Test.zip"))
+            {
+                OriginalTestFiles.Clear();
+                foreach (var e in z.Entries)
+                    OriginalTestFiles.Add(Path.Combine(binaries, e.FullName));
+            }
+
+            var not_all_files = false;
+            var files = Directory.GetFiles(binaries);
+            foreach (var f in OriginalTestFiles)
+                if (!files.Contains(f))
+                {
+                    not_all_files = true;
+                    break;
+                }
+
+            if (!Directory.Exists(binaries) || files.Length == 0 || not_all_files)
+            {
                 System.IO.Compression.ZipFile.ExtractToDirectory("../../Test.zip", binaries);
+
+            }
         }
 
-
-        [TestMethod]
-        [Ignore]
+        [TestCleanup]
         public void ClearBinaries()
         {
-            Directory.Delete(binaries, true);
-            Assert.IsFalse(Directory.Exists(binaries));
+            foreach (var d in Directory.GetDirectories(binaries))
+                Directory.Delete(d, true);
+            foreach (var f in Directory.GetFiles(binaries))
+                if (!OriginalTestFiles.Contains(f))
+                    File.Delete(f);
         }
 
 
@@ -63,7 +86,7 @@ namespace Tests
             Title("Info PCK");
             Assert.IsTrue(PCKActions.InfoPCKRun(Path.Combine(binaries, "Test.pck")));
             Title("Info EXE");
-            Assert.IsTrue(PCKActions.InfoPCKRun(Path.Combine(binaries, "Test.exe")));
+            Assert.IsTrue(PCKActions.InfoPCKRun(Path.Combine(binaries, "TestEmbedded.exe")));
             Title("Wrong path");
             Assert.IsFalse(PCKActions.InfoPCKRun(Path.Combine(binaries, "WrongPath/Test.pck")));
         }
@@ -82,14 +105,6 @@ namespace Tests
             string exportTestSelectedWrongPath = Path.Combine(binaries, "ExportTestSelectedWrong");
             string overwritePath = exportTestPath + "Overwrite";
             string out_exe = Path.ChangeExtension(newPckPath, ".exe");
-
-            foreach (var d in new string[] { overwritePath, exportTestSelectedPath, exportTestPath, exportTestSelectedWrongPath })
-                if (Directory.Exists(d))
-                    Directory.Delete(d, true);
-
-            foreach (var f in new string[] { selectedFilesPck, testEmbedPack, out_exe })
-                if (File.Exists(f))
-                    File.Delete(f);
 
             Title("Extract");
             Assert.IsTrue(PCKActions.ExtractPCKRun(testPCK, exportTestPath, true));
@@ -269,10 +284,6 @@ namespace Tests
             string newEXE1Byte = Path.Combine(binaries, "TestMerge1Byte.exe");
             string newEXE_old = Path.Combine(binaries, "TestMerge.old.exe");
 
-            foreach (var f in new string[] { newEXE_old, newEXE, newEXE1Byte })
-                if (File.Exists(f))
-                    File.Delete(f);
-
             File.Copy(testEXE, newEXE);
 
             Title("Merge");
@@ -341,10 +352,6 @@ namespace Tests
             string new_pck = Path.Combine(binaries, "TestRip.pck");
             string locked_exe_str = Path.Combine(binaries, "TestLockedRip.exe");
 
-            foreach (var f in new string[] { new_exe, new_pck, new_exe_old, locked_exe_str })
-                if (File.Exists(f))
-                    File.Delete(f);
-
             File.Copy(Path.Combine(binaries, "TestEmbedded.exe"), new_exe);
 
             Title("Rip embedded");
@@ -362,7 +369,7 @@ namespace Tests
             Title("Rip PCK from exe");
             Assert.IsTrue(PCKActions.RipPCKRun(new_exe, null, true));
             Assert.IsFalse(File.Exists(new_exe_old));
-            
+
             Title("Rip PCK from PCK");
             Assert.IsFalse(PCKActions.RipPCKRun(new_pck, null, true));
 
@@ -398,10 +405,6 @@ namespace Tests
             string pck = Path.Combine(binaries, "TestSplit.pck");
             string new_exe = Path.Combine(binaries, "SplitFolder", "Split.exe");
             string new_pck = Path.Combine(binaries, "SplitFolder", "Split.pck");
-
-            foreach (var f in new string[] { exe, pck, new_exe, new_pck })
-                if (File.Exists(f))
-                    File.Delete(f);
 
             File.Copy(Path.Combine(binaries, "TestEmbedded.exe"), exe);
 
@@ -452,6 +455,69 @@ namespace Tests
 
             Assert.IsFalse(File.Exists(new_exe));
             Assert.IsTrue(File.Exists(new_pck));
+        }
+
+
+        [TestMethod]
+        public void TestChangePCKVersion()
+        {
+            string exe = Path.Combine(binaries, "TestVersion.exe");
+            string pck = Path.Combine(binaries, "TestVersion.pck");
+            string exeEmbedded = Path.Combine(binaries, "TestVersionEmbedded.exe");
+
+            File.Copy(Path.Combine(binaries, "Test.exe"), exe);
+            File.Copy(Path.Combine(binaries, "Test.pck"), pck);
+            File.Copy(Path.Combine(binaries, "TestEmbedded.exe"), exeEmbedded);
+
+            Func<string, PCKVersion> getVersion = (s) =>
+            {
+                Console.WriteLine($"Getting version");
+                string console_output = "";
+                PCKVersion ver;
+                using (var output = new ConsoleOutputRedirect())
+                {
+                    Assert.IsTrue(PCKActions.InfoPCKRun(s));
+                    console_output = output.GetOuput();
+                    var lines = console_output.Replace("\r", "").Split('\n');
+                    ver = new PCKVersion(lines[lines.Length - 2].Split(':')[1]);
+                }
+                Console.WriteLine($"Got version: {ver}");
+                return ver;
+            };
+
+            var origVersion = getVersion(pck);
+            var newVersion = origVersion;
+            newVersion.Major += 1;
+            newVersion.Minor += 1;
+            newVersion.Revision += 2;
+
+            Title("Regular pck test runs");
+
+            Assert.IsTrue(PCKActions.ChangePCKVersion(pck, newVersion.ToString()));
+            Assert.AreEqual(newVersion, getVersion(pck));
+
+            using (var r = new RunAppWithOutput(exe, "", 1000))
+                Assert.IsTrue(r.GetConsoleText().Contains(pck_error));
+
+            Assert.IsTrue(PCKActions.ChangePCKVersion(pck, origVersion.ToString()));
+            Assert.AreEqual(origVersion, getVersion(pck));
+
+            using (var r = new RunAppWithOutput(exe, "", 1000))
+                Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
+
+            Title("Embedded test runs");
+
+            Assert.IsTrue(PCKActions.ChangePCKVersion(exeEmbedded, newVersion.ToString()));
+            Assert.AreEqual(newVersion, getVersion(exeEmbedded));
+
+            using (var r = new RunAppWithOutput(exeEmbedded, "", 1000))
+                Assert.IsTrue(r.GetConsoleText().Contains(pck_error));
+
+            Assert.IsTrue(PCKActions.ChangePCKVersion(exeEmbedded, origVersion.ToString()));
+            Assert.AreEqual(origVersion, getVersion(exeEmbedded));
+
+            using (var r = new RunAppWithOutput(exeEmbedded, "", 1000))
+                Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
         }
     }
 }

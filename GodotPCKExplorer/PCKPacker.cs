@@ -58,7 +58,7 @@ namespace GodotPCKExplorer
         public bool PackFiles(string out_pck, IEnumerable<FileToPack> files, int alignment, PCKVersion godotVersion, bool embed)
         {
             var bp = new BackgroundProgress();
-            var bw = bp.backgroundWorker1;
+            var bw = bp.bg_worker;
             bool result = false;
 
             if (!godotVersion.IsValid)
@@ -265,8 +265,8 @@ namespace GodotPCKExplorer
             bw.RunWorkerAsync();
             bp.ShowDialog();
 
-            if (result)
-                Utils.ShowMessage("Complete!", "Progress");
+            //if (result)
+            //    Utils.ShowMessage("Complete!", "Progress");
 
             return result;
         }

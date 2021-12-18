@@ -14,7 +14,7 @@ Examples of valid commands:
 	-i C:/Game.exe
 	-i C:/Game.pck
 
--e	Export content from a pack to a folder. Automatically overwrites existing files
+-e	Extract content from a pack to a folder. Automatically overwrites existing files
 	-e [path to pack] [path to output folder]
 	-e C:/Game.exe "C:/Path with Spaces"
 	-e C:/Game.pck Output_dir
@@ -26,23 +26,28 @@ Examples of valid commands:
 	-p [path to folder] [output pack file] [version]
 	-p "C:/Directory with files" C:/Game_New.pck 1.3.2.0
 
--pe	Pack embedded. Equal to just -p, but embed '.pck' into '.exe'
+-pe	Pack embedded. Equal to just -p, but embed '.pck' into target file
 	-p [path to folder] [exe to pack into] [version]
 	-p "C:/Directory with files" C:/Game.exe 1.3.2.0
 
--m	Merge pack into '.exe'. So you can copy the '.pck' from one '.exe' to another
-	-m [path to pack] [exe to merge into]
+-m	Merge pack into target file. So you can copy the '.pck' from one file to another
+	-m [path to pack] [file to merge into]
 	-m C:/Game.pck C:/Game.exe
 	-m C:/GameEmbedded.exe C:/Game.exe
 
--r	Rip '.pck' from '.exe'
-	If the output file is not specified, it will just be deleted from the '.exe'
-	Otherwise it will be exported without modifing '.exe'
-	-r [path to exe] {[output pack file]}
+-r	Rip '.pck' from file
+	If the output file is not specified, it will just be deleted from the original file
+	Otherwise, it will be extracted without changing the original file
+	-r [path to file] {[output pack file]}
 	-r C:/Game.exe C:/Game.pck
 	-r C:/Game.exe
 
--s	Split '.exe' with embedded '.pck' into two separated files
-	-s [path to exe] {[path to new '.exe' (this name will also be used for '.pck')]}
+-s	Split file with embedded '.pck' into two separated files
+	-s [path to file] {[path to the new file (this name will also be used for '.pck')]}
 	-s C:/Game.exe "C:/Out Folder/NewGameSplitted.exe"
 	-s C:/Game.exe
+
+-c	Change version of the '.pck'
+	-c [path to pck] [new version]
+	-c C:/Game.pck 1.3.4.1
+	-c C:/Game.exe 1.3.3.0

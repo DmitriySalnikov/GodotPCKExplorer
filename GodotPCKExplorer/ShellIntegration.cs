@@ -18,12 +18,10 @@ namespace GodotPCKExplorer
 
         const string PckExtractCommandName = "Extract Godot .pck file here";
         const string PckExtractCommandCodeName = "extract";
-        // TODO mb need to remove quotes
         const string PckExtractCMDArgs = "-e \"%1\" \"%1_extracted\"";
 
         const string PckOpenCommandName = "Open Godot .pck file";
         const string PckOpenCommandCodeName = "open";
-        // TODO mb need to remove quotes
         const string PckOpenCMDArgs = "-o \"%1\"";
 
         public static void Register()

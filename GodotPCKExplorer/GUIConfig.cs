@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,14 +11,33 @@ namespace GodotPCKExplorer
 {
     class GUIConfig
     {
+        [JsonIgnore]
         static public GUIConfig Instance { get; private set; } = null;
-
+        
+        [JsonIgnore]
         static string SaveFile = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "settings.json");
+
+        #region Packing
 
         public PCKVersion PackedVersion { get; set; } = new PCKVersion(1, 3, 4, 0);
         public bool EmbedPCK { get; set; } = false;
-        public bool OverwriteExported { get; set; } = true;
+        public string FolderPath { get; set; } = "";
+
+        #endregion
+
+        #region Extract
+
+        public bool OverwriteExtracted { get; set; } = true;
+
+        #endregion
+
+        #region Main Window
+
         public List<string> RecentOpenedFiles { get; set; } = new List<string>();
+
+        #endregion
+
+        #region Save/Load
 
         GUIConfig()
         {
@@ -52,5 +72,7 @@ namespace GodotPCKExplorer
                 Console.WriteLine(ex.Message);
             }
         }
+
+        #endregion
     }
 }

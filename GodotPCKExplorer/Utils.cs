@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using System.ComponentModel;
 
 namespace GodotPCKExplorer
 {
@@ -38,12 +38,25 @@ namespace GodotPCKExplorer
                 SizeSuffixes[mag]);
         }
 
-        public static void ShowMessage(string text, string title)
+        // https://stackoverflow.com/a/30300521/8980874
+
+        public static string WildCardToRegular(string value)
         {
-            if (Program.CMDMode)
+            return "^" + Regex.Escape(value).Replace("\\?", ".").Replace("\\*", ".*") + "$";
+        }
+
+        public static bool IsMatchWildCard(string input, string wildcard)
+        {
+            return Regex.IsMatch(input, WildCardToRegular(wildcard));
+        }
+
+        public static DialogResult ShowMessage(string text, string title, MessageBoxButtons boxButtons = MessageBoxButtons.OK)
+        {
+            if (Program.CMDMode || Program.ForceConsoleMode)
                 Console.WriteLine($"{title}: {text}");
             else
-                MessageBox.Show(text, title);
+                return MessageBox.Show(text, title, boxButtons);
+            return DialogResult.OK;
         }
 
         public static void CommandLog(string text, string title, bool showHelp)
@@ -56,22 +69,72 @@ namespace GodotPCKExplorer
 
         static public List<PCKPacker.FileToPack> ScanFoldersForFiles(string folder)
         {
+            if (!Directory.Exists(folder))
+                return new List<PCKPacker.FileToPack>();
+
+            folder = Path.GetFullPath(folder);
             var files = new List<PCKPacker.FileToPack>();
-            ScanFoldersForFilesInternal(folder, files, ref folder);
+            var cancel = false;
+
+            ScanFoldersForFilesAdvanced(folder, files, ref folder, ref cancel);
+            if (cancel)
+                files.Clear();
+            GC.Collect();
+
             return files;
         }
 
-        static void ScanFoldersForFilesInternal(string folder, List<PCKPacker.FileToPack> files, ref string basePath)
+        static public void ScanFoldersForFilesAdvanced(string folder, List<PCKPacker.FileToPack> files, ref string basePath, ref bool cancel, BackgroundWorker backgroundWorker = null)
         {
-            foreach (string d in Directory.EnumerateDirectories(folder))
+            IEnumerable<string> dirEnums;
+            try
             {
-                ScanFoldersForFilesInternal(d, files, ref basePath);
+                dirEnums = Directory.EnumerateDirectories(folder);
+            }
+            catch (Exception ex)
+            {
+                cancel = ShowMessage($"{ex.Message}\nThe directory will be skipped!", "Error", MessageBoxButtons.OKCancel) == DialogResult.Cancel;
+                return;
             }
 
-            foreach (string f in Directory.EnumerateFiles(folder))
+            // Scan folders
+            foreach (string d in dirEnums)
             {
-                var inf = new FileInfo(f);
-                files.Add(new PCKPacker.FileToPack(f, f.Replace(basePath + "\\", "res://").Replace("\\", "/"), inf.Length));
+                if (cancel || (backgroundWorker != null && backgroundWorker.CancellationPending))
+                    return;
+
+                backgroundWorker?.ReportProgress(0, $"Found files: {files.Count}");
+                ScanFoldersForFilesAdvanced(d, files, ref basePath, ref cancel, backgroundWorker);
+            }
+            dirEnums = null;
+
+            IEnumerable<string> filesEnum;
+            try
+            {
+                filesEnum = Directory.EnumerateFiles(folder);
+            }
+            catch (Exception ex)
+            {
+                cancel = ShowMessage($"{ex.Message}\nThe directory will be skipped!", "Error", MessageBoxButtons.OKCancel) == DialogResult.Cancel;
+                return;
+            }
+
+            // Scan files
+            foreach (string f in filesEnum)
+            {
+                if (cancel || (backgroundWorker != null && backgroundWorker.CancellationPending))
+                    return;
+
+                backgroundWorker?.ReportProgress(0, $"Found files: {files.Count}");
+                try
+                {
+                    var inf = new FileInfo(f);
+                    files.Add(new PCKPacker.FileToPack(f, f.Replace(basePath + "\\", "res://").Replace("\\", "/"), inf.Length));
+                }
+                catch (Exception ex)
+                {
+                    cancel = ShowMessage($"{ ex.Message}\nThe file will be skipped!", "Error", MessageBoxButtons.OKCancel) == DialogResult.Cancel;
+                }
             }
         }
 
@@ -88,6 +151,10 @@ namespace GodotPCKExplorer
                 {
                     short_name = "..." + short_name.Substring(slash_pos);
                 }
+            }
+            else
+            {
+                short_name = name;
             }
             return short_name;
         }

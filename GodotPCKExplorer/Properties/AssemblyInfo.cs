@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Godot PCK Unpacker")]
-[assembly: AssemblyDescription("C# implementation of PCK file format with ability to export files from it and create new PCK packs.")]
+[assembly: AssemblyDescription("C# implementation of the Godot's PCK file format with the ability to export files from it and create new PCK packs, as well as giving several more useful features.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Dmitriy Salnikov")]
 [assembly: AssemblyProduct("GodotPCKExplorer")]

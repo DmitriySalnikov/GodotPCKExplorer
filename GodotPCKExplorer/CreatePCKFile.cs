@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -14,6 +15,9 @@ namespace GodotPCKExplorer
             InitializeComponent();
             Icon = Properties.Resources.icon;
 
+            tb_folder_path.Text = GUIConfig.Instance.FolderPath;
+            SetFolderPath(tb_folder_path.Text);
+
             var ver = GUIConfig.Instance.PackedVersion;
 
             cb_ver.SelectedItem = ver.PackVersion.ToString();
@@ -26,18 +30,33 @@ namespace GodotPCKExplorer
 
         public void SetFolderPath(string path)
         {
-            files = Utils.ScanFoldersForFiles(path).ToDictionary((f) => f.OriginalPath);
+            //files = Utils.ScanFoldersForFiles(path).ToDictionary((f) => f.OriginalPath);
+            var bp = new BackgroundProgress();
+            var bw = bp.bg_worker;
+            var filesScan = new List<PCKPacker.FileToPack>();
 
-            dataGridView1.Rows.Clear();
-            foreach (var f in files)
+            bw.DoWork += (s, e) =>
             {
-                var tmpRow = new DataGridViewRow();
-                tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Key });
-                tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = Utils.SizeSuffix(f.Value.Size), Tag = f.Value.Size });
+                if (!Directory.Exists(path))
+                    return;
 
-                dataGridView1.Rows.Add(tmpRow);
-            }
+                var folder = Path.GetFullPath(path);
+                var cancel = false;
 
+                bw.ReportProgress(0);
+                Utils.ScanFoldersForFilesAdvanced(folder, filesScan, ref folder, ref cancel, bw);
+                if (cancel || bw.CancellationPending)
+                    filesScan.Clear();
+            };
+
+            bp.UnknowPercents = true;
+            bw.RunWorkerAsync();
+            bp.ShowDialog();
+
+            GC.Collect();
+            files = filesScan.ToDictionary((f) => f.OriginalPath);
+
+            UpdateTableContent();
             CalculatePCKSize();
         }
 
@@ -51,6 +70,23 @@ namespace GodotPCKExplorer
             }
 
             l_total_size.Text = $"Total size: ~{Utils.SizeSuffix(size)}";
+        }
+
+        void UpdateTableContent()
+        {
+            dataGridView1.Rows.Clear();
+            foreach (var f in files)
+            {
+                if (string.IsNullOrEmpty(searchText.Text) ||
+                    (!string.IsNullOrEmpty(searchText.Text) && Utils.IsMatchWildCard(f.Key, searchText.Text)))
+                {
+                    var tmpRow = new DataGridViewRow();
+                    tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Key });
+                    tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = Utils.SizeSuffix(f.Value.Size), Tag = f.Value.Size });
+
+                    dataGridView1.Rows.Add(tmpRow);
+                }
+            }
         }
 
         private void dataGridView1_UserDeletedRow(object sender, DataGridViewRowEventArgs e)
@@ -82,6 +118,7 @@ namespace GodotPCKExplorer
 
                 GUIConfig.Instance.PackedVersion = ver;
                 GUIConfig.Instance.EmbedPCK = cb_embed.Checked;
+                GUIConfig.Instance.FolderPath = tb_folder_path.Text;
                 GUIConfig.Instance.Save();
             }
         }
@@ -96,6 +133,44 @@ namespace GodotPCKExplorer
 
             e.SortResult = (long)(dataGridView1.Rows[e.RowIndex1].Cells[1].Tag) > (long)(dataGridView1.Rows[e.RowIndex2].Cells[1].Tag) ? 1 : -1;
             e.Handled = true;
+        }
+
+        private void tb_folder_path_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                SetFolderPath(tb_folder_path.Text);
+                e.Handled = true;
+            }
+        }
+
+        private void btn_browse_Click(object sender, EventArgs e)
+        {
+            if (fbd_pack_folder.ShowDialog() == DialogResult.OK)
+            {
+                tb_folder_path.Text = Path.GetFullPath(fbd_pack_folder.SelectedPath);
+                SetFolderPath(tb_folder_path.Text);
+            }
+        }
+
+        private void btn_refresh_Click(object sender, EventArgs e)
+        {
+            SetFolderPath(tb_folder_path.Text);
+        }
+
+        private void textBoxWithPlaceholder1_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                UpdateTableContent();
+            }
+        }
+
+        private void btn_filter_Click(object sender, EventArgs e)
+        {
+            UpdateTableContent();
         }
     }
 }
