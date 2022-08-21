@@ -1,5 +1,5 @@
-Godot can embed '.pck' files inside '.exe' files.
-Therefore, GodotPCKExplorer can open both '.pck' and '.exe' files.
+Godot can embed '.pck' files into other files.
+Therefore, GodotPCKExplorer can open both '.pck' and files with embedded 'pck'.
 "" - Paths and other arguments must be without spaces or inside quotes.
 {} - Optional arguments
 

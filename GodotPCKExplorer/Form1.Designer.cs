@@ -55,7 +55,7 @@
             this.registerProgramToOpenPCKInExplorerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.unregisterProgramToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem_filterButton = new System.Windows.Forms.ToolStripMenuItem();
             this.searchText = new ToolStripTextBoxWithPlaceholder();
             this.tsmi_match_case_filter = new System.Windows.Forms.ToolStripMenuItem();
             this.ofd_open_pack = new System.Windows.Forms.OpenFileDialog();
@@ -96,7 +96,7 @@
             this.extractToolStripMenuItem,
             this.integrationToolStripMenuItem,
             this.aboutToolStripMenuItem,
-            this.toolStripMenuItem1,
+            this.toolStripMenuItem_filterButton,
             this.searchText,
             this.tsmi_match_case_filter});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
@@ -292,23 +292,21 @@
             this.aboutToolStripMenuItem.Text = "About";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
             // 
-            // toolStripMenuItem1
+            // toolStripMenuItem_filterButton
             // 
-            this.toolStripMenuItem1.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
-            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(45, 23);
-            this.toolStripMenuItem1.Text = "Filter";
-            this.toolStripMenuItem1.Click += new System.EventHandler(this.toolStripMenuItem1_Click);
+            this.toolStripMenuItem_filterButton.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
+            this.toolStripMenuItem_filterButton.Name = "toolStripMenuItem_filterButton";
+            this.toolStripMenuItem_filterButton.Size = new System.Drawing.Size(45, 23);
+            this.toolStripMenuItem_filterButton.Text = "Filter";
+            this.toolStripMenuItem_filterButton.Click += new System.EventHandler(this.toolStripMenuItem1_Click);
             // 
             // searchText
             // 
             this.searchText.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
             this.searchText.CueBanner = "Filter text (? and * allowed)";
-            this.searchText.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.searchText.Name = "searchText";
             this.searchText.Size = new System.Drawing.Size(200, 23);
             this.searchText.ToolTipText = resources.GetString("searchText.ToolTipText");
-            this.searchText.KeyDown += new System.Windows.Forms.KeyEventHandler(this.searchText_KeyDown);
             // 
             // tsmi_match_case_filter
             // 
@@ -551,7 +549,7 @@
         private System.Windows.Forms.ToolStripMenuItem splitExeToolStripMenuItem;
         private System.Windows.Forms.OpenFileDialog ofd_open_pack;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
-        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
+        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem_filterButton;
         private System.Windows.Forms.OpenFileDialog ofd_remove_pck_from_exe;
         private System.Windows.Forms.OpenFileDialog ofd_split_in_place;
         private System.Windows.Forms.ToolTip toolTip1;

@@ -110,12 +110,14 @@ namespace GodotPCKExplorer
 
         static public void ShowConsole()
         {
-            ShowWindow(GetConsoleWindow(), SW_SHOW);
+            if (!Utils.IsRunningOnMono())
+                ShowWindow(GetConsoleWindow(), SW_SHOW);
         }
 
         static public void HideConsole()
         {
-            ShowWindow(GetConsoleWindow(), SW_HIDE);
+            if (!Utils.IsRunningOnMono())
+                ShowWindow(GetConsoleWindow(), SW_HIDE);
         }
 
         static void HelpCommand()

@@ -36,6 +36,7 @@ public class ToolStripTextBoxWithPlaceholder : ToolStripTextBox
 
     private void UpdateCueBanner()
     {
-        SendMessage(this.Control.Handle, EM_SETCUEBANNER, 0, cueBanner);
+        if (!GodotPCKExplorer.Utils.IsRunningOnMono())
+            SendMessage(this.Control.Handle, EM_SETCUEBANNER, 0, cueBanner);
     }
 }

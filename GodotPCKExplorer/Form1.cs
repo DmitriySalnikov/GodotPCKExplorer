@@ -39,6 +39,41 @@ namespace GodotPCKExplorer
             copyOffsetToolStripMenuItem.Click += (o, e) => { if (cms_table_row.Tag != null) Clipboard.SetText(dataGridView1.Rows[(int)cms_table_row.Tag].Cells[1].Value.ToString()); };
             copySizeToolStripMenuItem.Click += (o, e) => { if (cms_table_row.Tag != null) Clipboard.SetText(dataGridView1.Rows[(int)cms_table_row.Tag].Cells[2].Value.ToString()); };
             copySizeInBytesToolStripMenuItem.Click += (o, e) => { if (cms_table_row.Tag != null) Clipboard.SetText(dataGridView1.Rows[(int)cms_table_row.Tag].Cells[2].Tag.ToString()); };
+
+            if (Utils.IsRunningOnMono())
+            {
+                // Recreate filter text for mono support
+                menuStrip1.Items.Remove(searchText);
+                searchText.Dispose();
+                searchText = null;
+
+                searchText = new ToolStripTextBoxWithPlaceholder();
+
+                searchText.Alignment = ToolStripItemAlignment.Right;
+                searchText.AutoSize = false;
+                searchText.Font = new Font("Segoe UI", 9F);
+                searchText.Name = "searchTextLinux";
+                searchText.Size = new Size(200, 23);
+                searchText.ToolTipText = "Filter text (? and * allowed)\n" + new System.ComponentModel.ComponentResourceManager(typeof(Form1)).GetString("searchText.ToolTipText");
+                menuStrip1.Items.Insert(menuStrip1.Items.IndexOf(tsmi_match_case_filter)+1, searchText);
+
+                searchText.Text = "Filter text (? and * allowed)";
+                // HACK to get some size of the text field.
+                // Without this, the Textbox's text field will have a width of 1 pixel.
+                var t = new Timer(components);
+                t.Interval = 1;
+                t.Tick += (s, e) =>
+                {
+                    t.Dispose();
+                    t = null;
+                    searchText.Text= "";
+                };
+                t.Start();
+
+                integrationToolStripMenuItem.Visible = false;
+            }
+
+            searchText.KeyDown += new KeyEventHandler(searchText_KeyDown);
         }
 
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)

@@ -243,7 +243,7 @@ namespace GodotPCKExplorer
                         if (pckReader.RipPCKFileFromExe(outFile))
                         {
                             if (show_message)
-                                Utils.CommandLog($"Extracting '.pck' from '.exe' completed.", "Progress", false);
+                                Utils.CommandLog($"Extracting the '.pck' file from another file is complete.", "Progress", false);
                         }
                         else
                         {
@@ -305,7 +305,7 @@ namespace GodotPCKExplorer
                         return false;
                     }
                     if (show_message)
-                        Utils.CommandLog($"Removing '.pck' from '.exe' completed. Original file renamed to \"{oldExeFile}\"", "Progress", false);
+                        Utils.CommandLog($"Removing '.pck' from another file is completed. The original file is renamed to \"{oldExeFile}\"", "Progress", false);
 
                     // remove backup
                     try
@@ -368,7 +368,7 @@ namespace GodotPCKExplorer
                     // merge
                     if (exeFile != null)
                         if (pckReader.MergePCKFileIntoExe(exeFile))
-                            Utils.CommandLog($"Merging '.pck' into '.exe' completed.", "Progress", false);
+                            Utils.CommandLog($"Merging '.pck' into another file is complete.", "Progress", false);
                         else
                         {
                             pckReader.Close();

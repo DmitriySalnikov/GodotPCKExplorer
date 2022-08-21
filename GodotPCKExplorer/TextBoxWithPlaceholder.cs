@@ -36,6 +36,7 @@ public class TextBoxWithPlaceholder : TextBox
 
     private void UpdateCueBanner()
     {
-        SendMessage(this.Handle, EM_SETCUEBANNER, 0, cueBanner);
+        if (!GodotPCKExplorer.Utils.IsRunningOnMono())
+            SendMessage(this.Handle, EM_SETCUEBANNER, 0, cueBanner);
     }
 }

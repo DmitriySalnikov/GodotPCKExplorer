@@ -135,11 +135,11 @@ namespace GodotPCKExplorer
                 try
                 {
                     var inf = new FileInfo(f);
-                    files.Add(new PCKPacker.FileToPack(f, f.Replace(basePath + "\\", "res://").Replace("\\", "/"), inf.Length));
+                    files.Add(new PCKPacker.FileToPack(f, f.Replace(basePath + Path.DirectorySeparatorChar, "res://").Replace("\\", "/"), inf.Length));
                 }
                 catch (Exception ex)
                 {
-                    cancel = ShowMessage($"{ ex.Message}\nThe file will be skipped!", "Error", MessageBoxButtons.OKCancel) == DialogResult.Cancel;
+                    cancel = ShowMessage($"{ex.Message}\nThe file will be skipped!", "Error", MessageBoxButtons.OKCancel) == DialogResult.Cancel;
                 }
             }
         }
@@ -163,6 +163,11 @@ namespace GodotPCKExplorer
                 short_name = name;
             }
             return short_name;
+        }
+
+        public static bool IsRunningOnMono()
+        {
+            return Type.GetType("Mono.Runtime") != null;
         }
     }
 }

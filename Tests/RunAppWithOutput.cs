@@ -22,15 +22,23 @@ namespace Tests
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
-
             };
             process.Start();
 
             timer = new System.Threading.Timer((s) =>
             {
                 if (!process.HasExited)
-                    process.Kill();
+                    Kill();
             }, null, closeDelay, -1);
+        }
+
+        void Kill()
+        {
+#if UNIX
+            var p = Process.Start("pkill", $"-9 -P {process.Id}");
+            p.WaitForExit();
+#endif
+            process.Kill();
         }
 
         public string GetConsoleText()
@@ -51,7 +59,7 @@ namespace Tests
         {
             timer.Dispose();
             if (!process.HasExited)
-                process.Kill();
+                Kill();
             process.Dispose();
         }
     }
