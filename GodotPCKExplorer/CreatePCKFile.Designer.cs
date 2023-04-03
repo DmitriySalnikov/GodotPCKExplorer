@@ -29,7 +29,7 @@
 		private void InitializeComponent()
 		{
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(CreatePCKFile));
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
             this.filePath = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -91,8 +91,8 @@
             // 
             // size
             // 
-            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
-            this.size.DefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
+            this.size.DefaultCellStyle = dataGridViewCellStyle2;
             this.size.FillWeight = 15F;
             this.size.HeaderText = "Size";
             this.size.Name = "size";
@@ -149,7 +149,7 @@
             this.nud_major.Size = new System.Drawing.Size(38, 20);
             this.nud_major.TabIndex = 8;
             this.nud_major.Value = new decimal(new int[] {
-            3,
+            4,
             0,
             0,
             0});
@@ -166,11 +166,6 @@
             this.nud_minor.Name = "nud_minor";
             this.nud_minor.Size = new System.Drawing.Size(38, 20);
             this.nud_minor.TabIndex = 9;
-            this.nud_minor.Value = new decimal(new int[] {
-            2,
-            0,
-            0,
-            0});
             // 
             // nud_revision
             // 
@@ -190,14 +185,14 @@
             this.cb_ver.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cb_ver.FormattingEnabled = true;
             this.cb_ver.Items.AddRange(new object[] {
-            "0",
-            "1"});
+            "1",
+            "2"});
             this.cb_ver.Location = new System.Drawing.Point(546, 424);
             this.cb_ver.MaxLength = 2;
             this.cb_ver.Name = "cb_ver";
             this.cb_ver.Size = new System.Drawing.Size(38, 21);
             this.cb_ver.TabIndex = 12;
-            this.cb_ver.Text = "1";
+            this.cb_ver.Text = "2";
             // 
             // label2
             // 

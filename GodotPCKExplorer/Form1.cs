@@ -166,6 +166,7 @@ namespace GodotPCKExplorer
             extractToolStripMenuItem.Enabled = false;
 
             pckReader.Close();
+
             Text = FormBaseTitle;
             TotalOpenedSize = 0;
 
@@ -205,7 +206,7 @@ namespace GodotPCKExplorer
                     size += (long)f.Cells[2].Tag;
                 }
 
-                tssl_version_and_stats.Text = $"Version: {pckReader.PCK_VersionPack}.{pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}" +
+                tssl_version_and_stats.Text = $"Version: {pckReader.PCK_VersionPack} {pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}" +
                     $" Files count: {pckReader.Files.Count}" +
                     $" Total size: {Utils.SizeSuffix(TotalOpenedSize)}";
 
@@ -282,7 +283,7 @@ namespace GodotPCKExplorer
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            pckReader.Close();
+            CloseFile();
         }
 
         private void registerProgramToOpenPCKInExplorerToolStripMenuItem_Click(object sender, EventArgs e)
@@ -347,7 +348,7 @@ namespace GodotPCKExplorer
                     }
                     else if (!pck.PCK_Embedded)
                     {
-                        Utils.ShowMessage("The selected file must contain an embedded '.pck' file", "Error");
+                        Utils.ShowMessage("The selected file must contain an embedded '.pck' file", "Error", MessageType.Error);
                         return;
                     }
 
@@ -369,7 +370,7 @@ namespace GodotPCKExplorer
                     }
                     else if (!pck.PCK_Embedded)
                     {
-                        Utils.ShowMessage("The selected file must contain an embedded '.pck' file", "Error");
+                        Utils.ShowMessage("The selected file must contain an embedded '.pck' file", "Error", MessageType.Error);
                         return;
                     }
 

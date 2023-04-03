@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.Win32;
+using System;
 using System.Windows.Forms;
-using Microsoft.Win32;
 using WinShellContextMenuRegistrator;
 
 namespace GodotPCKExplorer
@@ -35,9 +31,9 @@ namespace GodotPCKExplorer
                 ContextMenuRegistrator.RegisterContexMenuNameForApp(RegistryBranch.CURRENT_USER, PckApp, "Godot Engine PCK pack");
                 MessageBox.Show("Successful registered .pck files");
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                MessageBox.Show(e.Message, "Error");
+                MessageBox.Show(ex.Message, "Error");
             }
         }
 

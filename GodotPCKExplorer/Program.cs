@@ -1,19 +1,23 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace GodotPCKExplorer
 {
     public static class Program
     {
-        public const int PCK_MAGIC = 0x43504447;
+        public static string AppName = "GodotPCKExplorer";
+        public static string AppDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppName);
 
         public static bool CMDMode = false;
-        public static bool ForceConsoleMode = false;
-        static bool runWithArgs = false;
         public static Form1 mainForm = null;
+
+        static Logger logger;
+        static bool runWithArgs = false;
 
         // https://stackoverflow.com/a/3571628/8980874
         [DllImport("kernel32.dll")]
@@ -30,12 +34,19 @@ namespace GodotPCKExplorer
         [STAThread]
         static void Main(string[] args)
         {
+            if (!Directory.Exists(AppDataPath))
+                Directory.CreateDirectory(AppDataPath);
+
+            // InvariantCulture for console and UI
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
             ShowConsole();
             CMDMode = true;
-            Console.WriteLine("");
+            Log("");
 
             RunCommandInternal(args, false);
 
@@ -52,6 +63,31 @@ namespace GodotPCKExplorer
 
             //Environment.ExitCode = 0;
             return;
+        }
+
+        public static void Cleanup()
+        {
+            logger?.Dispose();
+            logger = null;
+
+            mainForm?.Dispose();
+            mainForm = null;
+        }
+
+        public static void Log(string txt)
+        {
+            if (logger == null)
+                logger = new Logger("log.txt");
+
+            logger.Write(txt);
+        }
+
+        public static void Log(Exception ex)
+        {
+            if (logger == null)
+                logger = new Logger("log.txt");
+
+            logger.Write(ex);
         }
 
         static public void RunCommand(string[] args)
@@ -71,9 +107,9 @@ namespace GodotPCKExplorer
                     if (Path.GetFullPath(args[0]) == Application.ExecutablePath)
                         args = args.Skip(1).ToArray();
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Utils.CommandLog(e.Message, "Error", false);
+                Utils.CommandLog(ex, "Error", false, MessageType.Error);
             }
 
             if (args.Length > 0)
@@ -139,9 +175,9 @@ namespace GodotPCKExplorer
                     path = Path.GetFullPath(args[1]);
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Utils.CommandLog(e.Message, "Error", false);
+                Utils.CommandLog(ex, "Error", false, MessageType.Error);
                 return;
             }
 
@@ -154,9 +190,9 @@ namespace GodotPCKExplorer
                         path = Path.GetFullPath(args[0]);
                     }
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    Utils.CommandLog(e.Message, "Error", false);
+                    Utils.CommandLog(ex, "Error", false, MessageType.Error);
                     return;
                 }
             }
@@ -183,13 +219,13 @@ namespace GodotPCKExplorer
                 }
                 else
                 {
-                    Utils.CommandLog("Path to file not specified! Or incorrect number of arguments specified!", "Error", true);
+                    Utils.CommandLog("Path to file not specified! Or incorrect number of arguments specified!", "Error", true, MessageType.Error);
                     return;
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Utils.CommandLog(e.Message, "Error", false);
+                Utils.CommandLog(ex, "Error", false, MessageType.Error);
                 return;
             }
 
@@ -211,13 +247,13 @@ namespace GodotPCKExplorer
                 }
                 else
                 {
-                    Utils.CommandLog($"Invalid number of arguments! Expected 3, but got {args.Length}", "Error", true);
+                    Utils.CommandLog($"Invalid number of arguments! Expected 3, but got {args.Length}", "Error", true, MessageType.Error);
                     return;
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Utils.CommandLog(e.Message, "Error", false);
+                Utils.CommandLog(ex, "Error", false, MessageType.Error);
                 return;
             }
 
@@ -247,13 +283,13 @@ namespace GodotPCKExplorer
                 }
                 else
                 {
-                    Utils.CommandLog($"Invalid number of arguments! Expected 4, but got {args.Length}", "Error", true);
+                    Utils.CommandLog($"Invalid number of arguments! Expected 4, but got {args.Length}", "Error", true, MessageType.Error);
                     return;
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Utils.CommandLog(e.Message, "Error", false);
+                Utils.CommandLog(ex, "Error", false, MessageType.Error);
                 return;
             }
 
@@ -276,19 +312,19 @@ namespace GodotPCKExplorer
 
                     if (args.Length > 4)
                     {
-                        Utils.CommandLog($"Invalid number of arguments! Expected 2 or 3, but got {args.Length}", "Error", true);
+                        Utils.CommandLog($"Invalid number of arguments! Expected 2 or 3, but got {args.Length}", "Error", true, MessageType.Error);
                         return;
                     }
                 }
                 else
                 {
-                    Utils.CommandLog($"Path to file or directory not specified!", "Error", true);
+                    Utils.CommandLog($"Path to file or directory not specified!", "Error", true, MessageType.Error);
                     return;
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Utils.CommandLog(e.Message, "Error", false);
+                Utils.CommandLog(ex, "Error", false, MessageType.Error);
                 return;
             }
 
@@ -310,13 +346,13 @@ namespace GodotPCKExplorer
                 }
                 else
                 {
-                    Utils.CommandLog($"Invalid number of arguments! Expected 3, but got {args.Length}", "Error", true);
+                    Utils.CommandLog($"Invalid number of arguments! Expected 3, but got {args.Length}", "Error", true, MessageType.Error);
                     return;
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Utils.CommandLog(e.Message, "Error", false);
+                Utils.CommandLog(ex, "Error", false, MessageType.Error);
                 return;
             }
 
@@ -340,19 +376,19 @@ namespace GodotPCKExplorer
 
                     if (args.Length > 3)
                     {
-                        Utils.CommandLog($"Invalid number of arguments! Expected 2 or 3, but got {args.Length}", "Error", true);
+                        Utils.CommandLog($"Invalid number of arguments! Expected 2 or 3, but got {args.Length}", "Error", true, MessageType.Error);
                         return;
                     }
                 }
                 else
                 {
-                    Utils.CommandLog($"Path to file not specified!", "Error", true);
+                    Utils.CommandLog($"Path to file not specified!", "Error", true, MessageType.Error);
                     return;
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Utils.CommandLog(e.Message, "Error", false);
+                Utils.CommandLog(ex, "Error", false, MessageType.Error);
                 return;
             }
 
@@ -374,13 +410,13 @@ namespace GodotPCKExplorer
                 }
                 else
                 {
-                    Utils.CommandLog($"Invalid number of arguments! Expected 3, but got {args.Length}", "Error", true);
+                    Utils.CommandLog($"Invalid number of arguments! Expected 3, but got {args.Length}", "Error", true, MessageType.Error);
                     return;
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Utils.CommandLog(e.Message, "Error", false);
+                Utils.CommandLog(ex, "Error", false, MessageType.Error);
                 return;
             }
 

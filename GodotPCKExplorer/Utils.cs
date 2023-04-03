@@ -1,14 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
-using System.ComponentModel;
 
 namespace GodotPCKExplorer
 {
+    public enum MessageType
+    {
+        None,
+        Info,
+        Error,
+        Warning
+    }
+
     public class Utils
     {
+        public const int PCK_MAGIC = 0x43504447;
+        public const int PCK_DIR_ENCRYPTED = 1 << 0;
+        public const int PCK_FILE_ENCRYPTED = 1 << 0;
+
         // Source: https://stackoverflow.com/a/14488941
         static readonly string[] SizeSuffixes = { "bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" };
 
@@ -38,8 +51,17 @@ namespace GodotPCKExplorer
                 SizeSuffixes[mag]);
         }
 
-        // https://stackoverflow.com/a/30300521/8980874
+        // https://stackoverflow.com/a/321404/8980874
+        public static byte[] StringToByteArray(string hex)
+        {
+            hex.Replace(" ", "");
+            return Enumerable.Range(0, hex.Length)
+                             .Where(x => x % 2 == 0)
+                             .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
+                             .ToArray();
+        }
 
+        // https://stackoverflow.com/a/30300521/8980874
         public static string WildCardToRegular(string value)
         {
             if (!(value.Contains("*") || value.Contains("?")))
@@ -56,21 +78,56 @@ namespace GodotPCKExplorer
                 return Regex.IsMatch(input.ToLower(), WildCardToRegular(wildcard.ToLower()));
         }
 
-        public static DialogResult ShowMessage(string text, string title, MessageBoxButtons boxButtons = MessageBoxButtons.OK)
+        public static DialogResult ShowMessage(string text, string title, MessageType messageType = MessageType.None, MessageBoxButtons boxButtons = MessageBoxButtons.OK)
         {
-            if (Program.CMDMode || Program.ForceConsoleMode)
-                Console.WriteLine($"{title}: {text}");
-            else
-                return MessageBox.Show(text, title, boxButtons);
+            Program.Log($"[{messageType}] \"{title}\": {text}");
+
+            if (!Program.CMDMode)
+            {
+                MessageBoxIcon icon = MessageBoxIcon.None;
+                switch (messageType)
+                {
+                    case MessageType.Info:
+                        icon = MessageBoxIcon.Information;
+                        break;
+                    case MessageType.Error:
+                        icon = MessageBoxIcon.Error;
+                        break;
+                    case MessageType.Warning:
+                        icon = MessageBoxIcon.Warning;
+                        break;
+                }
+
+#if DEV_ENABLED
+                System.Diagnostics.Debugger.Break();
+#endif
+                return MessageBox.Show(text, title, boxButtons, icon);
+            }
+
+#if DEV_ENABLED
+            System.Diagnostics.Debugger.Break();
+#endif
             return DialogResult.OK;
         }
 
-        public static void CommandLog(string text, string title, bool showHelp)
+        public static DialogResult ShowMessage(Exception ex, string title, MessageType messageType = MessageType.None, MessageBoxButtons boxButtons = MessageBoxButtons.OK)
+        {
+            Program.Log(ex);
+            return ShowMessage(ex.Message, title, messageType, boxButtons);
+        }
+
+        public static void CommandLog(string text, string title, bool showHelp, MessageType messageType = MessageType.None)
         {
             if (showHelp)
-                ShowMessage(text + "\n\n" + Properties.Resources.HelpText, title);
+                ShowMessage(text + "\n\n" + Properties.Resources.HelpText, title, messageType);
             else
-                ShowMessage(text, title);
+                ShowMessage(text, title, messageType);
+        }
+
+        public static void CommandLog(Exception ex, string title, bool showHelp, MessageType messageType = MessageType.None)
+        {
+            Program.Log(ex);
+            CommandLog(ex.Message, title, showHelp, messageType);
         }
 
         static public List<PCKPacker.FileToPack> ScanFoldersForFiles(string folder)
@@ -99,7 +156,7 @@ namespace GodotPCKExplorer
             }
             catch (Exception ex)
             {
-                cancel = ShowMessage($"{ex.Message}\nThe directory will be skipped!", "Error", MessageBoxButtons.OKCancel) == DialogResult.Cancel;
+                cancel = ShowMessage($"{ex.Message}\nThe directory will be skipped!", "Warning", MessageType.Warning, MessageBoxButtons.OKCancel) == DialogResult.Cancel;
                 return;
             }
 
@@ -121,7 +178,7 @@ namespace GodotPCKExplorer
             }
             catch (Exception ex)
             {
-                cancel = ShowMessage($"{ex.Message}\nThe directory will be skipped!", "Error", MessageBoxButtons.OKCancel) == DialogResult.Cancel;
+                cancel = ShowMessage($"{ex.Message}\nThe directory will be skipped!", "Warning", MessageType.Warning, MessageBoxButtons.OKCancel) == DialogResult.Cancel;
                 return;
             }
 
@@ -139,7 +196,7 @@ namespace GodotPCKExplorer
                 }
                 catch (Exception ex)
                 {
-                    cancel = ShowMessage($"{ex.Message}\nThe file will be skipped!", "Error", MessageBoxButtons.OKCancel) == DialogResult.Cancel;
+                    cancel = ShowMessage($"{ex.Message}\nThe file will be skipped!", "Warning", MessageType.Warning, MessageBoxButtons.OKCancel) == DialogResult.Cancel;
                 }
             }
         }

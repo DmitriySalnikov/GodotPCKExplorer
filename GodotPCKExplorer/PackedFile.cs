@@ -11,8 +11,9 @@ namespace GodotPCKExplorer
         public long OffsetPosition;
         public long Size;
         public byte[] MD5;
+        public int flags;
 
-        public PackedFile(BinaryReader reader, string path, long offset, long offsetPosition, long size, byte[] _MD5)
+        public PackedFile(BinaryReader reader, string path, long offset, long offsetPosition, long size, byte[] _MD5, int flags)
         {
             this.reader = reader;
             FilePath = path;
@@ -20,10 +21,16 @@ namespace GodotPCKExplorer
             OffsetPosition = offsetPosition;
             Size = size;
             MD5 = _MD5;
+            this.flags = flags;
         }
 
         public delegate void VoidInt(int progress);
         public event VoidInt OnProgress;
+
+        public bool IsEncrypted
+        {
+            get => (flags & Utils.PCK_FILE_ENCRYPTED) != 0;
+        }
 
         public bool ExtractFile(string basePath, bool overwriteExisting = true)
         {
@@ -44,9 +51,9 @@ namespace GodotPCKExplorer
                 Directory.CreateDirectory(dir);
                 file = new BinaryWriter(File.OpenWrite(path));
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Utils.ShowMessage(e.Message, "Error");
+                Utils.ShowMessage(ex, "Error", MessageType.Error);
                 return false;
             }
 
@@ -69,9 +76,9 @@ namespace GodotPCKExplorer
                     }
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Utils.ShowMessage(e.Message, "Error");
+                Utils.ShowMessage(ex, "Error", MessageType.Error);
                 file.Close();
                 try
                 {

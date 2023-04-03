@@ -35,9 +35,19 @@ namespace GodotPCKExplorer
             }
             else
             {
-                Utils.CommandLog($"Specified file does not exists! '{path}'", "Error", false);
+                Utils.CommandLog($"Specified file does not exists! '{path}'", "Error", false, MessageType.Error);
             }
             return false;
+        }
+
+        public static void ClosePCK()
+        {
+            Program.mainForm?.CloseFile();
+        }
+
+        public static void CleanupApp()
+        {
+            Program.Cleanup();
         }
 
         public static bool InfoPCKRun(string filePath)
@@ -47,7 +57,7 @@ namespace GodotPCKExplorer
                 using (var pckReader = new PCKReader())
                 {
                     if (pckReader.OpenFile(filePath))
-                        Utils.CommandLog($"\"{pckReader.PackPath}\"\nPack version {pckReader.PCK_VersionPack}. Godot version {pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}\nVersion string for this program: {pckReader.PCK_VersionPack}.{pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}", "Pack Info", false);
+                        Utils.CommandLog($"\"{pckReader.PackPath}\"\nPack version {pckReader.PCK_VersionPack}. Godot version {pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}\nVersion string for this program: {pckReader.PCK_VersionPack}.{pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}", "Pack Info", false, MessageType.Info);
                     else
                         return false;
                 }
@@ -55,7 +65,7 @@ namespace GodotPCKExplorer
             }
             else
             {
-                Utils.CommandLog($"Specified file does not exists! '{filePath}'", "Error", false);
+                Utils.CommandLog($"Specified file does not exists! '{filePath}'", "Error", false, MessageType.Error);
             }
             return false;
         }
@@ -67,7 +77,7 @@ namespace GodotPCKExplorer
                 var newVersion = new PCKVersion(strVersion);
                 if (!newVersion.IsValid)
                 {
-                    Utils.CommandLog("The version is specified incorrectly.", "Error", true);
+                    Utils.CommandLog("The version is specified incorrectly.", "Error", true, MessageType.Error);
                     return false;
                 }
 
@@ -87,9 +97,9 @@ namespace GodotPCKExplorer
                         using (var br = new BinaryReader(bw.BaseStream))
                         {
                             bw.BaseStream.Seek(pckStartPosition, SeekOrigin.Begin);
-                            if (br.ReadInt32() != Program.PCK_MAGIC)
+                            if (br.ReadInt32() != Utils.PCK_MAGIC)
                             {
-                                Utils.ShowMessage("Not Godot PCK file!", "Error");
+                                Utils.ShowMessage("Not a Godot PCK file!", "Error", MessageType.Error);
                                 return false;
                             }
 
@@ -99,18 +109,18 @@ namespace GodotPCKExplorer
                             bw.Write((int)newVersion.Revision);
                         }
                     }
-                    Utils.ShowMessage("Version changed", "Progress");
+                    Utils.ShowMessage("Version changed", "Progress", MessageType.Info);
                 }
                 catch (Exception ex)
                 {
-                    Utils.CommandLog(ex.Message, "Error", false);
+                    Utils.CommandLog(ex, "Error", false, MessageType.Error);
                     return false;
                 }
                 return true;
             }
             else
             {
-                Utils.CommandLog($"Specified file does not exists! '{filePath}'", "Error", false);
+                Utils.CommandLog($"Specified file does not exists! '{filePath}'", "Error", false, MessageType.Error);
             }
             return false;
         }
@@ -136,7 +146,7 @@ namespace GodotPCKExplorer
             }
             else
             {
-                Utils.CommandLog($"Specified file does not exists! '{filePath}'", "Error", false);
+                Utils.CommandLog($"Specified file does not exists! '{filePath}'", "Error", false, MessageType.Error);
             }
             return false;
         }
@@ -149,7 +159,7 @@ namespace GodotPCKExplorer
             }
             else
             {
-                Utils.CommandLog($"Specified directory does not exists! '{dirPath}'", "Error", false);
+                Utils.CommandLog($"Specified directory does not exists! '{dirPath}'", "Error", false, MessageType.Error);
             }
             return false;
         }
@@ -158,7 +168,7 @@ namespace GodotPCKExplorer
         {
             if (!files.Any())
             {
-                Utils.CommandLog("No files to pack", "Error", false);
+                Utils.CommandLog("No files to pack", "Error", false, MessageType.Error);
                 return false;
             }
 
@@ -167,7 +177,7 @@ namespace GodotPCKExplorer
 
             if (!ver.IsValid)
             {
-                Utils.CommandLog("The version is specified incorrectly.", "Error", true);
+                Utils.CommandLog("The version is specified incorrectly.", "Error", true, MessageType.Error);
                 return false;
             }
 
@@ -181,9 +191,10 @@ namespace GodotPCKExplorer
                         File.Delete(oldPCKFile);
                     File.Copy(filePath, oldPCKFile);
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    Utils.CommandLog("Unable to create a backup copy of the file:\n" + e.Message, "Error", false);
+                    Utils.CommandLog("Unable to create a backup copy of the file:\n" + ex.Message, "Error", false, MessageType.Error);
+                    Program.Log(ex.StackTrace);
                     return false;
                 }
             }
@@ -203,7 +214,8 @@ namespace GodotPCKExplorer
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Error: Can't restore backup file.\n" + ex.Message);
+                    Program.Log("[Error] Can't restore backup file.\n" + ex.Message);
+                    Program.Log(ex.StackTrace);
                 }
             }
             return false;
@@ -221,20 +233,20 @@ namespace GodotPCKExplorer
                     res = pckReader.OpenFile(exeFile, false);
                     if (!res)
                     {
-                        Utils.CommandLog($"The file does not contain '.pck' inside", "Error", false);
+                        Utils.CommandLog($"The file does not contain '.pck' inside", "Error", false, MessageType.Error);
                         return false;
                     }
                     to_write = pckReader.PCK_StartPosition;
 
                     if (!pckReader.PCK_Embedded)
                     {
-                        Utils.CommandLog($"The selected file is a regular '.pck'.\nOperation is not required..", "Error", false);
+                        Utils.CommandLog($"The selected file is a regular '.pck'.\nOperation is not required..", "Error", false, MessageType.Error);
                         return false;
                     }
 
                     if (outFile == exeFile)
                     {
-                        Utils.CommandLog($"The path to the new file cannot be equal to the original file", "Error", false);
+                        Utils.CommandLog($"The path to the new file cannot be equal to the original file", "Error", false, MessageType.Error);
                         return false;
                     }
 
@@ -243,7 +255,7 @@ namespace GodotPCKExplorer
                         if (pckReader.RipPCKFileFromExe(outFile))
                         {
                             if (show_message)
-                                Utils.CommandLog($"Extracting the '.pck' file from another file is complete.", "Progress", false);
+                                Utils.CommandLog($"Extracting the '.pck' file from another file is complete.", "Progress", false, MessageType.Info);
                         }
                         else
                         {
@@ -261,9 +273,10 @@ namespace GodotPCKExplorer
                             File.Delete(oldExeFile);
                         File.Move(exeFile, oldExeFile);
                     }
-                    catch (Exception e)
+                    catch (Exception ex)
                     {
-                        Utils.CommandLog("Unable to create a backup copy of the file:\n" + e.Message, "Error", false);
+                        Utils.CommandLog("Unable to create a backup copy of the file:\n" + ex.Message, "Error", false, MessageType.Error);
+                        Program.Log(ex.StackTrace);
                         return false;
                     }
 
@@ -284,7 +297,7 @@ namespace GodotPCKExplorer
                         exeOld.Close();
                         exeNew.Close();
                     }
-                    catch (Exception e)
+                    catch (Exception ex)
                     {
                         exeOld?.Close();
                         exeNew?.Close();
@@ -296,16 +309,17 @@ namespace GodotPCKExplorer
                                 File.Delete(exeFile);
                             File.Move(oldExeFile, exeFile);
                         }
-                        catch (Exception ex)
+                        catch (Exception e)
                         {
-                            Console.WriteLine("Error: Can't restore backup file.\n" + ex.Message);
+                            Program.Log("[Error] Can't restore backup file.\n" + e.Message);
+                            Program.Log(e.StackTrace);
                         }
 
-                        Utils.CommandLog(e.Message, "Error", false);
+                        Utils.CommandLog(ex, "Error", false, MessageType.Error);
                         return false;
                     }
                     if (show_message)
-                        Utils.CommandLog($"Removing '.pck' from another file is completed. The original file is renamed to \"{oldExeFile}\"", "Progress", false);
+                        Utils.CommandLog($"Removing '.pck' from another file is completed. The original file is renamed to \"{oldExeFile}\"", "Progress", false, MessageType.Info);
 
                     // remove backup
                     try
@@ -313,9 +327,9 @@ namespace GodotPCKExplorer
                         if (removeBackup)
                             File.Delete(oldExeFile);
                     }
-                    catch (Exception e)
+                    catch (Exception ex)
                     {
-                        Utils.CommandLog(e.Message, "Error", false);
+                        Utils.CommandLog(ex, "Error", false, MessageType.Error);
                     }
                 }
 
@@ -323,7 +337,7 @@ namespace GodotPCKExplorer
             }
             else
             {
-                Utils.CommandLog($"Specified file does not exists! '{exeFile}'", "Error", false);
+                Utils.CommandLog($"Specified file does not exists! '{exeFile}'", "Error", false, MessageType.Error);
             }
             return false;
         }
@@ -339,14 +353,14 @@ namespace GodotPCKExplorer
                     if (!res)
                     {
                         pckReader.Close();
-                        Utils.CommandLog($"Unable to open PCK file", "Error", false);
+                        Utils.CommandLog($"Unable to open PCK file", "Error", false, MessageType.Error);
                         return false;
                     }
 
                     if (exeFile == pckFile)
                     {
                         pckReader.Close();
-                        Utils.CommandLog($"The path to the new file cannot be equal to the original file", "Error", false);
+                        Utils.CommandLog($"The path to the new file cannot be equal to the original file", "Error", false, MessageType.Error);
                         return false;
                     }
 
@@ -358,17 +372,18 @@ namespace GodotPCKExplorer
                             File.Delete(oldExeFile);
                         File.Copy(exeFile, oldExeFile);
                     }
-                    catch (Exception e)
+                    catch (Exception ex)
                     {
                         pckReader.Close();
-                        Utils.CommandLog("Unable to create a backup copy of the file:\n" + e.Message, "Error", false);
+                        Utils.CommandLog("Unable to create a backup copy of the file:\n" + ex.Message, "Error", false, MessageType.Error);
+                        Program.Log(ex.StackTrace);
                         return false;
                     }
 
                     // merge
                     if (exeFile != null)
                         if (pckReader.MergePCKFileIntoExe(exeFile))
-                            Utils.CommandLog($"Merging '.pck' into another file is complete.", "Progress", false);
+                            Utils.CommandLog($"Merging '.pck' into another file is complete.", "Progress", false, MessageType.Info);
                         else
                         {
                             pckReader.Close();
@@ -380,9 +395,10 @@ namespace GodotPCKExplorer
                                     File.Delete(exeFile);
                                 File.Move(oldExeFile, exeFile);
                             }
-                            catch (Exception e)
+                            catch (Exception ex)
                             {
-                                Console.WriteLine("Error: Can't restore backup file.\n" + e.Message);
+                                Program.Log("[Error] Can't restore backup file.\n" + ex.Message);
+                                Program.Log(ex.StackTrace);
                             }
 
                             return false;
@@ -394,9 +410,9 @@ namespace GodotPCKExplorer
                         if (removeBackup)
                             File.Delete(oldExeFile);
                     }
-                    catch (Exception e)
+                    catch (Exception ex)
                     {
-                        Utils.CommandLog(e.Message, "Error", false);
+                        Utils.CommandLog(ex, "Error", false, MessageType.Error);
                     }
 
                     return res;
@@ -404,7 +420,7 @@ namespace GodotPCKExplorer
             }
             else
             {
-                Utils.CommandLog($"Specified file does not exists! '{pckFile}'", "Error", false);
+                Utils.CommandLog($"Specified file does not exists! '{pckFile}'", "Error", false, MessageType.Error);
             }
             return false;
         }
@@ -420,7 +436,7 @@ namespace GodotPCKExplorer
 
                     if (name == exeFile)
                     {
-                        Utils.CommandLog($"The new pair cannot be named the same as the original file: {newExeName}", "Error", false);
+                        Utils.CommandLog($"The new pair cannot be named the same as the original file: {newExeName}", "Error", false, MessageType.Error);
                         return false;
                     }
 
@@ -432,12 +448,12 @@ namespace GodotPCKExplorer
                         if (File.Exists(name))
                             File.Delete(name);
 
-                        Console.WriteLine($"Progress: Copying the original file to {name}");
+                        Program.Log($"[Info] Progress: Copying the original file to {name}");
                         File.Copy(exeFile, name);
                     }
-                    catch (Exception e)
+                    catch (Exception ex)
                     {
-                        Utils.CommandLog(e.Message, "Error", false);
+                        Utils.CommandLog(ex, "Error", false, MessageType.Error);
                         return false;
                     }
 
@@ -448,7 +464,7 @@ namespace GodotPCKExplorer
                 {
                     if (RipPCKRun(name, null, removeBackup, false))
                     {
-                        Utils.CommandLog($"Split finished. Original file: \"{exeFile}\".\nNew files: \"{name}\" and \"{pckName}\"", "Progress", false);
+                        Utils.CommandLog($"Split finished. Original file: \"{exeFile}\".\nNew files: \"{name}\" and \"{pckName}\"", "Progress", false, MessageType.Info);
                         return true;
                     }
                 }
@@ -456,15 +472,15 @@ namespace GodotPCKExplorer
                 // remove new broken files
                 if (newExeName != null)
                 {
-                    Console.WriteLine($"Attempt to delete a new pair of broken files: \"{name}\" \"{pckName}\"");
+                    Program.Log($"Attempt to delete a new pair of broken files: \"{name}\" \"{pckName}\"");
                     try
                     {
                         if (File.Exists(name))
                             File.Delete(name);
                     }
-                    catch (Exception e)
+                    catch (Exception ex)
                     {
-                        Utils.CommandLog(e.Message, "Error", false);
+                        Utils.CommandLog(ex, "Error", false, MessageType.Error);
                     }
 
                     try
@@ -473,9 +489,9 @@ namespace GodotPCKExplorer
                             File.Delete(pckName);
 
                     }
-                    catch (Exception e)
+                    catch (Exception ex)
                     {
-                        Utils.CommandLog(e.Message, "Error", false);
+                        Utils.CommandLog(ex, "Error", false, MessageType.Error);
                     }
                 }
 
@@ -483,7 +499,7 @@ namespace GodotPCKExplorer
             }
             else
             {
-                Utils.CommandLog($"Specified file does not exists! '{exeFile}'", "Error", false);
+                Utils.CommandLog($"Specified file does not exists! '{exeFile}'", "Error", false, MessageType.Error);
             }
             return false;
         }

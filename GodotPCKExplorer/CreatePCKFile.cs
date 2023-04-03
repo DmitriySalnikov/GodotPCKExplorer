@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace GodotPCKExplorer
@@ -39,25 +40,35 @@ namespace GodotPCKExplorer
         {
             var bp = new BackgroundProgress();
             var bw = bp.bg_worker;
+            var are = new AutoResetEvent(false);
+
             var filesScan = new List<PCKPacker.FileToPack>();
 
             bw.DoWork += (s, e) =>
             {
-                if (!Directory.Exists(path))
-                    return;
+                try
+                {
+                    if (!Directory.Exists(path))
+                        return;
 
-                var folder = Path.GetFullPath(path);
-                var cancel = false;
+                    var folder = Path.GetFullPath(path);
+                    var cancel = false;
 
-                bw.ReportProgress(0);
-                Utils.ScanFoldersForFilesAdvanced(folder, filesScan, ref folder, ref cancel, bw);
-                if (cancel || bw.CancellationPending)
-                    filesScan.Clear();
+                    bw.ReportProgress(0);
+                    Utils.ScanFoldersForFilesAdvanced(folder, filesScan, ref folder, ref cancel, bw);
+                    if (cancel || bw.CancellationPending)
+                        filesScan.Clear();
+                }
+                finally
+                {
+                    are.Set();
+                }
             };
 
             bp.UnknowPercents = true;
             bw.RunWorkerAsync();
             bp.ShowDialog();
+            are.WaitOne();
 
             GC.Collect();
             files = filesScan.ToDictionary((f) => f.OriginalPath);

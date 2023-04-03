@@ -41,7 +41,7 @@ namespace GodotPCKExplorer
             }
             else
             {
-                Utils.CommandLog($"Specified file does not exists! '{filePath}'", "Error", false);
+                Utils.CommandLog($"Specified file does not exists! '{filePath}'", "Error", false, MessageType.Error);
                 return;
             }
         }

@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Windows.Forms;
 
 namespace GodotPCKExplorer
 {
@@ -10,9 +9,9 @@ namespace GodotPCKExplorer
     {
         [JsonIgnore]
         static public GUIConfig Instance { get; private set; } = null;
-        
+
         [JsonIgnore]
-        static string SaveFile = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "settings.json");
+        static string SaveFile = Path.Combine(Program.AppDataPath, "settings.json");
 
         #region Packing
 
@@ -52,7 +51,7 @@ namespace GodotPCKExplorer
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Program.Log(ex);
             }
         }
 
@@ -68,7 +67,7 @@ namespace GodotPCKExplorer
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Program.Log(ex);
             }
         }
 

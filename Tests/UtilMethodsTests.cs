@@ -86,48 +86,49 @@ namespace Tests
             return name + ExecutableExtension;
         }
 
+        PCKVersion GetPCKVersion(string pack)
+        {
+            Console.WriteLine($"Getting version");
+            string console_output = "";
+            PCKVersion ver;
+            using (var output = new ConsoleOutputRedirect())
+            {
+                Assert.IsTrue(PCKActions.InfoPCKRun(pack));
+                console_output = output.GetOuput();
+                var lines = console_output.Replace("\r", "").Split('\n');
+                var parts = lines[lines.Length - 2].Split(':');
+                ver = new PCKVersion(parts[parts.Length - 1]);
+            }
+            Console.WriteLine(console_output);
+            Console.WriteLine($"Got version: {ver}");
+            return ver;
+        }
+
         [SetUp]
         public void GodotPCKInit()
         {
             Program.CMDMode = true;
-            Program.ForceConsoleMode = true;
 
             if (!Directory.Exists(binaries_base))
                 Directory.CreateDirectory(binaries_base);
 
-            using (var z = ZipFile.Read(ZipFilePath))
+            ClearBinaries();
+
+            using (var zip = ZipFile.Read(ZipFilePath))
             {
-                OriginalTestFiles.Clear();
-                foreach (var e in z.Entries)
-                    OriginalTestFiles.Add(Path.Combine(binaries_base, e.FileName));
-            }
-
-            var not_all_files = false;
-            var files = Directory.GetFiles(binaries_base, "*", SearchOption.AllDirectories);
-            foreach (var f in OriginalTestFiles)
-                if (!files.Contains(f))
+                foreach (var e in zip)
                 {
-                    not_all_files = true;
-                    break;
+                    if (e.FileName.StartsWith(PlatformFolder))
+                        e.Extract(binaries_base, ExtractExistingFileAction.DoNotOverwrite);
                 }
-
-            if (!Directory.Exists(binaries_base) || files.Length == 0 || not_all_files)
-            {
-                using (var zip = ZipFile.Read(ZipFilePath))
-                {
-                    foreach (var e in zip)
-                    {
-                        if (e.FileName.StartsWith(PlatformFolder))
-                            e.Extract(binaries_base, ExtractExistingFileAction.DoNotOverwrite);
-                    }
-                }
-
             }
         }
 
         [TearDown]
         public void ClearBinaries()
         {
+            PCKActions.CleanupApp();
+
             foreach (var d in Directory.GetDirectories(binaries_base))
                 Directory.Delete(d, true);
             foreach (var f in Directory.GetFiles(binaries_base, "*", SearchOption.AllDirectories))
@@ -249,23 +250,8 @@ namespace Tests
                 Assert.IsTrue(File.Exists(files[1]));
             }
 
-
-            string ver = "";
-            {
-                Title("Get original version");
-                string console_output = "";
-                using (var output = new ConsoleOutputRedirect())
-                {
-                    Assert.IsTrue(PCKActions.InfoPCKRun(testPCK));
-                    console_output = output.GetOuput();
-                    var lines = console_output.Replace("\r", "").Split('\n');
-                    ver = lines[lines.Length - 2].Split(':')[1];
-                }
-                Console.WriteLine(console_output);
-                Console.WriteLine($"Found version: {ver}");
-            }
-
-
+            string ver = GetPCKVersion(testPCK).ToString();
+            
             {
                 Title("Pack new PCK");
 
@@ -550,23 +536,7 @@ namespace Tests
             File.Copy(Path.Combine(binaries, "Test.pck"), pck);
             File.Copy(Path.Combine(binaries, Exe("TestEmbedded")), exeEmbedded);
 
-            Func<string, PCKVersion> getVersion = (s) =>
-            {
-                Console.WriteLine($"Getting version");
-                string console_output = "";
-                PCKVersion ver;
-                using (var output = new ConsoleOutputRedirect())
-                {
-                    Assert.IsTrue(PCKActions.InfoPCKRun(s));
-                    console_output = output.GetOuput();
-                    var lines = console_output.Replace("\r", "").Split('\n');
-                    ver = new PCKVersion(lines[lines.Length - 2].Split(':')[1]);
-                }
-                Console.WriteLine($"Got version: {ver}");
-                return ver;
-            };
-
-            var origVersion = getVersion(pck);
+            var origVersion = GetPCKVersion(pck);
             var newVersion = origVersion;
             newVersion.Major += 1;
             newVersion.Minor += 1;
@@ -575,13 +545,13 @@ namespace Tests
             Title("Regular pck test runs");
 
             Assert.IsTrue(PCKActions.ChangePCKVersion(pck, newVersion.ToString()));
-            Assert.AreEqual(newVersion, getVersion(pck));
+            Assert.AreEqual(newVersion, GetPCKVersion(pck));
 
             using (var r = new RunAppWithOutput(exe, "", 1000))
                 Assert.IsTrue(r.GetConsoleText().Contains(pck_error));
 
             Assert.IsTrue(PCKActions.ChangePCKVersion(pck, origVersion.ToString()));
-            Assert.AreEqual(origVersion, getVersion(pck));
+            Assert.AreEqual(origVersion, GetPCKVersion(pck));
 
             using (var r = new RunAppWithOutput(exe, "", 1000))
                 Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
@@ -589,13 +559,13 @@ namespace Tests
             Title("Embedded test runs");
 
             Assert.IsTrue(PCKActions.ChangePCKVersion(exeEmbedded, newVersion.ToString()));
-            Assert.AreEqual(newVersion, getVersion(exeEmbedded));
+            Assert.AreEqual(newVersion, GetPCKVersion(exeEmbedded));
 
             using (var r = new RunAppWithOutput(exeEmbedded, "", 1000))
                 Assert.IsTrue(r.GetConsoleText().Contains(pck_error));
 
             Assert.IsTrue(PCKActions.ChangePCKVersion(exeEmbedded, origVersion.ToString()));
-            Assert.AreEqual(origVersion, getVersion(exeEmbedded));
+            Assert.AreEqual(origVersion, GetPCKVersion(exeEmbedded));
 
             using (var r = new RunAppWithOutput(exeEmbedded, "", 1000))
                 Assert.IsFalse(r.GetConsoleText().Contains(pck_error));

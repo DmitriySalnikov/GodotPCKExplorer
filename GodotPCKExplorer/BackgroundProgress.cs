@@ -28,7 +28,7 @@ namespace GodotPCKExplorer
                     prevUpdateTime = DateTime.Now;
                     if (Program.CMDMode)
                     {
-                        Console.WriteLine($"{prct}%");
+                        Program.Log($"{prct}%");
                         prevPercent = prct;
                     }
 
