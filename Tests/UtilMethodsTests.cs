@@ -13,22 +13,18 @@ using System.Collections;
 namespace Tests
 {
     [TestFixture]
-#if !UNIX
     [Apartment(System.Threading.ApartmentState.STA)]
-#else
-    [RequiresSTA]
-#endif
     [TestFixtureSource(typeof(MyFixtureData), nameof(MyFixtureData.FixtureParams))]
     public class UtilMethodsTests
     {
-        enum OS
+        internal enum OS
         {
             Windows,
             Linux,
             MacOS,
         }
 
-        static OS Platform
+        internal static OS Platform
         {
             get
             {
@@ -47,6 +43,20 @@ namespace Tests
         static string ExecutableExtension
         {
             get => Platform == OS.Windows ? ".exe" : "";
+        }
+
+        internal static int ExecutableRunDelay
+        {
+            get
+            {
+                switch (Platform)
+                {
+                    case OS.Windows:
+                        return 1000;
+                    default:
+                        return 1500;
+                }
+            }
         }
 
         static int GodotVersion = 0;
@@ -328,18 +338,18 @@ namespace Tests
 
             File.Copy(testEXE, out_exe);
 
-            using (var r = new RunAppWithOutput(out_exe, "", 1000))
+            using (var r = new RunAppWithOutput(out_exe, ""))
                 Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
 
             // test embed pack
-            using (var r = new RunAppWithOutput(testEmbedPack, "", 1000))
+            using (var r = new RunAppWithOutput(testEmbedPack, ""))
                 Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
 
             Title("Run without PCK");
             if (File.Exists(newPckPath))
                 File.Delete(newPckPath);
 
-            using (var r = new RunAppWithOutput(out_exe, "", 1000))
+            using (var r = new RunAppWithOutput(out_exe, ""))
                 Assert.IsTrue(r.GetConsoleText().Contains(pck_error));
         }
 
@@ -402,17 +412,17 @@ namespace Tests
             Assert.IsTrue(PCKActions.MergePCKRun(testPCK, newEXE1Byte, true));
 
             Title("Bad run");
-            using (var r = new RunAppWithOutput(newEXE, "", 1000))
+            using (var r = new RunAppWithOutput(newEXE, ""))
                 Assert.IsTrue(r.GetConsoleText().Contains(pck_error));
 
             Title("Good runs");
             File.Delete(newEXE);
             File.Copy(testEXE, newEXE);
             Assert.IsTrue(PCKActions.MergePCKRun(testPCK, newEXE));
-            using (var r = new RunAppWithOutput(newEXE, "", 1000))
+            using (var r = new RunAppWithOutput(newEXE, ""))
                 Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
 
-            using (var r = new RunAppWithOutput(newEXE1Byte, "", 1000))
+            using (var r = new RunAppWithOutput(newEXE1Byte, ""))
                 Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
         }
 
@@ -449,13 +459,13 @@ namespace Tests
             Assert.IsFalse(PCKActions.RipPCKRun(new_pck, null, true));
 
             Title("Good run");
-            using (var r = new RunAppWithOutput(new_exe, "", 1000))
+            using (var r = new RunAppWithOutput(new_exe, ""))
                 Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
 
             Title("Run without PCK");
             if (File.Exists(new_pck))
                 File.Delete(new_pck);
-            using (var r = new RunAppWithOutput(new_exe, "", 1000))
+            using (var r = new RunAppWithOutput(new_exe, ""))
                 Assert.IsTrue(r.GetConsoleText().Contains(pck_error));
 
             Title("Rip locked");
@@ -501,10 +511,10 @@ namespace Tests
             Assert.IsFalse(PCKActions.SplitPCKRun(exe));
 
             Title("Good runs");
-            using (var r = new RunAppWithOutput(exe, "", 1000))
+            using (var r = new RunAppWithOutput(exe, ""))
                 Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
 
-            using (var r = new RunAppWithOutput(new_exe, "", 1000))
+            using (var r = new RunAppWithOutput(new_exe, ""))
                 Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
 
             Title("Bad runs");
@@ -512,10 +522,10 @@ namespace Tests
                 if (File.Exists(f))
                     File.Delete(f);
 
-            using (var r = new RunAppWithOutput(exe, "", 1000))
+            using (var r = new RunAppWithOutput(exe, ""))
                 Assert.IsTrue(r.GetConsoleText().Contains(pck_error));
 
-            using (var r = new RunAppWithOutput(new_exe, "", 1000))
+            using (var r = new RunAppWithOutput(new_exe, ""))
                 Assert.IsTrue(r.GetConsoleText().Contains(pck_error));
 
             if (!Utils.IsRunningOnMono())
@@ -556,13 +566,13 @@ namespace Tests
             Assert.IsTrue(PCKActions.ChangePCKVersion(pck, newVersion.ToString()));
             Assert.AreEqual(newVersion, GetPCKVersion(pck));
 
-            using (var r = new RunAppWithOutput(exe, "", 1000))
+            using (var r = new RunAppWithOutput(exe, ""))
                 Assert.IsTrue(r.GetConsoleText().Contains(pck_error));
 
             Assert.IsTrue(PCKActions.ChangePCKVersion(pck, origVersion.ToString()));
             Assert.AreEqual(origVersion, GetPCKVersion(pck));
 
-            using (var r = new RunAppWithOutput(exe, "", 1000))
+            using (var r = new RunAppWithOutput(exe, ""))
                 Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
 
             Title("Embedded test runs");
@@ -570,13 +580,13 @@ namespace Tests
             Assert.IsTrue(PCKActions.ChangePCKVersion(exeEmbedded, newVersion.ToString()));
             Assert.AreEqual(newVersion, GetPCKVersion(exeEmbedded));
 
-            using (var r = new RunAppWithOutput(exeEmbedded, "", 1000))
+            using (var r = new RunAppWithOutput(exeEmbedded, ""))
                 Assert.IsTrue(r.GetConsoleText().Contains(pck_error));
 
             Assert.IsTrue(PCKActions.ChangePCKVersion(exeEmbedded, origVersion.ToString()));
             Assert.AreEqual(origVersion, GetPCKVersion(exeEmbedded));
 
-            using (var r = new RunAppWithOutput(exeEmbedded, "", 1000))
+            using (var r = new RunAppWithOutput(exeEmbedded, ""))
                 Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
         }
     }
