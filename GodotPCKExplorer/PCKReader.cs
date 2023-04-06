@@ -21,6 +21,7 @@ namespace GodotPCKExplorer
         public int PCK_VersionRevision = -1;
         public int PCK_Flags = -1;
         public long PCK_FileBase = 0;
+        public long PCK_FileBaseAddressOffset = 0;
         public long PCK_StartPosition = 0;
         public long PCK_EndPosition = 0;
         public bool PCK_Embedded = false;
@@ -50,6 +51,7 @@ namespace GodotPCKExplorer
             PCK_VersionMinor = -1;
             PCK_VersionRevision = -1;
             PCK_Flags = -1;
+            PCK_FileBaseAddressOffset = 0;
             PCK_FileBase = 0;
             PCK_StartPosition = 0;
             PCK_EndPosition = 0;
@@ -73,7 +75,7 @@ namespace GodotPCKExplorer
 
             try
             {
-                int magic = binReader.ReadInt32();
+                int magic = binReader.ReadInt32(); // 0-3
 
                 if (magic != Utils.PCK_MAGIC)
                 {
@@ -116,26 +118,35 @@ namespace GodotPCKExplorer
                     PCK_EndPosition = binReader.BaseStream.Length;
                 }
 
-                PCK_VersionPack = binReader.ReadInt32();
-                PCK_VersionMajor = binReader.ReadInt32();
-                PCK_VersionMinor = binReader.ReadInt32();
-                PCK_VersionRevision = binReader.ReadInt32();
+                PCK_VersionPack = binReader.ReadInt32(); // 4-7
+                PCK_VersionMajor = binReader.ReadInt32(); // 8-11
+                PCK_VersionMinor = binReader.ReadInt32(); // 12-15
+                PCK_VersionRevision = binReader.ReadInt32(); // 16-19
 
                 PCK_Flags = 0;
                 PCK_FileBase = 0;
                 if (PCK_VersionPack == 2)
                 {
-                    PCK_Flags = binReader.ReadInt32();
-                    PCK_FileBase = binReader.ReadInt64();
+                    PCK_Flags = binReader.ReadInt32(); // 20-23
+                    PCK_FileBaseAddressOffset = binReader.BaseStream.Position;
+                    PCK_FileBase = binReader.ReadInt64(); // 24-31
                 }
 
-                for (int i = 0; i < 16; i++)
-                {
-                    //reserved
-                    binReader.ReadInt32();
-                }
+                binReader.ReadBytes(16 * sizeof(int)); // 32-95 reserved
 
                 int file_count = binReader.ReadInt32();
+
+                //Aes aes = Aes.Create();
+                //aes.GenerateIV();
+                //aes.KeySize = 256;
+                //aes.Mode = CipherMode.CFB;
+                //aes.Key = Utils.StringToByteArray("04bf1d8556b390b71e59f2517fd8f27dafddf223f5e84b19c1e31ddbd766165d");
+                //Program.Log(string.Join(" ", aes.IV.Select(i => i.ToString("X"))));
+
+                //var iv = Utils.StringToByteArray("d5 7c 93 69 f7 47 1f 44 05 03 e2 bd cc 08 00 00");
+                //ICryptoTransform crypt = aes.CreateDecryptor(aes.Key, iv);
+
+                //binReader = new BinaryReader(new CryptoStream(binReader.BaseStream, crypt, CryptoStreamMode.Read));
 
                 for (int i = 0; i < file_count; i++)
                 {
@@ -320,10 +331,19 @@ namespace GodotPCKExplorer
                         return;
                     }
 
-                    foreach (var p in Files.Values)
+                    // Fix addresses
+                    if (PCK_VersionPack < 2)
                     {
-                        file.BaseStream.Seek(p.PositionOsOffsetValue - PCK_StartPosition, SeekOrigin.Begin);
-                        file.Write(p.Offset - PCK_StartPosition);
+                        foreach (var p in Files.Values)
+                        {
+                            file.BaseStream.Seek(p.PositionOfOffsetValue - PCK_StartPosition, SeekOrigin.Begin);
+                            file.Write(p.Offset - PCK_StartPosition);
+                        }
+                    }
+                    else
+                    {
+                        file.BaseStream.Seek(PCK_FileBaseAddressOffset - PCK_StartPosition, SeekOrigin.Begin);
+                        file.Write(PCK_FileBase - PCK_StartPosition);
                     }
 
                     file.Close();
@@ -381,11 +401,7 @@ namespace GodotPCKExplorer
                     // Ensure embedded PCK starts at a 64-bit multiple
                     try
                     {
-                        int pad = (int)(file.BaseStream.Position % 8);
-                        for (int i = 0; i < pad; i++)
-                        {
-                            file.Write((byte)0);
-                        }
+                        Utils.AddPadding(file, (int)file.BaseStream.Position % 8);
                     }
                     catch (Exception ex)
                     {
@@ -423,11 +439,7 @@ namespace GodotPCKExplorer
 
                             // Ensure embedded data ends at a 64-bit multiple
                             long embed_end = file.BaseStream.Position - embed_start + 12;
-                            long pad = embed_end % 8;
-                            for (long i = 0; i < pad; i++)
-                            {
-                                file.Write((byte)0);
-                            }
+                            Utils.AddPadding(file, (int)embed_end % 8);
 
                             long pck_size = file.BaseStream.Position - pck_start;
                             file.Write((long)pck_size);
@@ -446,10 +458,19 @@ namespace GodotPCKExplorer
                         return;
                     }
 
-                    foreach (var p in Files.Values)
+                    // Fix addresses
+                    if (PCK_VersionPack < 2)
                     {
-                        file.BaseStream.Seek(p.PositionOsOffsetValue + offset_delta, SeekOrigin.Begin);
-                        file.Write(p.Offset + offset_delta);
+                        foreach (var p in Files.Values)
+                        {
+                            file.BaseStream.Seek(p.PositionOfOffsetValue + offset_delta, SeekOrigin.Begin);
+                            file.Write(p.Offset + offset_delta);
+                        }
+                    }
+                    else
+                    {
+                        file.BaseStream.Seek(embed_start + PCK_FileBaseAddressOffset - PCK_StartPosition, SeekOrigin.Begin);
+                        file.Write(embed_start + PCK_FileBase);
                     }
 
                     file.Close();
