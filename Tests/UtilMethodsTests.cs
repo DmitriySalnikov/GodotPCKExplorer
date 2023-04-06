@@ -8,6 +8,7 @@ using GodotPCKExplorer;
 using System.Windows.Forms;
 using System.Collections.Generic;
 using Ionic.Zip;
+using System.Collections;
 
 namespace Tests
 {
@@ -17,6 +18,7 @@ namespace Tests
 #else
     [RequiresSTA]
 #endif
+    [TestFixtureSource(typeof(MyFixtureData), nameof(MyFixtureData.FixtureParams))]
     public class UtilMethodsTests
     {
         enum OS
@@ -47,9 +49,11 @@ namespace Tests
             get => Platform == OS.Windows ? ".exe" : "";
         }
 
+        static string ZipFileName = "test.zip";
+
         static string ZipFilePath
         {
-            get => Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "../../../Test.zip");
+            get => Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "../../../" + ZipFileName);
         }
 
         static string PlatformFolder
@@ -75,6 +79,11 @@ namespace Tests
         static readonly string pck_error = "Error: Couldn't load project data at path \".\". Is the .pck file missing?";
 
         List<string> OriginalTestFiles = new List<string>();
+
+        public UtilMethodsTests(string archiveFile)
+        {
+            ZipFileName = archiveFile;
+        }
 
         void Title(string name)
         {
@@ -251,7 +260,7 @@ namespace Tests
             }
 
             string ver = GetPCKVersion(testPCK).ToString();
-            
+
             {
                 Title("Pack new PCK");
 
@@ -569,6 +578,18 @@ namespace Tests
 
             using (var r = new RunAppWithOutput(exeEmbedded, "", 1000))
                 Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
+        }
+    }
+
+    public class MyFixtureData
+    {
+        public static IEnumerable FixtureParams
+        {
+            get
+            {
+                yield return new TestFixtureData("Test3.zip");
+                //yield return new TestFixtureData("Test4.zip");
+            }
         }
     }
 }

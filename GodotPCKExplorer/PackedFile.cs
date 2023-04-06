@@ -6,22 +6,41 @@ namespace GodotPCKExplorer
     public class PackedFile
     {
         private BinaryReader reader;
+        /// <summary>
+        /// The name of the file in the package hierarchy.
+        /// </summary>
         public string FilePath;
+        /// <summary>
+        /// File offset inside the package.
+        /// </summary>
         public long Offset;
-        public long OffsetPosition;
+        /// <summary>
+        /// Required for manipulating addresses.
+        /// </summary>
+        public long PositionOsOffsetValue;
+        /// <summary>
+        /// File size inside the package.
+        /// </summary>
         public long Size;
+        /// <summary>
+        /// Hash to check the correctness of the file.
+        /// </summary>
         public byte[] MD5;
-        public int flags;
+        /// <summary>
+        /// Individual file flags.
+        /// Now only: 0 or 1 (Encrypted).
+        /// </summary>
+        public int Flags;
 
-        public PackedFile(BinaryReader reader, string path, long offset, long offsetPosition, long size, byte[] _MD5, int flags)
+        public PackedFile(BinaryReader reader, string path, long contentOffset, long positionOfOffsetValue, long size, byte[] MD5, int flags)
         {
             this.reader = reader;
             FilePath = path;
-            Offset = offset;
-            OffsetPosition = offsetPosition;
+            Offset = contentOffset;
+            PositionOsOffsetValue = positionOfOffsetValue;
             Size = size;
-            MD5 = _MD5;
-            this.flags = flags;
+            this.MD5 = MD5;
+            this.Flags = flags;
         }
 
         public delegate void VoidInt(int progress);
@@ -29,7 +48,7 @@ namespace GodotPCKExplorer
 
         public bool IsEncrypted
         {
-            get => (flags & Utils.PCK_FILE_ENCRYPTED) != 0;
+            get => (Flags & Utils.PCK_FILE_ENCRYPTED) != 0;
         }
 
         public bool ExtractFile(string basePath, bool overwriteExisting = true)

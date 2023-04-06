@@ -189,7 +189,7 @@ namespace GodotPCKExplorer
                             }
                             else
                             {
-                                // TODO: add actual md5
+                                pck.Write(Utils.GetFileMD5(file.Path));
 
                                 pck.Write((int)0); // TODO: add flags (encrypted or not)
                             }

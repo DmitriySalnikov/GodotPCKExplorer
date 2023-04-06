@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
@@ -59,6 +60,21 @@ namespace GodotPCKExplorer
                              .Where(x => x % 2 == 0)
                              .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
                              .ToArray();
+        }
+
+        // https://stackoverflow.com/a/10520086/8980874
+        public static byte[] GetFileMD5(string path)
+        {
+            using (var md5 = MD5.Create())
+            {
+                using (var stream = File.OpenRead(path))
+                {
+                    var bytes = md5.ComputeHash(stream);
+                    if (bytes.Length > 16)
+                        throw new FormatException("Wrong size of MD5 hash");
+                    return bytes;
+                }
+            }
         }
 
         // https://stackoverflow.com/a/30300521/8980874
