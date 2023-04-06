@@ -242,5 +242,23 @@ namespace GodotPCKExplorer
         {
             return Type.GetType("Mono.Runtime") != null;
         }
+
+        public static long AlignAddress(long p_n, int p_alignment)
+        {
+            if (p_alignment == 0)
+                return p_n;
+
+            long rest = p_n % p_alignment;
+            if (rest == 0)
+                return p_n;
+            else
+                return p_n + (p_alignment - rest);
+        }
+
+        public static void AddPadding(BinaryWriter p_file, int p_bytes)
+        {
+            p_file.Write(new byte[p_bytes]);
+        }
+
     }
 }

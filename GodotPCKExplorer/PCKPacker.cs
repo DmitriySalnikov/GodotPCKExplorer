@@ -25,23 +25,6 @@ namespace GodotPCKExplorer
             }
         }
 
-        long _align(long p_n, int p_alignment)
-        {
-            if (p_alignment == 0)
-                return p_n;
-
-            long rest = p_n % p_alignment;
-            if (rest == 0)
-                return p_n;
-            else
-                return p_n + (p_alignment - rest);
-        }
-
-        void _pad(BinaryWriter p_file, int p_bytes)
-        {
-            p_file.Write(new byte[p_bytes]);
-        }
-
         void CloseAndDeleteFile(BinaryWriter writer, string out_pck)
         {
             writer?.Close();
@@ -161,7 +144,7 @@ namespace GodotPCKExplorer
                             pck.Write((long)0); // TODO: file_base (where begins the chunk of actual data)
                         }
 
-                        _pad(pck, 16 * sizeof(int)); // reserved
+                        Utils.AddPadding(pck, 16 * sizeof(int)); // reserved
 
                         // write the index
                         pck.Write((int)files.Count());
@@ -198,9 +181,9 @@ namespace GodotPCKExplorer
                         total_size += pck.BaseStream.Position;
 
                         long ofs = pck.BaseStream.Position;
-                        ofs = _align(ofs, alignment);
+                        ofs = Utils.AlignAddress(ofs, alignment);
 
-                        _pad(pck, (int)(ofs - pck.BaseStream.Position));
+                        Utils.AddPadding(pck, (int)(ofs - pck.BaseStream.Position));
 
                         const int buf_max = 65536;
 
@@ -241,8 +224,8 @@ namespace GodotPCKExplorer
                             pck.Write((long)ofs);
                             pck.BaseStream.Seek(pos, SeekOrigin.Begin);
 
-                            ofs = _align(ofs + file.Size, alignment);
-                            _pad(pck, (int)(ofs - pos));
+                            ofs = Utils.AlignAddress(ofs + file.Size, alignment);
+                            Utils.AddPadding(pck, (int)(ofs - pos));
 
                             src.Close();
 

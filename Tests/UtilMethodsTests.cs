@@ -49,11 +49,11 @@ namespace Tests
             get => Platform == OS.Windows ? ".exe" : "";
         }
 
-        static string ZipFileName = "test.zip";
+        static int GodotVersion = 0;
 
         static string ZipFilePath
         {
-            get => Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "../../../" + ZipFileName);
+            get => Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), $"../../../Test{GodotVersion}.zip");
         }
 
         static string PlatformFolder
@@ -80,9 +80,9 @@ namespace Tests
 
         List<string> OriginalTestFiles = new List<string>();
 
-        public UtilMethodsTests(string archiveFile)
+        public UtilMethodsTests(int version)
         {
-            ZipFileName = archiveFile;
+            GodotVersion = version;
         }
 
         void Title(string name)
@@ -587,8 +587,8 @@ namespace Tests
         {
             get
             {
-                yield return new TestFixtureData("Test3.zip");
-                //yield return new TestFixtureData("Test4.zip");
+                yield return new TestFixtureData(3);
+                //yield return new TestFixtureData(4);
             }
         }
     }

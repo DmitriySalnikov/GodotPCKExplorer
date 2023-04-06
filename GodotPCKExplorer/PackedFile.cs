@@ -17,7 +17,7 @@ namespace GodotPCKExplorer
         /// <summary>
         /// Required for manipulating addresses.
         /// </summary>
-        public long PositionOsOffsetValue;
+        public long PositionOfOffsetValue;
         /// <summary>
         /// File size inside the package.
         /// </summary>
@@ -37,7 +37,7 @@ namespace GodotPCKExplorer
             this.reader = reader;
             FilePath = path;
             Offset = contentOffset;
-            PositionOsOffsetValue = positionOfOffsetValue;
+            PositionOfOffsetValue = positionOfOffsetValue;
             Size = size;
             this.MD5 = MD5;
             this.Flags = flags;
