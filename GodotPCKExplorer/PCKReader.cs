@@ -10,6 +10,8 @@ namespace GodotPCKExplorer
 {
     public class PCKReader : IDisposable
     {
+        const int BUF_MAX_SIZE = 1024 * 1024;
+
         BinaryReader binReader = null;
         public Dictionary<string, PackedFile> Files = new Dictionary<string, PackedFile>();
         public string PackPath = "";
@@ -17,6 +19,8 @@ namespace GodotPCKExplorer
         public int PCK_VersionMajor = -1;
         public int PCK_VersionMinor = -1;
         public int PCK_VersionRevision = -1;
+        public int PCK_Flags = -1;
+        public long PCK_FileBase = 0;
         public long PCK_StartPosition = 0;
         public long PCK_EndPosition = 0;
         public bool PCK_Embedded = false;
@@ -45,6 +49,8 @@ namespace GodotPCKExplorer
             PCK_VersionMajor = -1;
             PCK_VersionMinor = -1;
             PCK_VersionRevision = -1;
+            PCK_Flags = -1;
+            PCK_FileBase = 0;
             PCK_StartPosition = 0;
             PCK_EndPosition = 0;
             PCK_Embedded = false;
@@ -115,12 +121,12 @@ namespace GodotPCKExplorer
                 PCK_VersionMinor = binReader.ReadInt32();
                 PCK_VersionRevision = binReader.ReadInt32();
 
-                int pack_flags = 0;
-                long file_base = 0;
+                PCK_Flags = 0;
+                PCK_FileBase = 0;
                 if (PCK_VersionPack == 2)
                 {
-                    pack_flags = binReader.ReadInt32();
-                    file_base = binReader.ReadInt64();
+                    PCK_Flags = binReader.ReadInt32();
+                    PCK_FileBase = binReader.ReadInt64();
                 }
 
                 for (int i = 0; i < 16; i++)
@@ -135,8 +141,8 @@ namespace GodotPCKExplorer
                 {
                     int path_size = binReader.ReadInt32();
                     string path = Encoding.UTF8.GetString(binReader.ReadBytes(path_size)).Replace("\0", "");
-                    long ofs_p = binReader.BaseStream.Position;
-                    long ofs = binReader.ReadInt64();
+                    long pos_of_ofs = binReader.BaseStream.Position;
+                    long ofs = binReader.ReadInt64() + PCK_FileBase;
                     long size = binReader.ReadInt64();
                     byte[] md5 = binReader.ReadBytes(16);
 
@@ -146,7 +152,7 @@ namespace GodotPCKExplorer
                         flags = binReader.ReadInt32();
                     }
 
-                    Files.Add(path, new PackedFile(binReader, path, ofs, ofs_p, size, md5, flags));
+                    Files.Add(path, new PackedFile(binReader, path, ofs, pos_of_ofs, size, md5, flags));
                 };
             }
             catch (Exception ex)
@@ -277,7 +283,6 @@ namespace GodotPCKExplorer
                         return;
                     }
 
-                    const int buf_max = 65536;
                     long size = PCK_EndPosition - PCK_StartPosition;
 
                     try
@@ -289,7 +294,7 @@ namespace GodotPCKExplorer
 
                             while (to_write > 0)
                             {
-                                var read = binReader.ReadBytes(Math.Min(buf_max, (int)to_write));
+                                var read = binReader.ReadBytes(Math.Min(BUF_MAX_SIZE, (int)to_write));
                                 file.Write(read);
                                 to_write -= read.Length;
 
@@ -317,7 +322,7 @@ namespace GodotPCKExplorer
 
                     foreach (var p in Files.Values)
                     {
-                        file.BaseStream.Seek(p.OffsetPosition - PCK_StartPosition, SeekOrigin.Begin);
+                        file.BaseStream.Seek(p.PositionOsOffsetValue - PCK_StartPosition, SeekOrigin.Begin);
                         file.Write(p.Offset - PCK_StartPosition);
                     }
 
@@ -348,21 +353,17 @@ namespace GodotPCKExplorer
             {
                 try
                 {
-                    BinaryWriter file;
-
+                    using (var p = new PCKReader())
                     {
-                        Program.Log("Checking file whether it already contains '.pck'");
-                        var p = new PCKReader();
                         if (p.OpenFile(exePath, false))
                         {
-                            p.Close();
                             Utils.CommandLog("File already contains '.pck' inside.", "Error", false, MessageType.Error);
                             result = false;
                             return;
                         }
-                        p.Close();
                     }
 
+                    BinaryWriter file;
                     try
                     {
                         file = new BinaryWriter(File.OpenWrite(exePath));
@@ -377,7 +378,6 @@ namespace GodotPCKExplorer
 
                     var embed_start = file.BaseStream.Position;
 
-                    // Godot's 779a5e56218b7fa2ab34ab22ab5b1b2aaa19346f editor_export.cpp:994
                     // Ensure embedded PCK starts at a 64-bit multiple
                     try
                     {
@@ -394,7 +394,6 @@ namespace GodotPCKExplorer
                         return;
                     }
 
-                    const int buf_max = 65536;
                     long pck_start = file.BaseStream.Position;
                     long size = PCK_EndPosition - PCK_StartPosition;
 
@@ -409,7 +408,7 @@ namespace GodotPCKExplorer
 
                             while (to_write > 0)
                             {
-                                var read = binReader.ReadBytes(Math.Min(buf_max, (int)to_write));
+                                var read = binReader.ReadBytes(Math.Min(BUF_MAX_SIZE, (int)to_write));
                                 file.Write(read);
                                 to_write -= read.Length;
 
@@ -422,7 +421,6 @@ namespace GodotPCKExplorer
                                 }
                             }
 
-                            // Godot's 779a5e56218b7fa2ab34ab22ab5b1b2aaa19346f editor_export.cpp:1073
                             // Ensure embedded data ends at a 64-bit multiple
                             long embed_end = file.BaseStream.Position - embed_start + 12;
                             long pad = embed_end % 8;
@@ -448,10 +446,9 @@ namespace GodotPCKExplorer
                         return;
                     }
 
-
                     foreach (var p in Files.Values)
                     {
-                        file.BaseStream.Seek(p.OffsetPosition + offset_delta, SeekOrigin.Begin);
+                        file.BaseStream.Seek(p.PositionOsOffsetValue + offset_delta, SeekOrigin.Begin);
                         file.Write(p.Offset + offset_delta);
                     }
 
