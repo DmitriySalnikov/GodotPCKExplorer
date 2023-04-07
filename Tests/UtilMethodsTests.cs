@@ -307,14 +307,14 @@ namespace Tests
 
                 File.Copy(testEXE, testEmbedPack);
 
-                Assert.IsTrue(PCKActions.PackPCKRun(exportTestPath, testEmbedPack, ver, true));
+                Assert.IsTrue(PCKActions.PackPCKRun(exportTestPath, testEmbedPack, ver, embed: true));
                 Assert.IsTrue(File.Exists(Path.ChangeExtension(testEmbedPack, Exe(".old"))));
 
                 Title("Pack embedded again");
-                Assert.IsFalse(PCKActions.PackPCKRun(exportTestPath, testEmbedPack, ver, true));
+                Assert.IsFalse(PCKActions.PackPCKRun(exportTestPath, testEmbedPack, ver, embed: true));
                 Assert.IsFalse(File.Exists(Path.ChangeExtension(testEmbedPack, Exe(".old"))));
             }
-
+            // TODO: test alignment param
 
             {
                 Title("Pack only selected files");

@@ -401,7 +401,7 @@ namespace GodotPCKExplorer
                     // Ensure embedded PCK starts at a 64-bit multiple
                     try
                     {
-                        Utils.AddPadding(file, (int)file.BaseStream.Position % 8);
+                        Utils.AddPadding(file, (uint)file.BaseStream.Position % 8);
                     }
                     catch (Exception ex)
                     {
@@ -439,7 +439,7 @@ namespace GodotPCKExplorer
 
                             // Ensure embedded data ends at a 64-bit multiple
                             long embed_end = file.BaseStream.Position - embed_start + 12;
-                            Utils.AddPadding(file, (int)embed_end % 8);
+                            Utils.AddPadding(file, (uint)embed_end % 8);
 
                             long pck_size = file.BaseStream.Position - pck_start;
                             file.Write((long)pck_size);

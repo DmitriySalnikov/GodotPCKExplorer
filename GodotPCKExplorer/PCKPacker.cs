@@ -39,7 +39,7 @@ namespace GodotPCKExplorer
             }
         }
 
-        public bool PackFiles(string out_pck, IEnumerable<FileToPack> files, int alignment, PCKVersion godotVersion, bool embed)
+        public bool PackFiles(string out_pck, IEnumerable<FileToPack> files, uint alignment, PCKVersion godotVersion, bool embed)
         {
             var bp = new BackgroundProgress();
             var bw = bp.bg_worker;
@@ -114,11 +114,7 @@ namespace GodotPCKExplorer
                         // Ensure embedded PCK starts at a 64-bit multiple
                         try
                         {
-                            int pad = (int)(pck.BaseStream.Position % 8);
-                            for (int i = 0; i < pad; i++)
-                            {
-                                pck.Write((byte)0);
-                            }
+                            Utils.AddPadding(pck, (uint)pck.BaseStream.Position % 8);
                         }
                         catch (Exception ex)
                         {
@@ -138,10 +134,13 @@ namespace GodotPCKExplorer
                         pck.Write(godotVersion.Minor);
                         pck.Write(godotVersion.Revision);
 
+                        long file_base_address = -1;
+
                         if (godotVersion.PackVersion == 2)
                         {
                             pck.Write((int)0); // TODO: pack_flags (is pack encrypted)
-                            pck.Write((long)0); // TODO: file_base (where begins the chunk of actual data)
+                            file_base_address = pck.BaseStream.Position;
+                            pck.Write((long)0);
                         }
 
                         Utils.AddPadding(pck, 16 * sizeof(int)); // reserved
@@ -149,30 +148,40 @@ namespace GodotPCKExplorer
                         // write the index
                         pck.Write((int)files.Count());
 
+
                         long total_size = 0;
                         // write pck header
                         foreach (var file in files)
                         {
                             var str = Encoding.UTF8.GetBytes(file.Path).ToList();
-                            pck.Write((int)str.Count); // write str size because of original function "store_pascal_string" store size and after actual data
+                            var str_len = str.Count;
+
+                            // Godot 4's PCK uses padding for some reason...
+                            if (godotVersion.PackVersion == 2)
+                                str_len = (int)Utils.AlignAddress(str_len, 4); // align with 4
+
+                            // store pascal string (size, data)
+                            pck.Write(str_len);
                             pck.Write(str.ToArray());
+
+                            // Add padding for string
+                            if (godotVersion.PackVersion == 2)
+                                Utils.AddPadding(pck, (uint)(str_len - str.Count));
+
                             file.OffsetPosition = pck.BaseStream.Position;
                             pck.Write((long)0); // offset
                             pck.Write((long)file.Size); // size
 
                             total_size += file.Size; // for progress bar
 
-                            // # empty md5
                             if (godotVersion.PackVersion < 2)
                             {
-                                pck.Write((int)0);
-                                pck.Write((int)0);
-                                pck.Write((int)0);
-                                pck.Write((int)0);
+                                // # empty md5
+                                Utils.AddPadding(pck, 16 * sizeof(byte));
                             }
                             else
                             {
-                                pck.Write(Utils.GetFileMD5(file.Path));
+                                pck.Write(Utils.GetFileMD5(file.OriginalPath));
 
                                 pck.Write((int)0); // TODO: add flags (encrypted or not)
                             }
@@ -180,10 +189,19 @@ namespace GodotPCKExplorer
 
                         total_size += pck.BaseStream.Position;
 
-                        long ofs = pck.BaseStream.Position;
-                        ofs = Utils.AlignAddress(ofs, alignment);
+                        long offset = pck.BaseStream.Position;
+                        offset = Utils.AlignAddress(offset, alignment);
 
-                        Utils.AddPadding(pck, (int)(ofs - pck.BaseStream.Position));
+                        Utils.AddPadding(pck, (uint)(offset - pck.BaseStream.Position));
+
+                        long file_base = offset;
+                        if (godotVersion.PackVersion == 2)
+                        {
+                            // update actual address of file_base in the header
+                            pck.Seek((int)file_base_address, SeekOrigin.Begin);
+                            pck.Write(file_base);
+                            pck.Seek((int)offset, SeekOrigin.Begin);
+                        }
 
                         const int buf_max = 65536;
 
@@ -221,11 +239,20 @@ namespace GodotPCKExplorer
 
                             long pos = pck.BaseStream.Position;
                             pck.BaseStream.Seek(file.OffsetPosition, SeekOrigin.Begin); // go back to store the pck's offset
-                            pck.Write((long)ofs);
+
+                            if (godotVersion.PackVersion < 2)
+                            {
+                                pck.Write((long)offset);
+                            }
+                            else
+                            {
+                                pck.Write((long)offset - file_base);
+                            }
+
                             pck.BaseStream.Seek(pos, SeekOrigin.Begin);
 
-                            ofs = Utils.AlignAddress(ofs + file.Size, alignment);
-                            Utils.AddPadding(pck, (int)(ofs - pos));
+                            offset = Utils.AlignAddress(offset + file.Size, alignment);
+                            Utils.AddPadding(pck, (uint)(offset - pos));
 
                             src.Close();
 
@@ -237,11 +264,7 @@ namespace GodotPCKExplorer
                             // Godot's 779a5e56218b7fa2ab34ab22ab5b1b2aaa19346f editor_export.cpp:1073
                             // Ensure embedded data ends at a 64-bit multiple
                             long embed_end = pck.BaseStream.Position - embed_start + 12;
-                            long pad = embed_end % 8;
-                            for (long i = 0; i < pad; i++)
-                            {
-                                pck.Write((byte)0);
-                            }
+                            Utils.AddPadding(pck, (uint)embed_end % 8);
 
                             long pck_size = pck.BaseStream.Position - pck_start;
                             pck.Write((long)pck_size);

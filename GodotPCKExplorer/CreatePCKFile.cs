@@ -140,7 +140,8 @@ namespace GodotPCKExplorer
 
             if (res == DialogResult.OK)
             {
-                bool p_res = PCKActions.PackPCKRun(files.Values, file, ver.ToString(), cb_embed.Checked);
+                //                                                                TODO: alignment
+                bool p_res = PCKActions.PackPCKRun(files.Values, file, ver.ToString(), 16, cb_embed.Checked);
 
                 GUIConfig.Instance.PackedVersion = ver;
                 GUIConfig.Instance.EmbedPCK = cb_embed.Checked;

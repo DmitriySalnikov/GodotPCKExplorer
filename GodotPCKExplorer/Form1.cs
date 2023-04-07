@@ -15,6 +15,8 @@ namespace GodotPCKExplorer
         Font MatchCaseNormal = null;
         Font MatchCaseStrikeout = null;
 
+        // TODO: add md5 validation of any pck
+        // TODO: add md5 check after export
         public Form1()
         {
             GUIConfig.Load();
