@@ -128,8 +128,9 @@ namespace GodotPCKExplorer
 
         public static DialogResult ShowMessage(Exception ex, string title, MessageType messageType = MessageType.None, MessageBoxButtons boxButtons = MessageBoxButtons.OK)
         {
+            var res = ShowMessage(ex.Message, title, messageType, boxButtons);
             Program.Log(ex);
-            return ShowMessage(ex.Message, title, messageType, boxButtons);
+            return res;
         }
 
         public static void CommandLog(string text, string title, bool showHelp, MessageType messageType = MessageType.None)
@@ -243,7 +244,7 @@ namespace GodotPCKExplorer
             return Type.GetType("Mono.Runtime") != null;
         }
 
-        public static long AlignAddress(long p_n, int p_alignment)
+        public static long AlignAddress(long p_n, uint p_alignment)
         {
             if (p_alignment == 0)
                 return p_n;
@@ -255,9 +256,10 @@ namespace GodotPCKExplorer
                 return p_n + (p_alignment - rest);
         }
 
-        public static void AddPadding(BinaryWriter p_file, int p_bytes)
+        public static void AddPadding(BinaryWriter p_file, uint p_bytes)
         {
-            p_file.Write(new byte[p_bytes]);
+            if (p_bytes != 0)
+                p_file.Write(new byte[p_bytes]);
         }
 
     }

@@ -23,12 +23,14 @@ Examples of valid commands:
 
 -p	Pack content of folder into .pck file
 	The version should be in this format: PACK_VERSION.GODOT_MINOR._MAJOR._PATCH
-	-p [path to folder] [output pack file] [version]
+	-p [path to folder] [output pack file] [version] {[alignment]}
 	-p "C:/Directory with files" C:/Game_New.pck 1.3.2.0
+	-p "C:/Directory with files" C:/Game_New.pck 2.4.0.1 16 
 
 -pe	Pack embedded. Equal to just -p, but embed '.pck' into target file
-	-p [path to folder] [exe to pack into] [version]
+	-p [path to folder] [exe to pack into] [version] {[alignment]}
 	-p "C:/Directory with files" C:/Game.exe 1.3.2.0
+	-p "C:/Directory with files" C:/Game.exe 2.4.0.0 32
 
 -m	Merge pack into target file. So you can copy the '.pck' from one file to another
 	-m [path to pack] [file to merge into]
@@ -50,4 +52,4 @@ Examples of valid commands:
 -c	Change version of the '.pck'
 	-c [path to pck] [new version]
 	-c C:/Game.pck 1.3.4.1
-	-c C:/Game.exe 1.3.3.0
+	-c C:/Game.exe 2.4.0.2

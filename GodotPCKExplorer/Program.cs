@@ -272,18 +272,22 @@ namespace GodotPCKExplorer
             string dirPath = "";
             string filePath = "";
             string strVer = "";
+            uint alignment = 16;
 
             try
             {
-                if (args.Length == 4)
+                if (args.Length >= 4)
                 {
                     dirPath = Path.GetFullPath(args[1].Replace("\"", ""));
                     filePath = Path.GetFullPath(args[2].Replace("\"", ""));
                     strVer = args[3];
+
+                    if (args.Length > 4)
+                        alignment = uint.Parse(args[4]);
                 }
                 else
                 {
-                    Utils.CommandLog($"Invalid number of arguments! Expected 4, but got {args.Length}", "Error", true, MessageType.Error);
+                    Utils.CommandLog($"Invalid number of arguments! Expected at least 4, but got {args.Length}", "Error", true, MessageType.Error);
                     return;
                 }
             }
@@ -293,7 +297,7 @@ namespace GodotPCKExplorer
                 return;
             }
 
-            PCKActions.PackPCKRun(dirPath, filePath, strVer, embed);
+            PCKActions.PackPCKRun(dirPath, filePath, strVer, alignment, embed);
         }
 
         static void RipPCKCommand(string[] args)
