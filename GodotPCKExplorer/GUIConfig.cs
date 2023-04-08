@@ -5,6 +5,18 @@ using System.IO;
 
 namespace GodotPCKExplorer
 {
+    class RecentFiles
+    {
+        public string Path;
+        public string EncryptionKey;
+
+        public RecentFiles(string path, string encKey)
+        {
+            Path = path;
+            EncryptionKey = encKey;
+        }
+    }
+
     class GUIConfig
     {
         [JsonIgnore]
@@ -19,6 +31,16 @@ namespace GodotPCKExplorer
         public bool EmbedPCK { get; set; } = false;
         public string FolderPath { get; set; } = "";
         public bool MatchCaseFilterPackingForm { get; set; } = false;
+        public uint PCKAlignment { get; set; } = 16;
+
+        #region Encryption
+
+        public bool EncryptPCK { get; set; } = false;
+        public string EncryptionKey { get; set; } = "";
+        public bool EncryptIndex { get; set; } = false;
+        public bool EncryptFiles { get; set; } = false;
+
+        #endregion
 
         #endregion
 
@@ -30,7 +52,7 @@ namespace GodotPCKExplorer
 
         #region Main Window
 
-        public List<string> RecentOpenedFiles { get; set; } = new List<string>();
+        public List<RecentFiles> RecentOpenedFiles { get; set; } = new List<RecentFiles>();
         public bool MatchCaseFilterMainForm { get; set; } = false;
 
         #endregion

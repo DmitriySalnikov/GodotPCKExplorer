@@ -52,6 +52,8 @@ public struct GodotPCK4
 	
 	[color_scheme("Residency")]
 	int32 flags;
+	$assert(!(flags & 1), "The PCK is encrypted. Use other tools to inspect this file!");
+	
 	[color_scheme("Size")]
 	int64 files_base;
 hidden:

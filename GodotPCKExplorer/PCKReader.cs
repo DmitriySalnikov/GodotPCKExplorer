@@ -15,6 +15,8 @@ namespace GodotPCKExplorer
         BinaryReader binReader = null;
         public Dictionary<string, PackedFile> Files = new Dictionary<string, PackedFile>();
         public string PackPath = "";
+        public string EncryptionKey = "";
+
         public int PCK_VersionPack = -1;
         public int PCK_VersionMajor = -1;
         public int PCK_VersionMinor = -1;
@@ -28,6 +30,10 @@ namespace GodotPCKExplorer
 
         public PCKVersion PCK_Version { get { return new PCKVersion(PCK_VersionPack, PCK_VersionMajor, PCK_VersionMinor, PCK_VersionRevision); } }
         public bool IsOpened { get { return binReader != null; } }
+        public bool IsEncrypted
+        {
+            get => (PCK_Flags & Utils.PCK_DIR_ENCRYPTED) != 0;
+        }
 
         ~PCKReader()
         {
@@ -46,6 +52,8 @@ namespace GodotPCKExplorer
 
             Files.Clear();
             PackPath = "";
+            EncryptionKey = "";
+
             PCK_VersionPack = -1;
             PCK_VersionMajor = -1;
             PCK_VersionMinor = -1;
@@ -58,7 +66,7 @@ namespace GodotPCKExplorer
             PCK_Embedded = false;
         }
 
-        public bool OpenFile(string p_path, bool show_not_pck_error = true)
+        public bool OpenFile(string p_path, bool show_not_pck_error = true, Func<string> get_encryption_key = null)
         {
             Close();
 
@@ -130,6 +138,12 @@ namespace GodotPCKExplorer
                     PCK_Flags = binReader.ReadInt32(); // 20-23
                     PCK_FileBaseAddressOffset = binReader.BaseStream.Position;
                     PCK_FileBase = binReader.ReadInt64(); // 24-31
+
+                    if (IsEncrypted)
+                    {
+                        EncryptionKey = get_encryption_key();
+                        Program.Log(EncryptionKey);
+                    }
                 }
 
                 binReader.ReadBytes(16 * sizeof(int)); // 32-95 reserved
@@ -140,10 +154,10 @@ namespace GodotPCKExplorer
                 //aes.GenerateIV();
                 //aes.KeySize = 256;
                 //aes.Mode = CipherMode.CFB;
-                //aes.Key = Utils.StringToByteArray("04bf1d8556b390b71e59f2517fd8f27dafddf223f5e84b19c1e31ddbd766165d");
+                //aes.Key = Utils.HexStringToByteArray("04bf1d8556b390b71e59f2517fd8f27dafddf223f5e84b19c1e31ddbd766165d");
                 //Program.Log(string.Join(" ", aes.IV.Select(i => i.ToString("X"))));
 
-                //var iv = Utils.StringToByteArray("d5 7c 93 69 f7 47 1f 44 05 03 e2 bd cc 08 00 00");
+                //var iv = Utils.HexStringToByteArray("d5 7c 93 69 f7 47 1f 44 05 03 e2 bd cc 08 00 00");
                 //ICryptoTransform crypt = aes.CreateDecryptor(aes.Key, iv);
 
                 //binReader = new BinaryReader(new CryptoStream(binReader.BaseStream, crypt, CryptoStreamMode.Read));

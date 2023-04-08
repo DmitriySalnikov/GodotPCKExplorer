@@ -34,6 +34,9 @@ namespace GodotPCKExplorer
             nud_revision.Value = ver.Revision;
 
             cb_embed.Checked = GUIConfig.Instance.EmbedPCK;
+
+            nud_alignment.Value = GUIConfig.Instance.PCKAlignment;
+            cb_enable_encryption.Checked = GUIConfig.Instance.EncryptPCK;
         }
 
         public void SetFolderPath(string path)
@@ -140,12 +143,13 @@ namespace GodotPCKExplorer
 
             if (res == DialogResult.OK)
             {
-                //                                                                TODO: alignment
-                bool p_res = PCKActions.PackPCKRun(files.Values, file, ver.ToString(), 16, cb_embed.Checked);
+                bool p_res = PCKActions.PackPCKRun(files.Values, file, ver.ToString(), (uint)nud_alignment.Value, cb_embed.Checked);
 
                 GUIConfig.Instance.PackedVersion = ver;
                 GUIConfig.Instance.EmbedPCK = cb_embed.Checked;
                 GUIConfig.Instance.FolderPath = tb_folder_path.Text;
+                GUIConfig.Instance.PCKAlignment = (uint)nud_alignment.Value;
+                GUIConfig.Instance.EncryptPCK = cb_enable_encryption.Checked;
                 GUIConfig.Instance.Save();
             }
         }
@@ -206,6 +210,11 @@ namespace GodotPCKExplorer
             GUIConfig.Instance.Save();
             UpdateMatchCaseFilterButton();
             UpdateTableContent();
+        }
+
+        private void btn_generate_key_Click(object sender, EventArgs e)
+        {
+            new CreatePCKEncryption().ShowDialog();
         }
     }
 }
