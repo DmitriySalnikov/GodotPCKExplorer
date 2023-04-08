@@ -53,13 +53,31 @@ namespace GodotPCKExplorer
         }
 
         // https://stackoverflow.com/a/321404/8980874
-        public static byte[] StringToByteArray(string hex)
+        public static byte[] HexStringToByteArray(string hex)
         {
-            hex.Replace(" ", "");
+            hex = hex.Replace("-", "").Replace(" ", "");
+
             return Enumerable.Range(0, hex.Length)
                              .Where(x => x % 2 == 0)
                              .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
                              .ToArray();
+        }
+
+        public static bool HexStringValidate(string hex, uint expected_size_in_bytes = 0)
+        {
+            hex = hex.Replace("-", "").Replace(" ", "");
+            var matches = Regex.Matches(hex, "[0-9A-Fa-f]+");
+            if (matches.Count != 1)
+                return false;
+            if (matches[0].Length == hex.Length)
+            {
+                if (expected_size_in_bytes != 0)
+                    return expected_size_in_bytes == hex.Length / 2;
+                else
+                    return false;
+            }
+
+            return false;
         }
 
         // https://stackoverflow.com/a/10520086/8980874

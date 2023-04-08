@@ -14,6 +14,8 @@ namespace GodotPCKExplorer
             return true;
         }
 
+        // TODO: add encryption key everywhere
+
         public static bool OpenPCKRun(string path)
         {
             Program.CMDMode = false;

@@ -57,7 +57,7 @@ namespace GodotPCKExplorer
                 searchText.Name = "searchTextLinux";
                 searchText.Size = new Size(200, 23);
                 searchText.ToolTipText = "Filter text (? and * allowed)\n" + new System.ComponentModel.ComponentResourceManager(typeof(Form1)).GetString("searchText.ToolTipText");
-                menuStrip1.Items.Insert(menuStrip1.Items.IndexOf(tsmi_match_case_filter)+1, searchText);
+                menuStrip1.Items.Insert(menuStrip1.Items.IndexOf(tsmi_match_case_filter) + 1, searchText);
 
                 searchText.Text = "Filter text (? and * allowed)";
                 // HACK to get some size of the text field.
@@ -68,7 +68,7 @@ namespace GodotPCKExplorer
                 {
                     t.Dispose();
                     t = null;
-                    searchText.Text= "";
+                    searchText.Text = "";
                 };
                 t.Start();
 
@@ -104,7 +104,7 @@ namespace GodotPCKExplorer
                 foreach (var f in GUIConfig.Instance.RecentOpenedFiles)
                 {
                     recentToolStripMenuItem.DropDownItems.Add(
-                        new ToolStripButton(f, null, (s, e) => OpenFile(f)));
+                        new ToolStripButton(f.Path, null, (s, e) => OpenFile(f.Path, f.EncryptionKey)));
                 }
 
             }
@@ -114,26 +114,47 @@ namespace GodotPCKExplorer
             }
         }
 
-        public void OpenFile(string path)
+        public void OpenFile(string path, string encKey = "")
         {
             CloseFile();
 
+            Func<string> get_enc_key = () =>
+            {
+                if (!string.IsNullOrWhiteSpace(encKey))
+                {
+                    return encKey;
+                }
+                else
+                {
+                    var item = GUIConfig.Instance.RecentOpenedFiles.FirstOrDefault((i) => i.Path == path);
+
+                    using (var d = new OpenWithPCKEncryption(item?.EncryptionKey ?? ""))
+                    {
+                        d.ShowDialog();
+                        return d.EncryptionKey;
+                    }
+                }
+            };
+
             path = Path.GetFullPath(path);
-            if (pckReader.OpenFile(path))
+            if (pckReader.OpenFile(path, get_encryption_key: get_enc_key))
             {
                 Text = $"\"{Utils.GetShortPath(pckReader.PackPath, 50)}\" Pack version: {pckReader.PCK_VersionPack}. Godot Version: {pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}";
 
                 // update recent files
                 var list = GUIConfig.Instance.RecentOpenedFiles;
+                var item = list.FirstOrDefault((i) => i.Path == path);
 
-                if (list.Contains(path))
+                // Move to top
+                if (item != null)
                 {
-                    list.Remove(path);
-                    list.Insert(0, path);
+                    item.EncryptionKey = pckReader.EncryptionKey;
+                    list.Remove(item);
+                    list.Insert(0, item);
                 }
                 else
                 {
-                    list.Insert(0, path);
+                    list.Insert(0, new RecentFiles(path, pckReader.EncryptionKey));
                     while (list.Count > 16)
                         list.RemoveAt(list.Count - 1);
                 }
@@ -157,9 +178,12 @@ namespace GodotPCKExplorer
             {
                 // update recent files
                 var list = GUIConfig.Instance.RecentOpenedFiles;
-                if (list.Contains(path))
-                    list.Remove(path);
+
+                var item = list.FirstOrDefault((i) => i.Path == path);
+                if (item != null)
+                    list.Remove(item);
                 GUIConfig.Instance.Save();
+                UpdateRecentList();
             }
         }
 
