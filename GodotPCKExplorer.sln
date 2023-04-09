@@ -7,20 +7,36 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotPCKExplorer", "GodotPC
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj", "{5CFA14D6-9ECD-4314-9E81-1248677AA7DA}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mbedTLS_AES", "mbedTLS_AES\mbedTLS_AES.vcxproj", "{E57DCA52-531B-4244-8727-67B7CA2374BC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
 		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{F97C15B2-F26D-46E6-AF17-5A2495A9FAC8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F97C15B2-F26D-46E6-AF17-5A2495A9FAC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F97C15B2-F26D-46E6-AF17-5A2495A9FAC8}.Debug|x64.ActiveCfg = Debug|x64
+		{F97C15B2-F26D-46E6-AF17-5A2495A9FAC8}.Debug|x64.Build.0 = Debug|x64
 		{F97C15B2-F26D-46E6-AF17-5A2495A9FAC8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F97C15B2-F26D-46E6-AF17-5A2495A9FAC8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F97C15B2-F26D-46E6-AF17-5A2495A9FAC8}.Release|x64.ActiveCfg = Release|x64
+		{F97C15B2-F26D-46E6-AF17-5A2495A9FAC8}.Release|x64.Build.0 = Release|x64
 		{5CFA14D6-9ECD-4314-9E81-1248677AA7DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5CFA14D6-9ECD-4314-9E81-1248677AA7DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5CFA14D6-9ECD-4314-9E81-1248677AA7DA}.Debug|x64.ActiveCfg = Debug|x64
 		{5CFA14D6-9ECD-4314-9E81-1248677AA7DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5CFA14D6-9ECD-4314-9E81-1248677AA7DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5CFA14D6-9ECD-4314-9E81-1248677AA7DA}.Release|x64.ActiveCfg = Release|x64
+		{E57DCA52-531B-4244-8727-67B7CA2374BC}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{E57DCA52-531B-4244-8727-67B7CA2374BC}.Debug|Any CPU.Build.0 = Debug|Win32
+		{E57DCA52-531B-4244-8727-67B7CA2374BC}.Debug|x64.ActiveCfg = Debug|x64
+		{E57DCA52-531B-4244-8727-67B7CA2374BC}.Debug|x64.Build.0 = Debug|x64
+		{E57DCA52-531B-4244-8727-67B7CA2374BC}.Release|Any CPU.ActiveCfg = Release|Win32
+		{E57DCA52-531B-4244-8727-67B7CA2374BC}.Release|Any CPU.Build.0 = Release|Win32
+		{E57DCA52-531B-4244-8727-67B7CA2374BC}.Release|x64.ActiveCfg = Release|x64
+		{E57DCA52-531B-4244-8727-67B7CA2374BC}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

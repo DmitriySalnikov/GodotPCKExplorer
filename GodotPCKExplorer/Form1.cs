@@ -374,7 +374,7 @@ namespace GodotPCKExplorer
                     }
                     else if (!pck.PCK_Embedded)
                     {
-                        Utils.ShowMessage("The selected file must contain an embedded '.pck' file", "Error", MessageType.Error);
+                        Program.ShowMessage("The selected file must contain an embedded '.pck' file", "Error", MessageType.Error);
                         return;
                     }
 
@@ -396,7 +396,7 @@ namespace GodotPCKExplorer
                     }
                     else if (!pck.PCK_Embedded)
                     {
-                        Utils.ShowMessage("The selected file must contain an embedded '.pck' file", "Error", MessageType.Error);
+                        Program.ShowMessage("The selected file must contain an embedded '.pck' file", "Error", MessageType.Error);
                         return;
                     }
 

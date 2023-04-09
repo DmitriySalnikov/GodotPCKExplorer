@@ -35,7 +35,7 @@ namespace GodotPCKExplorer
             }
             catch (Exception ex)
             {
-                Utils.CommandLog(ex, "Error", false, MessageType.Error);
+                Program.CommandLog(ex, "Error", false, MessageType.Error);
             }
         }
 
@@ -50,7 +50,7 @@ namespace GodotPCKExplorer
             if (!godotVersion.IsValid)
             {
                 bp.Dispose();
-                Utils.ShowMessage("Incorrect version is specified!", "Error", MessageType.Error);
+                Program.ShowMessage("Incorrect version is specified!", "Error", MessageType.Error);
                 return false;
             }
 
@@ -58,7 +58,7 @@ namespace GodotPCKExplorer
             {
                 if (!File.Exists(out_pck))
                 {
-                    Utils.CommandLog("Attempt to embed a package in a non-existent file", "Error", false, MessageType.Error);
+                    Program.CommandLog("Attempt to embed a package in a non-existent file", "Error", false, MessageType.Error);
                     return false;
                 }
                 else
@@ -67,7 +67,7 @@ namespace GodotPCKExplorer
                     if (pck.OpenFile(out_pck, false))
                     {
                         pck.Close();
-                        Utils.CommandLog("Attempt to embed a package in a file with an already embedded package or in a regular '.pck' file", "Error", false, MessageType.Error);
+                        Program.CommandLog("Attempt to embed a package in a file with an already embedded package or in a regular '.pck' file", "Error", false, MessageType.Error);
                         return false;
                     }
                 }
@@ -87,7 +87,7 @@ namespace GodotPCKExplorer
                         }
                         catch (Exception ex)
                         {
-                            Utils.ShowMessage(ex, "Error", MessageType.Error);
+                            Program.ShowMessage(ex, "Error", MessageType.Error);
                             result = false;
                             return;
                         }
@@ -101,7 +101,7 @@ namespace GodotPCKExplorer
                     catch (Exception ex)
                     {
                         CloseAndDeleteFile(pck, out_pck);
-                        Utils.ShowMessage(ex, "Error", MessageType.Error); result = false; return;
+                        Program.ShowMessage(ex, "Error", MessageType.Error); result = false; return;
                     }
 
                     long embed_start = 0;
@@ -119,7 +119,7 @@ namespace GodotPCKExplorer
                         catch (Exception ex)
                         {
                             CloseAndDeleteFile(pck, out_pck);
-                            Utils.ShowMessage(ex, "Error", MessageType.Error); result = false; return;
+                            Program.ShowMessage(ex, "Error", MessageType.Error); result = false; return;
                         }
 
                     }
@@ -275,7 +275,7 @@ namespace GodotPCKExplorer
                     }
                     catch (Exception ex)
                     {
-                        Utils.ShowMessage(ex, "Error", MessageType.Error);
+                        Program.ShowMessage(ex, "Error", MessageType.Error);
                         CloseAndDeleteFile(pck, out_pck); result = false; return;
                     }
 
@@ -294,7 +294,7 @@ namespace GodotPCKExplorer
             are.WaitOne();
 
             //if (result)
-            //    Utils.ShowMessage("Complete!", "Progress");
+            //    Program.ShowMessage("Complete!", "Progress");
 
             return result;
         }
