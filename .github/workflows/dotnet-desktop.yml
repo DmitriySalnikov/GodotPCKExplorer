@@ -16,7 +16,7 @@ jobs:
 
     env:
       Project_Name: GodotPCKExplorer
-      Solution_Name: GodotPCKExplorer.sln
+      Solution_Path: GodotPCKExplorer.sln
 
     steps:
       - name: Checkout
@@ -31,19 +31,19 @@ jobs:
         uses: Nuget/setup-nuget@v1.1.1
 
       - name: Restore nuget packages
-        run: nuget restore ${{ env.Solution_Name }}
+        run: nuget restore ${{ env.Solution_Path }}
 
       - name: Build solution
         shell: powershell
-        run: msbuild ${{ env.Solution_Name }} /p:Configuration=${{ matrix.configuration }} /p:Platform="Any CPU"
+        run: msbuild ${{ env.Solution_Path }} /t:GodotPCKExplorer /p:Configuration=${{ matrix.configuration }} /p:Platform="x64" /m:2
 
       - name: Prepare artifacts
         if: matrix.configuration == 'Release'
         shell: powershell
-        run: Remove-Item ${{ env.Project_Name }}/bin/${{ matrix.configuration }}/* -Include *.xml,*.pdb -Force
+        run: Remove-Item ${{ env.Project_Name }}/bin/x64/${{ matrix.configuration }}/* -Include *.xml,*.pdb -Force
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3
         with:
           name: ${{ env.Project_Name }}_${{ matrix.configuration }}
-          path: ${{ env.Project_Name }}/bin/${{ matrix.configuration }}/
+          path: ${{ env.Project_Name }}/bin/x64/${{ matrix.configuration }}/

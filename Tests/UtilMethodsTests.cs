@@ -126,7 +126,7 @@ namespace Tests
         [SetUp]
         public void GodotPCKInit()
         {
-            Program.CMDMode = true;
+            PCKActions.Init();
 
             if (!Directory.Exists(binaries_base))
                 Directory.CreateDirectory(binaries_base);

@@ -53,9 +53,10 @@ namespace GodotPCKExplorer
         }
 
         // https://stackoverflow.com/a/321404/8980874
+        // does the same thing as here https://github.com/godotengine/godot/blob/cfab3d2f57976913a03a891b30eaa0a5da4ff64f/core/io/pck_packer.cpp#L61
         public static byte[] HexStringToByteArray(string hex)
         {
-            hex = hex.Replace("-", "").Replace(" ", "");
+            hex = hex.Replace("-", "").Replace(" ", "").Replace("\r", "").Replace("\n", "");
 
             return Enumerable.Range(0, hex.Length)
                              .Where(x => x % 2 == 0)
@@ -65,7 +66,8 @@ namespace GodotPCKExplorer
 
         public static bool HexStringValidate(string hex, uint expected_size_in_bytes = 0)
         {
-            hex = hex.Replace("-", "").Replace(" ", "");
+            hex = hex.Replace("-", "").Replace(" ", "").Replace("\r", "").Replace("\n", "");
+
             var matches = Regex.Matches(hex, "[0-9A-Fa-f]+");
             if (matches.Count != 1)
                 return false;
@@ -112,59 +114,6 @@ namespace GodotPCKExplorer
                 return Regex.IsMatch(input.ToLower(), WildCardToRegular(wildcard.ToLower()));
         }
 
-        public static DialogResult ShowMessage(string text, string title, MessageType messageType = MessageType.None, MessageBoxButtons boxButtons = MessageBoxButtons.OK)
-        {
-            Program.Log($"[{messageType}] \"{title}\": {text}");
-
-            if (!Program.CMDMode)
-            {
-                MessageBoxIcon icon = MessageBoxIcon.None;
-                switch (messageType)
-                {
-                    case MessageType.Info:
-                        icon = MessageBoxIcon.Information;
-                        break;
-                    case MessageType.Error:
-                        icon = MessageBoxIcon.Error;
-                        break;
-                    case MessageType.Warning:
-                        icon = MessageBoxIcon.Warning;
-                        break;
-                }
-
-#if DEV_ENABLED
-                System.Diagnostics.Debugger.Break();
-#endif
-                return MessageBox.Show(text, title, boxButtons, icon);
-            }
-
-#if DEV_ENABLED
-            System.Diagnostics.Debugger.Break();
-#endif
-            return DialogResult.OK;
-        }
-
-        public static DialogResult ShowMessage(Exception ex, string title, MessageType messageType = MessageType.None, MessageBoxButtons boxButtons = MessageBoxButtons.OK)
-        {
-            var res = ShowMessage(ex.Message, title, messageType, boxButtons);
-            Program.Log(ex);
-            return res;
-        }
-
-        public static void CommandLog(string text, string title, bool showHelp, MessageType messageType = MessageType.None)
-        {
-            if (showHelp)
-                ShowMessage(text + "\n\n" + Properties.Resources.HelpText, title, messageType);
-            else
-                ShowMessage(text, title, messageType);
-        }
-
-        public static void CommandLog(Exception ex, string title, bool showHelp, MessageType messageType = MessageType.None)
-        {
-            Program.Log(ex);
-            CommandLog(ex.Message, title, showHelp, messageType);
-        }
-
         static public List<PCKPacker.FileToPack> ScanFoldersForFiles(string folder)
         {
             if (!Directory.Exists(folder))
@@ -191,7 +140,7 @@ namespace GodotPCKExplorer
             }
             catch (Exception ex)
             {
-                cancel = ShowMessage($"{ex.Message}\nThe directory will be skipped!", "Warning", MessageType.Warning, MessageBoxButtons.OKCancel) == DialogResult.Cancel;
+                cancel = Program.ShowMessage($"{ex.Message}\nThe directory will be skipped!", "Warning", MessageType.Warning, MessageBoxButtons.OKCancel) == DialogResult.Cancel;
                 return;
             }
 
@@ -213,7 +162,7 @@ namespace GodotPCKExplorer
             }
             catch (Exception ex)
             {
-                cancel = ShowMessage($"{ex.Message}\nThe directory will be skipped!", "Warning", MessageType.Warning, MessageBoxButtons.OKCancel) == DialogResult.Cancel;
+                cancel = Program.ShowMessage($"{ex.Message}\nThe directory will be skipped!", "Warning", MessageType.Warning, MessageBoxButtons.OKCancel) == DialogResult.Cancel;
                 return;
             }
 
@@ -231,7 +180,7 @@ namespace GodotPCKExplorer
                 }
                 catch (Exception ex)
                 {
-                    cancel = ShowMessage($"{ex.Message}\nThe file will be skipped!", "Warning", MessageType.Warning, MessageBoxButtons.OKCancel) == DialogResult.Cancel;
+                    cancel = Program.ShowMessage($"{ex.Message}\nThe file will be skipped!", "Warning", MessageType.Warning, MessageBoxButtons.OKCancel) == DialogResult.Cancel;
                 }
             }
         }

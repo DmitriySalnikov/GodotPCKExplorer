@@ -72,7 +72,7 @@ namespace GodotPCKExplorer
             }
             catch (Exception ex)
             {
-                Utils.ShowMessage(ex, "Error", MessageType.Error);
+                Program.ShowMessage(ex, "Error", MessageType.Error);
                 return false;
             }
 
@@ -97,7 +97,7 @@ namespace GodotPCKExplorer
             }
             catch (Exception ex)
             {
-                Utils.ShowMessage(ex, "Error", MessageType.Error);
+                Program.ShowMessage(ex, "Error", MessageType.Error);
                 file.Close();
                 try
                 {

@@ -8,7 +8,7 @@ using System.Windows.Forms;
 
 namespace GodotPCKExplorer
 {
-    public static class Program
+    internal static class Program
     {
         public static string AppName = "GodotPCKExplorer";
         public static string AppDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppName);
@@ -19,9 +19,13 @@ namespace GodotPCKExplorer
         static Logger logger;
         static bool runWithArgs = false;
 
+        static bool libsLoaded = false;
+
         // https://stackoverflow.com/a/3571628/8980874
         [DllImport("kernel32.dll")]
         static extern IntPtr GetConsoleWindow();
+        [DllImport("kernel32.dll")]
+        private static extern IntPtr LoadLibrary(string dllToLoad);
         [DllImport("user32.dll")]
         static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
@@ -34,19 +38,7 @@ namespace GodotPCKExplorer
         [STAThread]
         static void Main(string[] args)
         {
-            if (!Directory.Exists(AppDataPath))
-                Directory.CreateDirectory(AppDataPath);
-
-            // InvariantCulture for console and UI
-            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-            Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
-
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-
-            ShowConsole();
-            CMDMode = true;
-            Log("");
+            Init();
 
             RunCommandInternal(args, false);
 
@@ -65,6 +57,38 @@ namespace GodotPCKExplorer
             return;
         }
 
+        public static void Init()
+        {
+            if (!Directory.Exists(AppDataPath))
+                Directory.CreateDirectory(AppDataPath);
+
+            // InvariantCulture for console and UI
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+
+            LoadNativeLibs();
+
+            ShowConsole();
+            CMDMode = true;
+            Log("");
+        }
+
+        // https://stackoverflow.com/a/30646096/8980874
+        static void LoadNativeLibs()
+        {
+            var myPath = new Uri(typeof(Program).Assembly.CodeBase).LocalPath;
+            var myFolder = Path.GetDirectoryName(myPath);
+            var subFolder = Path.Combine(myFolder, "mbedTLS", (Environment.Is64BitProcess ? "x64" : "x86"));
+
+            if (!libsLoaded)
+            {
+                LoadLibrary(Path.Combine(subFolder, "mbedTLS_AES.dll"));
+            }
+        }
+
         public static void Cleanup()
         {
             logger?.Dispose();
@@ -74,6 +98,7 @@ namespace GodotPCKExplorer
             mainForm = null;
         }
 
+        #region Logs
         public static void Log(string txt)
         {
             if (logger == null)
@@ -89,6 +114,60 @@ namespace GodotPCKExplorer
 
             logger.Write(ex);
         }
+        public static DialogResult ShowMessage(string text, string title, MessageType messageType = MessageType.None, MessageBoxButtons boxButtons = MessageBoxButtons.OK)
+        {
+            Log($"[{messageType}] \"{title}\": {text}");
+
+            if (!CMDMode)
+            {
+                MessageBoxIcon icon = MessageBoxIcon.None;
+                switch (messageType)
+                {
+                    case MessageType.Info:
+                        icon = MessageBoxIcon.Information;
+                        break;
+                    case MessageType.Error:
+                        icon = MessageBoxIcon.Error;
+                        break;
+                    case MessageType.Warning:
+                        icon = MessageBoxIcon.Warning;
+                        break;
+                }
+
+#if DEV_ENABLED
+                System.Diagnostics.Debugger.Break();
+#endif
+                return MessageBox.Show(text, title, boxButtons, icon);
+            }
+
+#if DEV_ENABLED
+            System.Diagnostics.Debugger.Break();
+#endif
+            return DialogResult.OK;
+        }
+
+        public static DialogResult ShowMessage(Exception ex, string title, MessageType messageType = MessageType.None, MessageBoxButtons boxButtons = MessageBoxButtons.OK)
+        {
+            var res = ShowMessage(ex.Message, title, messageType, boxButtons);
+            Log(ex);
+            return res;
+        }
+
+        public static void CommandLog(string text, string title, bool showHelp, MessageType messageType = MessageType.None)
+        {
+            if (showHelp)
+                ShowMessage(text + "\n\n" + Properties.Resources.HelpText, title, messageType);
+            else
+                ShowMessage(text, title, messageType);
+        }
+
+        public static void CommandLog(Exception ex, string title, bool showHelp, MessageType messageType = MessageType.None)
+        {
+            Log(ex);
+            CommandLog(ex.Message, title, showHelp, messageType);
+        }
+
+        #endregion
 
         static public void RunCommand(string[] args)
         {
@@ -109,7 +188,7 @@ namespace GodotPCKExplorer
             }
             catch (Exception ex)
             {
-                Utils.CommandLog(ex, "Error", false, MessageType.Error);
+                Program.CommandLog(ex, "Error", false, MessageType.Error);
             }
 
             if (args.Length > 0)
@@ -177,7 +256,7 @@ namespace GodotPCKExplorer
             }
             catch (Exception ex)
             {
-                Utils.CommandLog(ex, "Error", false, MessageType.Error);
+                Program.CommandLog(ex, "Error", false, MessageType.Error);
                 return;
             }
 
@@ -192,7 +271,7 @@ namespace GodotPCKExplorer
                 }
                 catch (Exception ex)
                 {
-                    Utils.CommandLog(ex, "Error", false, MessageType.Error);
+                    Program.CommandLog(ex, "Error", false, MessageType.Error);
                     return;
                 }
             }
@@ -219,13 +298,13 @@ namespace GodotPCKExplorer
                 }
                 else
                 {
-                    Utils.CommandLog("Path to file not specified! Or incorrect number of arguments specified!", "Error", true, MessageType.Error);
+                    Program.CommandLog("Path to file not specified! Or incorrect number of arguments specified!", "Error", true, MessageType.Error);
                     return;
                 }
             }
             catch (Exception ex)
             {
-                Utils.CommandLog(ex, "Error", false, MessageType.Error);
+                Program.CommandLog(ex, "Error", false, MessageType.Error);
                 return;
             }
 
@@ -247,13 +326,13 @@ namespace GodotPCKExplorer
                 }
                 else
                 {
-                    Utils.CommandLog($"Invalid number of arguments! Expected 3, but got {args.Length}", "Error", true, MessageType.Error);
+                    Program.CommandLog($"Invalid number of arguments! Expected 3, but got {args.Length}", "Error", true, MessageType.Error);
                     return;
                 }
             }
             catch (Exception ex)
             {
-                Utils.CommandLog(ex, "Error", false, MessageType.Error);
+                Program.CommandLog(ex, "Error", false, MessageType.Error);
                 return;
             }
 
@@ -287,13 +366,13 @@ namespace GodotPCKExplorer
                 }
                 else
                 {
-                    Utils.CommandLog($"Invalid number of arguments! Expected at least 4, but got {args.Length}", "Error", true, MessageType.Error);
+                    Program.CommandLog($"Invalid number of arguments! Expected at least 4, but got {args.Length}", "Error", true, MessageType.Error);
                     return;
                 }
             }
             catch (Exception ex)
             {
-                Utils.CommandLog(ex, "Error", false, MessageType.Error);
+                Program.CommandLog(ex, "Error", false, MessageType.Error);
                 return;
             }
 
@@ -316,19 +395,19 @@ namespace GodotPCKExplorer
 
                     if (args.Length > 4)
                     {
-                        Utils.CommandLog($"Invalid number of arguments! Expected 2 or 3, but got {args.Length}", "Error", true, MessageType.Error);
+                        Program.CommandLog($"Invalid number of arguments! Expected 2 or 3, but got {args.Length}", "Error", true, MessageType.Error);
                         return;
                     }
                 }
                 else
                 {
-                    Utils.CommandLog($"Path to file or directory not specified!", "Error", true, MessageType.Error);
+                    Program.CommandLog($"Path to file or directory not specified!", "Error", true, MessageType.Error);
                     return;
                 }
             }
             catch (Exception ex)
             {
-                Utils.CommandLog(ex, "Error", false, MessageType.Error);
+                Program.CommandLog(ex, "Error", false, MessageType.Error);
                 return;
             }
 
@@ -350,13 +429,13 @@ namespace GodotPCKExplorer
                 }
                 else
                 {
-                    Utils.CommandLog($"Invalid number of arguments! Expected 3, but got {args.Length}", "Error", true, MessageType.Error);
+                    Program.CommandLog($"Invalid number of arguments! Expected 3, but got {args.Length}", "Error", true, MessageType.Error);
                     return;
                 }
             }
             catch (Exception ex)
             {
-                Utils.CommandLog(ex, "Error", false, MessageType.Error);
+                Program.CommandLog(ex, "Error", false, MessageType.Error);
                 return;
             }
 
@@ -380,19 +459,19 @@ namespace GodotPCKExplorer
 
                     if (args.Length > 3)
                     {
-                        Utils.CommandLog($"Invalid number of arguments! Expected 2 or 3, but got {args.Length}", "Error", true, MessageType.Error);
+                        Program.CommandLog($"Invalid number of arguments! Expected 2 or 3, but got {args.Length}", "Error", true, MessageType.Error);
                         return;
                     }
                 }
                 else
                 {
-                    Utils.CommandLog($"Path to file not specified!", "Error", true, MessageType.Error);
+                    Program.CommandLog($"Path to file not specified!", "Error", true, MessageType.Error);
                     return;
                 }
             }
             catch (Exception ex)
             {
-                Utils.CommandLog(ex, "Error", false, MessageType.Error);
+                Program.CommandLog(ex, "Error", false, MessageType.Error);
                 return;
             }
 
@@ -414,13 +493,13 @@ namespace GodotPCKExplorer
                 }
                 else
                 {
-                    Utils.CommandLog($"Invalid number of arguments! Expected 3, but got {args.Length}", "Error", true, MessageType.Error);
+                    Program.CommandLog($"Invalid number of arguments! Expected 3, but got {args.Length}", "Error", true, MessageType.Error);
                     return;
                 }
             }
             catch (Exception ex)
             {
-                Utils.CommandLog(ex, "Error", false, MessageType.Error);
+                Program.CommandLog(ex, "Error", false, MessageType.Error);
                 return;
             }
 

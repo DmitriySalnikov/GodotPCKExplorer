@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Windows.Forms;
 
 namespace GodotPCKExplorer
 {
@@ -77,7 +78,7 @@ namespace GodotPCKExplorer
             }
             catch (Exception ex)
             {
-                Utils.ShowMessage(ex, "Error", MessageType.Error);
+                Program.ShowMessage(ex, "Error", MessageType.Error);
                 return false;
             }
 
@@ -94,7 +95,7 @@ namespace GodotPCKExplorer
                     {
                         binReader.Close();
                         if (show_not_pck_error)
-                            Utils.ShowMessage("Not a Godot PCK file!", "Error", MessageType.Error);
+                            Program.ShowMessage("Not a Godot PCK file!", "Error", MessageType.Error);
                         return false;
                     }
                     binReader.BaseStream.Seek(-12, SeekOrigin.Current);
@@ -107,7 +108,7 @@ namespace GodotPCKExplorer
                     {
                         binReader.Close();
                         if (show_not_pck_error)
-                            Utils.ShowMessage("Not a Godot PCK file!", "Error", MessageType.Error);
+                            Program.ShowMessage("Not a Godot PCK file!", "Error", MessageType.Error);
 
                         return false;
                     }
@@ -142,7 +143,7 @@ namespace GodotPCKExplorer
                     if (IsEncrypted)
                     {
                         EncryptionKey = get_encryption_key();
-                        Program.Log(EncryptionKey);
+                        Program.Log($"Got encryption key: {EncryptionKey}");
                     }
                 }
 
@@ -150,31 +151,39 @@ namespace GodotPCKExplorer
 
                 int file_count = binReader.ReadInt32();
 
-                //Aes aes = Aes.Create();
-                //aes.GenerateIV();
-                //aes.KeySize = 256;
-                //aes.Mode = CipherMode.CFB;
-                //aes.Key = Utils.HexStringToByteArray("04bf1d8556b390b71e59f2517fd8f27dafddf223f5e84b19c1e31ddbd766165d");
-                //Program.Log(string.Join(" ", aes.IV.Select(i => i.ToString("X"))));
+                BinaryReader tmp_reader = binReader;
 
-                //var iv = Utils.HexStringToByteArray("d5 7c 93 69 f7 47 1f 44 05 03 e2 bd cc 08 00 00");
-                //ICryptoTransform crypt = aes.CreateDecryptor(aes.Key, iv);
+                if ((PCK_Flags & Utils.PCK_DIR_ENCRYPTED) != 0)
+                {
+                    byte[] data;
+                    bool is_valid;
+                    using (var mtls = new mbedTLS())
+                        is_valid = ReadEncryptedBlock(binReader, mtls, Utils.HexStringToByteArray(EncryptionKey), out data);
 
-                //binReader = new BinaryReader(new CryptoStream(binReader.BaseStream, crypt, CryptoStreamMode.Read));
+                    if (is_valid)
+                    {
+                        MemoryStream memoryStream = new MemoryStream(data);
+                        tmp_reader = new BinaryReader(memoryStream);
+                    }
+                    else
+                    {
+                        throw new CryptographicException("The decrypted data has an incorrect MD5 hash sum.");
+                    }
+                }
 
                 for (int i = 0; i < file_count; i++)
                 {
-                    int path_size = binReader.ReadInt32();
-                    string path = Encoding.UTF8.GetString(binReader.ReadBytes(path_size)).Replace("\0", "");
-                    long pos_of_ofs = binReader.BaseStream.Position;
-                    long ofs = binReader.ReadInt64() + PCK_FileBase;
-                    long size = binReader.ReadInt64();
-                    byte[] md5 = binReader.ReadBytes(16);
+                    int path_size = tmp_reader.ReadInt32();
+                    string path = Encoding.UTF8.GetString(tmp_reader.ReadBytes(path_size)).Replace("\0", "");
+                    long pos_of_ofs = tmp_reader.BaseStream.Position;
+                    long ofs = tmp_reader.ReadInt64() + PCK_FileBase;
+                    long size = tmp_reader.ReadInt64();
+                    byte[] md5 = tmp_reader.ReadBytes(16);
 
                     int flags = 0;
                     if (PCK_VersionPack == 2)
                     {
-                        flags = binReader.ReadInt32();
+                        flags = tmp_reader.ReadInt32();
                     }
 
                     Files.Add(path, new PackedFile(binReader, path, ofs, pos_of_ofs, size, md5, flags));
@@ -185,13 +194,30 @@ namespace GodotPCKExplorer
                 binReader.Close();
                 binReader = null;
 
-                Utils.ShowMessage($"Can't read PCK file: {p_path}\n" + ex.Message, "Error", MessageType.Error);
+                Program.ShowMessage($"Can't read PCK file: {p_path}\n" + ex.Message, "Error", MessageType.Error);
                 Program.Log(ex.StackTrace);
                 return false;
             }
 
             PackPath = p_path;
             return true;
+        }
+
+        bool ReadEncryptedBlock(BinaryReader binReader, mbedTLS crypt, byte[] key, out byte[] output)
+        {
+            var md5 = binReader.ReadBytes(16);
+            var data_size = binReader.ReadInt64();
+            var iv = binReader.ReadBytes(16);
+            var data_size_enc = Utils.AlignAddress(data_size, 16);
+
+            output = new byte[data_size];
+            crypt.set_key(key);
+            crypt.decrypt_cfb(iv, binReader.ReadBytes((int)data_size_enc), output);
+
+            var md5_crypto = MD5.Create();
+            var dec_md5 = md5_crypto.ComputeHash(output);
+
+            return md5.SequenceEqual(dec_md5);
         }
 
         public bool ExtractAllFiles(string folder, bool overwriteExisting = true)
@@ -210,7 +236,7 @@ namespace GodotPCKExplorer
 
             if (!names.Any())
             {
-                Utils.CommandLog("The list of files to export is empty", "Error", false, MessageType.Error);
+                Program.CommandLog("The list of files to export is empty", "Error", false, MessageType.Error);
                 return false;
             }
 
@@ -224,11 +250,20 @@ namespace GodotPCKExplorer
                     double one_file_in_progress_line = 1.0 / files_count;
                     foreach (var path in names)
                     {
+                        if (bw.CancellationPending)
+                        {
+                            result = false;
+                            return;
+                        }
+
                         if (path != null)
                         {
                             if (!Files.ContainsKey(path))
                             {
-                                Utils.CommandLog($"File not found in PCK: {path}", "Error", false, MessageType.Error);
+                                var res = Program.ShowMessage($"File not found in PCK: {path}", "Error", MessageType.Error, MessageBoxButtons.OKCancel);
+                                if (res == DialogResult.Cancel)
+                                    bw.CancelAsync();
+
                                 continue;
                             }
 
@@ -276,7 +311,7 @@ namespace GodotPCKExplorer
         {
             if (!PCK_Embedded)
             {
-                Utils.ShowMessage("The PCK file is not embedded.", "Error", MessageType.Error);
+                Program.ShowMessage("The PCK file is not embedded.", "Error", MessageType.Error);
                 return false;
             }
 
@@ -303,7 +338,7 @@ namespace GodotPCKExplorer
                     }
                     catch (Exception ex)
                     {
-                        Utils.ShowMessage(ex, "Error", MessageType.Error);
+                        Program.ShowMessage(ex, "Error", MessageType.Error);
                         result = false;
                         return;
                     }
@@ -335,7 +370,7 @@ namespace GodotPCKExplorer
                     }
                     catch (Exception ex)
                     {
-                        Utils.ShowMessage(ex, "Error", MessageType.Error);
+                        Program.ShowMessage(ex, "Error", MessageType.Error);
                         file.Close();
                         try
                         {
@@ -391,7 +426,7 @@ namespace GodotPCKExplorer
                     {
                         if (p.OpenFile(exePath, false))
                         {
-                            Utils.CommandLog("File already contains '.pck' inside.", "Error", false, MessageType.Error);
+                            Program.CommandLog("File already contains '.pck' inside.", "Error", false, MessageType.Error);
                             result = false;
                             return;
                         }
@@ -405,7 +440,7 @@ namespace GodotPCKExplorer
                     }
                     catch (Exception ex)
                     {
-                        Utils.ShowMessage(ex, "Error", MessageType.Error);
+                        Program.ShowMessage(ex, "Error", MessageType.Error);
                         result = false;
                         return;
                     }
@@ -419,7 +454,7 @@ namespace GodotPCKExplorer
                     }
                     catch (Exception ex)
                     {
-                        Utils.ShowMessage(ex, "Error", MessageType.Error);
+                        Program.ShowMessage(ex, "Error", MessageType.Error);
                         result = false;
                         return;
                     }
@@ -462,7 +497,7 @@ namespace GodotPCKExplorer
                     }
                     catch (Exception ex)
                     {
-                        Utils.ShowMessage(ex, "Error", MessageType.Error);
+                        Program.ShowMessage(ex, "Error", MessageType.Error);
                         file.Close();
                         try
                         {

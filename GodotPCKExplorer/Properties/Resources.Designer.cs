@@ -61,12 +61,24 @@ namespace GodotPCKExplorer.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Test Text
+        ///   Looks up a localized string similar to Godot can embed &apos;.pck&apos; files into other files.
+        ///Therefore, GodotPCKExplorer can open both &apos;.pck&apos; and files with embedded &apos;pck&apos;.
+        ///&quot;&quot; - Paths and other arguments must be without spaces or inside quotes.
+        ///{} - Optional arguments
         ///
-        ///Example of valid arguments:
-        ///Open file &apos;-o &quot;C:\Game.pck&quot;&apos;
-        ///Export files &apos;-e &quot;C:\Game.exe&quot; &quot;C:\Export Directory&quot;&apos;
-        ///Pack files (version can be ignored if you have saved &apos;godot_version.save&apos;) &apos;-p &quot;C:\Directory with files&quot; &quot;C:\GameNew.pck&quot; 1.3.2.0&apos;.
+        ///Examples of valid commands:
+        ///-o	Open pack file
+        ///	-o [path to pack]
+        ///	-o C:/Game.exe
+        ///	-o C:/Game.pck
+        ///
+        ///-i	Show pack file info
+        ///	-i [path to pack]
+        ///	-i C:/Game.exe
+        ///	-i C:/Game.pck
+        ///
+        ///-e	Extract content from a pack to a folder. Automatically overwrites existing files
+        ///	-e [path to p [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string HelpText {
             get {
