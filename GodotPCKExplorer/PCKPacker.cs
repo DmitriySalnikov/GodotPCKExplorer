@@ -203,8 +203,6 @@ namespace GodotPCKExplorer
                             pck.Seek((int)offset, SeekOrigin.Begin);
                         }
 
-                        const int buf_max = 65536;
-
                         // write actual files data
                         int count = 0;
                         foreach (var file in files)
@@ -221,7 +219,7 @@ namespace GodotPCKExplorer
                             long to_write = file.Size;
                             while (to_write > 0)
                             {
-                                var read = src.ReadBytes(buf_max);
+                                var read = src.ReadBytes(Utils.BUFFER_MAX_SIZE);
                                 pck.Write(read);
                                 to_write -= read.Length;
 

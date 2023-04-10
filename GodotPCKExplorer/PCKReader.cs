@@ -1,22 +1,18 @@
 ﻿using System;
-using System.Security.Cryptography;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Windows.Forms;
 
 namespace GodotPCKExplorer
 {
     public class PCKReader : IDisposable
     {
-        const int BUF_MAX_SIZE = 1024 * 1024;
-
         BinaryReader binReader = null;
         public Dictionary<string, PackedFile> Files = new Dictionary<string, PackedFile>();
         public string PackPath = "";
-        public string EncryptionKey = "";
+        public byte[] EncryptionKey = null;
 
         public int PCK_VersionPack = -1;
         public int PCK_VersionMajor = -1;
@@ -28,6 +24,8 @@ namespace GodotPCKExplorer
         public long PCK_StartPosition = 0;
         public long PCK_EndPosition = 0;
         public bool PCK_Embedded = false;
+
+        Func<string> GetEncryptionKeyFunc = null;
 
         public PCKVersion PCK_Version { get { return new PCKVersion(PCK_VersionPack, PCK_VersionMajor, PCK_VersionMinor, PCK_VersionRevision); } }
         public bool IsOpened { get { return binReader != null; } }
@@ -53,7 +51,7 @@ namespace GodotPCKExplorer
 
             Files.Clear();
             PackPath = "";
-            EncryptionKey = "";
+            EncryptionKey = null;
 
             PCK_VersionPack = -1;
             PCK_VersionMajor = -1;
@@ -65,6 +63,17 @@ namespace GodotPCKExplorer
             PCK_StartPosition = 0;
             PCK_EndPosition = 0;
             PCK_Embedded = false;
+
+            GetEncryptionKeyFunc = null;
+        }
+
+        void TryGetEncryptionKey()
+        {
+            // TODO: add test for this key before use!
+
+            if (GetEncryptionKeyFunc != null)
+                EncryptionKey = Utils.HexStringToByteArray(GetEncryptionKeyFunc());
+            Program.Log($"Got encryption key: {Utils.ByteArrayToHexString(EncryptionKey)}");
         }
 
         public bool OpenFile(string p_path, bool show_not_pck_error = true, Func<string> get_encryption_key = null)
@@ -81,6 +90,8 @@ namespace GodotPCKExplorer
                 Program.ShowMessage(ex, "Error", MessageType.Error);
                 return false;
             }
+
+            GetEncryptionKeyFunc = get_encryption_key;
 
             try
             {
@@ -140,10 +151,9 @@ namespace GodotPCKExplorer
                     PCK_FileBaseAddressOffset = binReader.BaseStream.Position;
                     PCK_FileBase = binReader.ReadInt64(); // 24-31
 
-                    if (IsEncrypted)
+                    if (IsEncrypted && (EncryptionKey == null || EncryptionKey.Length != 32))
                     {
-                        EncryptionKey = get_encryption_key();
-                        Program.Log($"Got encryption key: {EncryptionKey}");
+                        TryGetEncryptionKey();
                     }
                 }
 
@@ -153,23 +163,8 @@ namespace GodotPCKExplorer
 
                 BinaryReader tmp_reader = binReader;
 
-                if ((PCK_Flags & Utils.PCK_DIR_ENCRYPTED) != 0)
-                {
-                    byte[] data;
-                    bool is_valid;
-                    using (var mtls = new mbedTLS())
-                        is_valid = ReadEncryptedBlock(binReader, mtls, Utils.HexStringToByteArray(EncryptionKey), out data);
-
-                    if (is_valid)
-                    {
-                        MemoryStream memoryStream = new MemoryStream(data);
-                        tmp_reader = new BinaryReader(memoryStream);
-                    }
-                    else
-                    {
-                        throw new CryptographicException("The decrypted data has an incorrect MD5 hash sum.");
-                    }
-                }
+                if (IsEncrypted)
+                    tmp_reader = Utils.ReadEncryptedBlockIntoMemoryStream(binReader, EncryptionKey);
 
                 for (int i = 0; i < file_count; i++)
                 {
@@ -188,6 +183,12 @@ namespace GodotPCKExplorer
 
                     Files.Add(path, new PackedFile(binReader, path, ofs, pos_of_ofs, size, md5, flags));
                 };
+
+                if (IsEncrypted)
+                {
+                    tmp_reader.Close();
+                    tmp_reader.Dispose();
+                }
             }
             catch (Exception ex)
             {
@@ -201,23 +202,6 @@ namespace GodotPCKExplorer
 
             PackPath = p_path;
             return true;
-        }
-
-        bool ReadEncryptedBlock(BinaryReader binReader, mbedTLS crypt, byte[] key, out byte[] output)
-        {
-            var md5 = binReader.ReadBytes(16);
-            var data_size = binReader.ReadInt64();
-            var iv = binReader.ReadBytes(16);
-            var data_size_enc = Utils.AlignAddress(data_size, 16);
-
-            output = new byte[data_size];
-            crypt.set_key(key);
-            crypt.decrypt_cfb(iv, binReader.ReadBytes((int)data_size_enc), output);
-
-            var md5_crypto = MD5.Create();
-            var dec_md5 = md5_crypto.ComputeHash(output);
-
-            return md5.SequenceEqual(dec_md5);
         }
 
         public bool ExtractAllFiles(string folder, bool overwriteExisting = true)
@@ -248,6 +232,7 @@ namespace GodotPCKExplorer
 
                     int count = 0;
                     double one_file_in_progress_line = 1.0 / files_count;
+
                     foreach (var path in names)
                     {
                         if (bw.CancellationPending)
@@ -260,8 +245,8 @@ namespace GodotPCKExplorer
                         {
                             if (!Files.ContainsKey(path))
                             {
-                                var res = Program.ShowMessage($"File not found in PCK: {path}", "Error", MessageType.Error, MessageBoxButtons.OKCancel);
-                                if (res == DialogResult.Cancel)
+                                var res = Program.ShowMessage($"File not found in PCK: {path}", "Error", MessageType.Error, System.Windows.Forms.MessageBoxButtons.OKCancel);
+                                if (res == System.Windows.Forms.DialogResult.Cancel)
                                     bw.CancelAsync();
 
                                 continue;
@@ -273,7 +258,10 @@ namespace GodotPCKExplorer
                             };
                             Files[path].OnProgress += upd;
 
-                            if (!Files[path].ExtractFile(basePath, overwriteExisting))
+                            if (Files[path].IsEncrypted && (EncryptionKey == null || EncryptionKey.Length != 32))
+                                TryGetEncryptionKey();
+
+                            if (!Files[path].ExtractFile(basePath, overwriteExisting, bw, EncryptionKey))
                             {
                                 Files[path].OnProgress -= upd;
                                 result = false;
@@ -354,7 +342,7 @@ namespace GodotPCKExplorer
 
                             while (to_write > 0)
                             {
-                                var read = binReader.ReadBytes(Math.Min(BUF_MAX_SIZE, (int)to_write));
+                                var read = binReader.ReadBytes(Math.Min(Utils.BUFFER_MAX_SIZE, (int)to_write));
                                 file.Write(read);
                                 to_write -= read.Length;
 
@@ -473,7 +461,7 @@ namespace GodotPCKExplorer
 
                             while (to_write > 0)
                             {
-                                var read = binReader.ReadBytes(Math.Min(BUF_MAX_SIZE, (int)to_write));
+                                var read = binReader.ReadBytes(Math.Min(Utils.BUFFER_MAX_SIZE, (int)to_write));
                                 file.Write(read);
                                 to_write -= read.Length;
 

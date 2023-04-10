@@ -22,6 +22,7 @@ namespace GodotPCKExplorer
         public const int PCK_MAGIC = 0x43504447;
         public const int PCK_DIR_ENCRYPTED = 1 << 0;
         public const int PCK_FILE_ENCRYPTED = 1 << 0;
+        public const int BUFFER_MAX_SIZE = 1024 * 1024;
 
         // Source: https://stackoverflow.com/a/14488941
         static readonly string[] SizeSuffixes = { "bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" };
@@ -50,6 +51,14 @@ namespace GodotPCKExplorer
             return string.Format("{0:n" + decimalPlaces + "} {1}",
                 adjustedSize,
                 SizeSuffixes[mag]);
+        }
+
+        public static string ByteArrayToHexString(byte[] data, string sepChar = "")
+        {
+            if (data != null)
+                return BitConverter.ToString(data).Replace("-", sepChar);
+
+            return "";
         }
 
         // https://stackoverflow.com/a/321404/8980874
@@ -95,6 +104,42 @@ namespace GodotPCKExplorer
                     return bytes;
                 }
             }
+        }
+
+        public static BinaryReader ReadEncryptedBlockIntoMemoryStream(BinaryReader reader, byte[] key)
+        {
+            byte[] data;
+            bool is_valid = ReadEncryptedBlock(reader, key, out data);
+
+            if (is_valid)
+            {
+                MemoryStream memoryStream = new MemoryStream(data);
+                return new BinaryReader(memoryStream);
+            }
+            else
+            {
+                throw new CryptographicException("The decrypted data has an incorrect MD5 hash sum.");
+            }
+        }
+
+        public static bool ReadEncryptedBlock(BinaryReader binReader, byte[] key, out byte[] output)
+        {
+            var md5 = binReader.ReadBytes(16);
+            var data_size = (int)binReader.ReadInt64();
+            var iv = binReader.ReadBytes(16);
+
+            var data_size_enc = AlignAddress(data_size, 16);
+
+            using (var mtls = new mbedTLS())
+            {
+                mtls.set_key(key);
+                mtls.decrypt_cfb(iv, binReader.ReadBytes((int)data_size_enc), data_size, out output);
+            }
+
+            var md5_crypto = MD5.Create();
+            var dec_md5 = md5_crypto.ComputeHash(output);
+
+            return md5.SequenceEqual(dec_md5);
         }
 
         // https://stackoverflow.com/a/30300521/8980874
