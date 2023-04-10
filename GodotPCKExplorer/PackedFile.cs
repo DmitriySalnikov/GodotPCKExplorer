@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.IO;
 
 namespace GodotPCKExplorer
@@ -40,7 +41,7 @@ namespace GodotPCKExplorer
             PositionOfOffsetValue = positionOfOffsetValue;
             Size = size;
             this.MD5 = MD5;
-            this.Flags = flags;
+            Flags = flags;
         }
 
         public delegate void VoidInt(int progress);
@@ -51,7 +52,7 @@ namespace GodotPCKExplorer
             get => (Flags & Utils.PCK_FILE_ENCRYPTED) != 0;
         }
 
-        public bool ExtractFile(string basePath, bool overwriteExisting = true)
+        public bool ExtractFile(string basePath, bool overwriteExisting = true, BackgroundWorker bw = null, byte[] encKey = null)
         {
             string path = basePath + "/" + FilePath.Replace("res://", "");
             string dir = Path.GetDirectoryName(path);
@@ -76,36 +77,48 @@ namespace GodotPCKExplorer
                 return false;
             }
 
-            const int buf_max = 65536;
-
             try
             {
                 if (Size > 0)
                 {
                     reader.BaseStream.Seek(Offset, SeekOrigin.Begin);
+
+                    BinaryReader tmp_reader = reader;
+
+                    if (IsEncrypted)
+                        tmp_reader = Utils.ReadEncryptedBlockIntoMemoryStream(reader, encKey);
+
                     long to_write = Size;
 
                     while (to_write > 0)
                     {
-                        var read = reader.ReadBytes(Math.Min(buf_max, (int)to_write));
+                        var read = tmp_reader.ReadBytes(Math.Min(Utils.BUFFER_MAX_SIZE, (int)to_write));
                         file.Write(read);
                         to_write -= read.Length;
 
                         OnProgress?.Invoke(100 - (int)((double)to_write / Size * 100));
                     }
+
+                    if (IsEncrypted)
+                    {
+                        tmp_reader.Close();
+                        tmp_reader.Dispose();
+                    }
                 }
             }
             catch (Exception ex)
             {
-                Program.ShowMessage(ex, "Error", MessageType.Error);
+                var res = Program.ShowMessage(ex, "Error", MessageType.Error, System.Windows.Forms.MessageBoxButtons.OKCancel);
                 file.Close();
                 try
                 {
                     File.Delete(path);
                 }
-                catch
-                {
+                catch { }
 
+                if (res == System.Windows.Forms.DialogResult.Cancel)
+                {
+                    bw?.CancelAsync();
                 }
             }
 

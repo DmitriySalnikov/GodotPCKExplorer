@@ -131,6 +131,12 @@ namespace GodotPCKExplorer
                     using (var d = new OpenWithPCKEncryption(item?.EncryptionKey ?? ""))
                     {
                         d.ShowDialog();
+
+                        if (item != null)
+                        {
+                            item.EncryptionKey = d.EncryptionKey;
+                            GUIConfig.Instance.Save();
+                        }
                         return d.EncryptionKey;
                     }
                 }
@@ -148,13 +154,15 @@ namespace GodotPCKExplorer
                 // Move to top
                 if (item != null)
                 {
-                    item.EncryptionKey = pckReader.EncryptionKey;
+                    var str = Utils.ByteArrayToHexString(pckReader.EncryptionKey);
+                    if (str != "")
+                        item.EncryptionKey = str;
                     list.Remove(item);
                     list.Insert(0, item);
                 }
                 else
                 {
-                    list.Insert(0, new RecentFiles(path, pckReader.EncryptionKey));
+                    list.Insert(0, new RecentFiles(path, Utils.ByteArrayToHexString(pckReader.EncryptionKey)));
                     while (list.Count > 16)
                         list.RemoveAt(list.Count - 1);
                 }

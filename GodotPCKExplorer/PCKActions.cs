@@ -297,7 +297,7 @@ namespace GodotPCKExplorer
                         exeNew = new BinaryWriter(File.OpenWrite(exeFile));
                         while (to_write > 0)
                         {
-                            var read = exeOld.ReadBytes(Math.Min(65536, (int)to_write));
+                            var read = exeOld.ReadBytes(Math.Min(Utils.BUFFER_MAX_SIZE, (int)to_write));
                             exeNew.Write(read);
                             to_write -= read.Length;
                         }
