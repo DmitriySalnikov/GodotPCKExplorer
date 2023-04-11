@@ -51,16 +51,35 @@ namespace GodotPCKExplorer
                 throw new ArgumentNullException(nameof(p_src));
             if (p_iv.Length != 16)
                 throw new ArgumentOutOfRangeException($"The IV must be 16 bytes long. {nameof(p_iv)}");
+            if (p_src.Length % 16 != 0)
+                throw new ArgumentOutOfRangeException($"The input data must be a multiple of 16. {nameof(p_iv)}");
             if (p_src.Length - 16 > dst_size)
                 throw new ArgumentOutOfRangeException($"The length of the source and output arrays is too much different. The difference should not exceed 16 bytes.");
 
             var output = new byte[p_src.Length];
             var res = decrypt_cfb(ctx, (ulong)p_src.Length, p_iv, p_src, output) == 0;
 
-            r_dst = new byte[dst_size];
-            Array.Copy(output, r_dst, dst_size);
+            Array.Resize(ref output, dst_size);
+            r_dst = output;
 
             return res;
+        }
+
+        public bool encrypt_cfb(byte[] p_iv, byte[] p_src, out byte[] r_dst)
+        {
+            if (p_iv == null)
+                throw new ArgumentNullException(nameof(p_iv));
+            if (p_src == null)
+                throw new ArgumentNullException(nameof(p_src));
+            if (p_iv.Length != 16)
+                throw new ArgumentOutOfRangeException($"The IV must be 16 bytes long. {nameof(p_iv)}");
+
+            var data = new byte[Utils.AlignAddress(p_src.Length, 16)];
+            Array.Copy(p_src, data, p_src.Length);
+
+            r_dst = new byte[data.Length];
+
+            return encrypt_cfb(ctx, (ulong)data.Length, p_iv, data, r_dst) == 0;
         }
     }
 }

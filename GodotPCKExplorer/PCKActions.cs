@@ -158,11 +158,11 @@ namespace GodotPCKExplorer
             return false;
         }
 
-        public static bool PackPCKRun(string dirPath, string filePath, string strVer, uint alignment = 16, bool embed = false)
+        public static bool PackPCKRun(string dirPath, string filePath, string strVer, uint alignment = 16, bool embed = false, byte[] encKey = null)
         {
             if (Directory.Exists(dirPath))
             {
-                return PackPCKRun(Utils.ScanFoldersForFiles(dirPath), filePath, strVer, alignment, embed);
+                return PackPCKRun(Utils.ScanFoldersForFiles(dirPath), filePath, strVer, alignment, embed, encKey);
             }
             else
             {
@@ -171,7 +171,7 @@ namespace GodotPCKExplorer
             return false;
         }
 
-        public static bool PackPCKRun(IEnumerable<PCKPacker.FileToPack> files, string filePath, string strVer, uint alignment = 16, bool embed = false)
+        public static bool PackPCKRun(IEnumerable<PCKPacker.FileToPack> files, string filePath, string strVer, uint alignment = 16, bool embed = false, byte[] encKey = null)
         {
             if (!files.Any())
             {
@@ -206,7 +206,7 @@ namespace GodotPCKExplorer
                 }
             }
 
-            if (pckPacker.PackFiles(filePath, files, alignment, ver, embed))
+            if (pckPacker.PackFiles(filePath, files, alignment, ver, embed, encKey))
             {
                 return true;
             }

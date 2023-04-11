@@ -1,7 +1,9 @@
-﻿using System;
+﻿using Newtonsoft.Json.Bson;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 
@@ -15,6 +17,9 @@ namespace GodotPCKExplorer
             public string OriginalPath;
             public long Size;
             public long OffsetPosition;
+
+            public byte[] md5 = null;
+            public bool is_encrypted = false;
 
             public FileToPack(string o_path, string path, long size)
             {
@@ -39,7 +44,7 @@ namespace GodotPCKExplorer
             }
         }
 
-        public bool PackFiles(string out_pck, IEnumerable<FileToPack> files, uint alignment, PCKVersion godotVersion, bool embed)
+        public bool PackFiles(string out_pck, IEnumerable<FileToPack> files, uint alignment, PCKVersion godotVersion, bool embed, byte[] encKey = null)
         {
             var bp = new BackgroundProgress();
             var bw = bp.bg_worker;
@@ -93,114 +98,136 @@ namespace GodotPCKExplorer
                         }
                     }
 
-                    BinaryWriter pck = null;
+                    BinaryWriter binWriter = null;
                     try
                     {
-                        pck = new BinaryWriter(File.OpenWrite(out_pck));
+                        binWriter = new BinaryWriter(File.Open(out_pck, FileMode.Create, FileAccess.ReadWrite));
                     }
                     catch (Exception ex)
                     {
-                        CloseAndDeleteFile(pck, out_pck);
+                        CloseAndDeleteFile(binWriter, out_pck);
                         Program.ShowMessage(ex, "Error", MessageType.Error); result = false; return;
                     }
 
                     long embed_start = 0;
                     if (embed)
                     {
-                        pck.BaseStream.Seek(0, SeekOrigin.End);
-                        embed_start = pck.BaseStream.Position;
+                        binWriter.BaseStream.Seek(0, SeekOrigin.End);
+                        embed_start = binWriter.BaseStream.Position;
 
                         // Godot's 779a5e56218b7fa2ab34ab22ab5b1b2aaa19346f editor_export.cpp:994
                         // Ensure embedded PCK starts at a 64-bit multiple
                         try
                         {
-                            Utils.AddPadding(pck, (uint)pck.BaseStream.Position % 8);
+                            Utils.AddPadding(binWriter, binWriter.BaseStream.Position % 8);
                         }
                         catch (Exception ex)
                         {
-                            CloseAndDeleteFile(pck, out_pck);
+                            CloseAndDeleteFile(binWriter, out_pck);
                             Program.ShowMessage(ex, "Error", MessageType.Error); result = false; return;
                         }
 
                     }
 
-                    long pck_start = pck.BaseStream.Position;
+                    long pck_start = binWriter.BaseStream.Position;
 
                     try
                     {
-                        pck.Write(Utils.PCK_MAGIC);
-                        pck.Write(godotVersion.PackVersion);
-                        pck.Write(godotVersion.Major);
-                        pck.Write(godotVersion.Minor);
-                        pck.Write(godotVersion.Revision);
+                        binWriter.Write(Utils.PCK_MAGIC);
+                        binWriter.Write(godotVersion.PackVersion);
+                        binWriter.Write(godotVersion.Major);
+                        binWriter.Write(godotVersion.Minor);
+                        binWriter.Write(godotVersion.Revision);
 
                         long file_base_address = -1;
 
+                        var is_index_encrypted = GUIConfig.Instance.EncryptIndex;
                         if (godotVersion.PackVersion == 2)
                         {
-                            pck.Write((int)0); // TODO: pack_flags (is pack encrypted)
-                            file_base_address = pck.BaseStream.Position;
-                            pck.Write((long)0);
+                            binWriter.Write((int)(is_index_encrypted ? 1 : 0));
+                            file_base_address = binWriter.BaseStream.Position;
+                            binWriter.Write((long)0);
                         }
 
-                        Utils.AddPadding(pck, 16 * sizeof(int)); // reserved
+                        Utils.AddPadding(binWriter, 16 * sizeof(int)); // reserved
 
-                        // write the index
-                        pck.Write((int)files.Count());
+                        // write the files count
+                        binWriter.Write((int)files.Count());
 
+                        var index_writer = binWriter;
+                        long index_begin_pos = binWriter.BaseStream.Position;
 
                         long total_size = 0;
-                        // write pck header
-                        foreach (var file in files)
+
                         {
-                            var str = Encoding.UTF8.GetBytes(file.Path).ToList();
-                            var str_len = str.Count;
+                            if (is_index_encrypted)
+                                index_writer = new BinaryWriter(new MemoryStream());
 
-                            // Godot 4's PCK uses padding for some reason...
-                            if (godotVersion.PackVersion == 2)
-                                str_len = (int)Utils.AlignAddress(str_len, 4); // align with 4
-
-                            // store pascal string (size, data)
-                            pck.Write(str_len);
-                            pck.Write(str.ToArray());
-
-                            // Add padding for string
-                            if (godotVersion.PackVersion == 2)
-                                Utils.AddPadding(pck, (uint)(str_len - str.Count));
-
-                            file.OffsetPosition = pck.BaseStream.Position;
-                            pck.Write((long)0); // offset
-                            pck.Write((long)file.Size); // size
-
-                            total_size += file.Size; // for progress bar
-
-                            if (godotVersion.PackVersion < 2)
+                            // write pck index
+                            foreach (var file in files)
                             {
-                                // # empty md5
-                                Utils.AddPadding(pck, 16 * sizeof(byte));
-                            }
-                            else
+                                var str = Encoding.UTF8.GetBytes(file.Path).ToList();
+                                var str_len = str.Count;
+
+                                // Godot 4's PCK uses padding for some reason...
+                                if (godotVersion.PackVersion == 2)
+                                    str_len = (int)Utils.AlignAddress(str_len, 4); // align with 4
+
+                                // store pascal string (size, data)
+                                index_writer.Write(str_len);
+                                index_writer.Write(str.ToArray());
+
+                                // Add padding for string
+                                if (godotVersion.PackVersion == 2)
+                                    Utils.AddPadding(index_writer, str_len - str.Count);
+
+                                file.OffsetPosition = index_writer.BaseStream.Position;
+                                index_writer.Write((long)0); // offset for later use
+                                index_writer.Write((long)file.Size); // size
+
+                                total_size += file.Size; // for progress bar
+
+                                if (godotVersion.PackVersion < 2)
+                                {
+                                    // # empty md5
+                                    Utils.AddPadding(index_writer, 16 * sizeof(byte));
+                                }
+                                else
+                                {
+                                    file.md5 = Utils.GetFileMD5(file.OriginalPath);
+                                    index_writer.Write(file.md5);
+
+                                    file.is_encrypted = GUIConfig.Instance.EncryptFiles;
+                                    index_writer.Write((int)(file.is_encrypted ? 1 : 0));
+                                }
+                            };
+
+                            if (is_index_encrypted)
                             {
-                                pck.Write(Utils.GetFileMD5(file.OriginalPath));
-
-                                pck.Write((int)0); // TODO: add flags (encrypted or not)
+                                // Lately it will be encrypted and size of data will be aligned to 16
+                                // + 16 bytes for MD5
+                                // + 8 bytes for size of data
+                                // + 16 bytes for IV
+                                Utils.AddPadding(binWriter, Utils.AlignAddress(index_writer.BaseStream.Length, 16) + 16 + 8 + 16);
                             }
-                        };
+                        }
 
-                        total_size += pck.BaseStream.Position;
+                        // approximate size of the output file for displaying progress
+                        total_size += binWriter.BaseStream.Position;
 
-                        long offset = pck.BaseStream.Position;
+                        // file_base or individual offset
+                        long offset = binWriter.BaseStream.Position;
                         offset = Utils.AlignAddress(offset, alignment);
 
-                        Utils.AddPadding(pck, (uint)(offset - pck.BaseStream.Position));
+                        Utils.AddPadding(binWriter, offset - binWriter.BaseStream.Position);
 
                         long file_base = offset;
                         if (godotVersion.PackVersion == 2)
                         {
                             // update actual address of file_base in the header
-                            pck.Seek((int)file_base_address, SeekOrigin.Begin);
-                            pck.Write(file_base);
-                            pck.Seek((int)offset, SeekOrigin.Begin);
+                            binWriter.BaseStream.Seek(file_base_address, SeekOrigin.Begin);
+                            binWriter.Write(file_base);
+                            binWriter.BaseStream.Seek(offset, SeekOrigin.Begin);
                         }
 
                         // write actual files data
@@ -210,7 +237,7 @@ namespace GodotPCKExplorer
                             // cancel packing
                             if (bw.CancellationPending)
                             {
-                                CloseAndDeleteFile(pck, out_pck);
+                                CloseAndDeleteFile(binWriter, out_pck);
                                 result = false;
                                 return;
                             }
@@ -220,53 +247,71 @@ namespace GodotPCKExplorer
                             while (to_write > 0)
                             {
                                 var read = src.ReadBytes(Utils.BUFFER_MAX_SIZE);
-                                pck.Write(read);
+                                binWriter.Write(read);
                                 to_write -= read.Length;
 
-                                bw.ReportProgress((int)((double)pck.BaseStream.Position / total_size * 100)); // update progress bar
+                                bw.ReportProgress((int)((double)binWriter.BaseStream.Position / total_size * 100)); // update progress bar
 
                                 // cancel packing
                                 if (bw.CancellationPending)
                                 {
                                     src.Close();
-                                    CloseAndDeleteFile(pck, out_pck);
+                                    CloseAndDeleteFile(binWriter, out_pck);
                                     result = false;
                                     return;
                                 }
                             };
 
-                            long pos = pck.BaseStream.Position;
-                            pck.BaseStream.Seek(file.OffsetPosition, SeekOrigin.Begin); // go back to store the pck's offset
-
-                            if (godotVersion.PackVersion < 2)
                             {
-                                pck.Write((long)offset);
-                            }
-                            else
-                            {
-                                pck.Write((long)offset - file_base);
-                            }
+                                // go back to store the file's offset
 
-                            pck.BaseStream.Seek(pos, SeekOrigin.Begin);
+                                long pos = index_writer.BaseStream.Position;
+                                index_writer.BaseStream.Seek(file.OffsetPosition, SeekOrigin.Begin);
 
-                            offset = Utils.AlignAddress(offset + file.Size, alignment);
-                            Utils.AddPadding(pck, (uint)(offset - pos));
+                                if (godotVersion.PackVersion < 2)
+                                {
+                                    index_writer.Write((long)offset);
+                                }
+                                else
+                                {
+                                    index_writer.Write((long)offset - file_base);
+                                }
+
+                                index_writer.BaseStream.Seek(pos, SeekOrigin.Begin);
+
+                                offset = Utils.AlignAddress(offset + file.Size, alignment);
+                                Utils.AddPadding(binWriter, offset - binWriter.BaseStream.Position);
+                            }
 
                             src.Close();
 
                             count += 1;
                         };
 
+                        // If the index is encrypted, then it must be written after all other operations in order to properly handle file offsets
+                        if (is_index_encrypted)
+                        {
+                            long pos = binWriter.BaseStream.Position;
+                            binWriter.BaseStream.Seek(index_begin_pos, SeekOrigin.Begin);
+
+                            PackEncryptedBlock(binWriter, (MemoryStream)index_writer.BaseStream, encKey);
+                            index_writer.Close();
+                            index_writer.Dispose();
+                            index_writer = null;
+
+                            binWriter.BaseStream.Seek(pos, SeekOrigin.Begin);
+                        }
+
                         if (embed)
                         {
                             // Godot's 779a5e56218b7fa2ab34ab22ab5b1b2aaa19346f editor_export.cpp:1073
                             // Ensure embedded data ends at a 64-bit multiple
-                            long embed_end = pck.BaseStream.Position - embed_start + 12;
-                            Utils.AddPadding(pck, (uint)embed_end % 8);
+                            long embed_end = binWriter.BaseStream.Position - embed_start + 12;
+                            Utils.AddPadding(binWriter, embed_end % 8);
 
-                            long pck_size = pck.BaseStream.Position - pck_start;
-                            pck.Write((long)pck_size);
-                            pck.Write((int)Utils.PCK_MAGIC);
+                            long pck_size = binWriter.BaseStream.Position - pck_start;
+                            binWriter.Write((long)pck_size);
+                            binWriter.Write((int)Utils.PCK_MAGIC);
                         }
 
                         bw.ReportProgress(100);
@@ -274,10 +319,10 @@ namespace GodotPCKExplorer
                     catch (Exception ex)
                     {
                         Program.ShowMessage(ex, "Error", MessageType.Error);
-                        CloseAndDeleteFile(pck, out_pck); result = false; return;
+                        CloseAndDeleteFile(binWriter, out_pck); result = false; return;
                     }
 
-                    pck.Close();
+                    binWriter.Close();
                     result = true;
                     return;
                 }
@@ -295,6 +340,32 @@ namespace GodotPCKExplorer
             //    Program.ShowMessage("Complete!", "Progress");
 
             return result;
+        }
+
+        void PackEncryptedBlock(BinaryWriter binWriter, MemoryStream stream, byte[] key)
+        {
+            var data = stream.ToArray();
+            var md5 = new byte[16];
+            using (var md5_crypt = MD5.Create())
+                md5 = md5_crypt.ComputeHash(data);
+
+            binWriter.Write(md5);
+            binWriter.Write((long)data.Length);
+
+            var iv = new byte[16];
+            Random rnd = new Random();
+            rnd.NextBytes(iv);
+
+            iv = Utils.HexStringToByteArray("a8 93 f5 ce 0b b8 85 e2 19 5e 80 4e ea 8d 92 19");
+
+            binWriter.Write(iv);
+
+            using (var mtls = new mbedTLS())
+            {
+                mtls.set_key(key);
+                mtls.encrypt_cfb(iv.ToArray(), data, out byte[] output);
+                binWriter.Write(output);
+            }
         }
     }
 }
