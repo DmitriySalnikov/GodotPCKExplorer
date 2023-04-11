@@ -40,6 +40,11 @@ namespace GodotPCKExplorer
 
         public bool set_key(byte[] key)
         {
+            if (key == null)
+                throw new ArgumentNullException(nameof(key));
+            if (key.Length != 32)
+                throw new ArgumentOutOfRangeException(nameof(key));
+
             return set_key(ctx, key);
         }
 

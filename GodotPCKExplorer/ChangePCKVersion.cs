@@ -19,7 +19,7 @@ namespace GodotPCKExplorer
             {
                 using (var pck = new PCKReader())
                 {
-                    if (pck.OpenFile(filePath))
+                    if (pck.OpenFile(filePath, log_names_progress: false))
                     {
                         FilePath = filePath;
                         var ver = pck.PCK_Version;

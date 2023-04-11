@@ -47,8 +47,6 @@ namespace GodotPCKExplorer
                 // run..
                 CMDMode = false;
 
-                HideConsole();
-
                 mainForm = new Form1();
                 Application.Run(mainForm);
             }
@@ -99,7 +97,14 @@ namespace GodotPCKExplorer
         }
 
         #region Logs
-        // TODO: need more log for progress
+        public static void LogProgress(string operation, string txt)
+        {
+            if (logger == null)
+                logger = new Logger("log.txt");
+
+            logger.Write($"[Progress] {operation}: {txt}");
+        }
+
         public static void Log(string txt)
         {
             if (logger == null)

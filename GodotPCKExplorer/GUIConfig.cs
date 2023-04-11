@@ -47,6 +47,7 @@ namespace GodotPCKExplorer
         #region Extract
 
         public bool OverwriteExtracted { get; set; } = true;
+        public bool CheckMD5Extracted { get; set; } = true;
 
         #endregion
 
@@ -54,6 +55,7 @@ namespace GodotPCKExplorer
 
         public List<RecentFiles> RecentOpenedFiles { get; set; } = new List<RecentFiles>();
         public bool MatchCaseFilterMainForm { get; set; } = false;
+        public bool ShowConsole { get; set; } = false;
 
         #endregion
 

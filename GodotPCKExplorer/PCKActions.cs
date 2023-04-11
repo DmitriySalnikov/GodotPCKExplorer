@@ -31,7 +31,6 @@ namespace GodotPCKExplorer
                     Program.mainForm = new Form1();
                     Program.mainForm.OpenFile(path);
 
-                    Program.HideConsole();
                     Application.Run(Program.mainForm);
                 }
                 else
@@ -59,6 +58,8 @@ namespace GodotPCKExplorer
 
         public static bool InfoPCKRun(string filePath)
         {
+            Program.Log("PCK Info started");
+
             if (File.Exists(filePath))
             {
                 using (var pckReader = new PCKReader())
@@ -79,6 +80,8 @@ namespace GodotPCKExplorer
 
         public static bool ChangePCKVersion(string filePath, string strVersion)
         {
+            Program.Log("Change PCK Version started");
+
             if (File.Exists(filePath))
             {
                 var newVersion = new PCKVersion(strVersion);
@@ -91,7 +94,7 @@ namespace GodotPCKExplorer
                 long pckStartPosition = 0;
                 using (var pck = new PCKReader())
                 {
-                    if (pck.OpenFile(filePath))
+                    if (pck.OpenFile(filePath, log_names_progress: false))
                         pckStartPosition = pck.PCK_StartPosition;
                     else
                         return false;
@@ -116,7 +119,7 @@ namespace GodotPCKExplorer
                             bw.Write((int)newVersion.Revision);
                         }
                     }
-                    Program.ShowMessage("Version changed", "Progress", MessageType.Info);
+                    Program.ShowMessage($"Version changed. New version: {newVersion}", "Progress", MessageType.Info);
                 }
                 catch (Exception ex)
                 {
@@ -132,8 +135,10 @@ namespace GodotPCKExplorer
             return false;
         }
 
-        public static bool ExtractPCKRun(string filePath, string dirPath, bool overwriteExisting = true, IEnumerable<string> files = null)
+        public static bool ExtractPCKRun(string filePath, string dirPath, bool overwriteExisting = true, IEnumerable<string> files = null, bool check_md5 = true)
         {
+            Program.Log("Extract PCK started");
+
             if (File.Exists(filePath))
             {
                 using (var pckReader = new PCKReader())
@@ -141,9 +146,9 @@ namespace GodotPCKExplorer
                     if (pckReader.OpenFile(filePath))
                     {
                         if (files != null)
-                            return pckReader.ExtractFiles(files, dirPath, overwriteExisting);
+                            return pckReader.ExtractFiles(files, dirPath, overwriteExisting, check_md5);
                         else
-                            return pckReader.ExtractAllFiles(dirPath, overwriteExisting);
+                            return pckReader.ExtractAllFiles(dirPath, overwriteExisting, check_md5);
                     }
                     else
                     {
@@ -178,6 +183,8 @@ namespace GodotPCKExplorer
                 Program.CommandLog("No files to pack", "Error", false, MessageType.Error);
                 return false;
             }
+
+            Program.Log("Pack PCK started");
 
             var pckPacker = new PCKPacker();
             var ver = new PCKVersion(strVer);
@@ -230,6 +237,8 @@ namespace GodotPCKExplorer
 
         public static bool RipPCKRun(string exeFile, string outFile = null, bool removeBackup = false, bool show_message = true)
         {
+            Program.Log("Rip PCK started");
+
             if (File.Exists(exeFile))
             {
                 bool res = false;
@@ -237,7 +246,7 @@ namespace GodotPCKExplorer
 
                 using (var pckReader = new PCKReader())
                 {
-                    res = pckReader.OpenFile(exeFile, false);
+                    res = pckReader.OpenFile(exeFile, false, log_names_progress: false);
                     if (!res)
                     {
                         Program.CommandLog($"The file does not contain '.pck' inside", "Error", false, MessageType.Error);
@@ -351,11 +360,13 @@ namespace GodotPCKExplorer
 
         public static bool MergePCKRun(string pckFile, string exeFile, bool removeBackup = false)
         {
+            Program.Log("Merge PCK started");
+
             if (File.Exists(pckFile))
             {
                 using (var pckReader = new PCKReader())
                 {
-                    bool res = pckReader.OpenFile(pckFile);
+                    bool res = pckReader.OpenFile(pckFile, log_names_progress: false);
 
                     if (!res)
                     {
@@ -434,6 +445,8 @@ namespace GodotPCKExplorer
 
         public static bool SplitPCKRun(string exeFile, string newExeName = null, bool removeBackup = true)
         {
+            Program.Log("Split PCK started");
+
             if (File.Exists(exeFile))
             {
                 var name = exeFile;

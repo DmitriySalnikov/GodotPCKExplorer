@@ -15,7 +15,6 @@ namespace GodotPCKExplorer
         Font MatchCaseNormal = null;
         Font MatchCaseStrikeout = null;
 
-        // TODO: add md5 check after export
         public Form1()
         {
             GUIConfig.Load();
@@ -28,6 +27,11 @@ namespace GodotPCKExplorer
             MatchCaseStrikeout = new Font(tsmi_match_case_filter.Font, FontStyle.Strikeout);
 
             overwriteExported.Checked = GUIConfig.Instance.OverwriteExtracted;
+            checkMD5OnExportToolStripMenuItem.Checked = GUIConfig.Instance.CheckMD5Extracted;
+
+            showConsoleToolStripMenuItem.Checked = GUIConfig.Instance.ShowConsole;
+
+            UpdateShowConsole();
             UpdateStatuStrip();
             UpdateRecentList();
             UpdateListOfPCKContent();
@@ -90,6 +94,18 @@ namespace GodotPCKExplorer
             if (res == DialogResult.OK)
             {
                 OpenFile(ofd_open_pack.FileName);
+            }
+        }
+
+        void UpdateShowConsole()
+        {
+            if (GUIConfig.Instance.ShowConsole)
+            {
+                Program.ShowConsole();
+            }
+            else
+            {
+                Program.HideConsole();
             }
         }
 
@@ -277,7 +293,7 @@ namespace GodotPCKExplorer
                 foreach (DataGridViewRow i in dataGridView1.SelectedRows)
                     rows.Add((string)i.Cells[0].Value);
 
-                pckReader.ExtractFiles(rows, fbd_extract_folder.SelectedPath, overwriteExported.Checked);
+                pckReader.ExtractFiles(rows, fbd_extract_folder.SelectedPath, overwriteExported.Checked, GUIConfig.Instance.CheckMD5Extracted);
             }
         }
 
@@ -286,7 +302,7 @@ namespace GodotPCKExplorer
             var res = fbd_extract_folder.ShowDialog();
             if (res == DialogResult.OK)
             {
-                pckReader.ExtractFiles(pckReader.Files.Select((f) => f.Key), fbd_extract_folder.SelectedPath, overwriteExported.Checked);
+                pckReader.ExtractFiles(pckReader.Files.Select((f) => f.Key), fbd_extract_folder.SelectedPath, overwriteExported.Checked, GUIConfig.Instance.CheckMD5Extracted);
             }
         }
 
@@ -329,6 +345,13 @@ namespace GodotPCKExplorer
             ShellIntegration.Unregister();
         }
 
+        private void showConsoleToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            GUIConfig.Instance.ShowConsole = showConsoleToolStripMenuItem.Checked;
+            GUIConfig.Instance.Save();
+            UpdateShowConsole();
+        }
+
         private void Form1_DragEnter(object sender, DragEventArgs e)
         {
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
@@ -340,7 +363,7 @@ namespace GodotPCKExplorer
 
                     if (File.Exists(files[0]))
                     {
-                        if (pck.OpenFile(files[0], false))
+                        if (pck.OpenFile(files[0], false, log_names_progress: false))
                         {
                             e.Effect = DragDropEffects.Copy;
                             return;
@@ -370,12 +393,19 @@ namespace GodotPCKExplorer
             GUIConfig.Instance.Save();
         }
 
+        private void checkMD5OnExportToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+            GUIConfig.Instance.CheckMD5Extracted = checkMD5OnExportToolStripMenuItem.Checked;
+            GUIConfig.Instance.Save();
+        }
+
         private void ripPackFromFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (ofd_rip_select_pck.ShowDialog() == DialogResult.OK)
             {
                 using (var pck = new PCKReader())
-                    if (!pck.OpenFile(ofd_rip_select_pck.FileName))
+                    if (!pck.OpenFile(ofd_rip_select_pck.FileName, log_names_progress: false))
                     {
                         return;
                     }
@@ -397,7 +427,7 @@ namespace GodotPCKExplorer
             if (ofd_split_exe_open.ShowDialog() == DialogResult.OK)
             {
                 using (var pck = new PCKReader())
-                    if (!pck.OpenFile(ofd_split_exe_open.FileName))
+                    if (!pck.OpenFile(ofd_split_exe_open.FileName, log_names_progress: false))
                     {
                         return;
                     }
@@ -420,7 +450,7 @@ namespace GodotPCKExplorer
             if (ofd_merge_pck.ShowDialog() == DialogResult.OK)
             {
                 using (var pck = new PCKReader())
-                    if (!pck.OpenFile(ofd_merge_pck.FileName))
+                    if (!pck.OpenFile(ofd_merge_pck.FileName, log_names_progress: false))
                     {
                         return;
                     }

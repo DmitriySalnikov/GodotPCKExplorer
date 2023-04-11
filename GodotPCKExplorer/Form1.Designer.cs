@@ -51,9 +51,11 @@
             this.extractFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.extractAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.overwriteExported = new System.Windows.Forms.ToolStripMenuItem();
+            this.checkMD5OnExportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.integrationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.registerProgramToOpenPCKInExplorerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.unregisterProgramToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.showConsoleToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem_filterButton = new System.Windows.Forms.ToolStripMenuItem();
             this.searchText = new ToolStripTextBoxWithPlaceholder();
@@ -235,7 +237,8 @@
             this.extractToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.extractFileToolStripMenuItem,
             this.extractAllToolStripMenuItem,
-            this.overwriteExported});
+            this.overwriteExported,
+            this.checkMD5OnExportToolStripMenuItem});
             this.extractToolStripMenuItem.Name = "extractToolStripMenuItem";
             this.extractToolStripMenuItem.Size = new System.Drawing.Size(55, 23);
             this.extractToolStripMenuItem.Text = "Extract";
@@ -243,14 +246,14 @@
             // extractFileToolStripMenuItem
             // 
             this.extractFileToolStripMenuItem.Name = "extractFileToolStripMenuItem";
-            this.extractFileToolStripMenuItem.Size = new System.Drawing.Size(204, 22);
+            this.extractFileToolStripMenuItem.Size = new System.Drawing.Size(226, 22);
             this.extractFileToolStripMenuItem.Text = "Extract Selected";
             this.extractFileToolStripMenuItem.Click += new System.EventHandler(this.extractFileToolStripMenuItem_Click);
             // 
             // extractAllToolStripMenuItem
             // 
             this.extractAllToolStripMenuItem.Name = "extractAllToolStripMenuItem";
-            this.extractAllToolStripMenuItem.Size = new System.Drawing.Size(204, 22);
+            this.extractAllToolStripMenuItem.Size = new System.Drawing.Size(226, 22);
             this.extractAllToolStripMenuItem.Text = "Extract All";
             this.extractAllToolStripMenuItem.Click += new System.EventHandler(this.extractAllToolStripMenuItem_Click);
             // 
@@ -258,18 +261,28 @@
             // 
             this.overwriteExported.CheckOnClick = true;
             this.overwriteExported.Name = "overwriteExported";
-            this.overwriteExported.Size = new System.Drawing.Size(204, 22);
+            this.overwriteExported.Size = new System.Drawing.Size(226, 22);
             this.overwriteExported.Text = "Overwrite exported files?";
             this.overwriteExported.Click += new System.EventHandler(this.overwriteExported_Click);
+            // 
+            // checkMD5OnExportToolStripMenuItem
+            // 
+            this.checkMD5OnExportToolStripMenuItem.CheckOnClick = true;
+            this.checkMD5OnExportToolStripMenuItem.Name = "checkMD5OnExportToolStripMenuItem";
+            this.checkMD5OnExportToolStripMenuItem.Size = new System.Drawing.Size(226, 22);
+            this.checkMD5OnExportToolStripMenuItem.Text = "Check MD5 when exporting?";
+            this.checkMD5OnExportToolStripMenuItem.ToolTipText = "Only for Godot 4+";
+            this.checkMD5OnExportToolStripMenuItem.Click += new System.EventHandler(this.checkMD5OnExportToolStripMenuItem_Click);
             // 
             // integrationToolStripMenuItem
             // 
             this.integrationToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.registerProgramToOpenPCKInExplorerToolStripMenuItem,
-            this.unregisterProgramToolStripMenuItem});
+            this.unregisterProgramToolStripMenuItem,
+            this.showConsoleToolStripMenuItem});
             this.integrationToolStripMenuItem.Name = "integrationToolStripMenuItem";
-            this.integrationToolStripMenuItem.Size = new System.Drawing.Size(77, 23);
-            this.integrationToolStripMenuItem.Text = "Integration";
+            this.integrationToolStripMenuItem.Size = new System.Drawing.Size(61, 23);
+            this.integrationToolStripMenuItem.Text = "Options";
             // 
             // registerProgramToOpenPCKInExplorerToolStripMenuItem
             // 
@@ -284,6 +297,14 @@
             this.unregisterProgramToolStripMenuItem.Size = new System.Drawing.Size(293, 22);
             this.unregisterProgramToolStripMenuItem.Text = "Unregister program";
             this.unregisterProgramToolStripMenuItem.Click += new System.EventHandler(this.unregisterProgramToolStripMenuItem_Click);
+            // 
+            // showConsoleToolStripMenuItem
+            // 
+            this.showConsoleToolStripMenuItem.CheckOnClick = true;
+            this.showConsoleToolStripMenuItem.Name = "showConsoleToolStripMenuItem";
+            this.showConsoleToolStripMenuItem.Size = new System.Drawing.Size(293, 22);
+            this.showConsoleToolStripMenuItem.Text = "Show console";
+            this.showConsoleToolStripMenuItem.Click += new System.EventHandler(this.showConsoleToolStripMenuItem_Click);
             // 
             // aboutToolStripMenuItem
             // 
@@ -304,6 +325,7 @@
             // 
             this.searchText.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
             this.searchText.CueBanner = "Filter text (? and * allowed)";
+            this.searchText.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.searchText.Name = "searchText";
             this.searchText.Size = new System.Drawing.Size(200, 23);
             this.searchText.ToolTipText = resources.GetString("searchText.ToolTipText");
@@ -567,6 +589,8 @@
         private System.Windows.Forms.ToolStripMenuItem changePackVersionToolStripMenuItem;
         private System.Windows.Forms.OpenFileDialog ofd_change_version;
         private System.Windows.Forms.ToolStripMenuItem tsmi_match_case_filter;
+        private System.Windows.Forms.ToolStripMenuItem showConsoleToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem checkMD5OnExportToolStripMenuItem;
     }
 }
 
