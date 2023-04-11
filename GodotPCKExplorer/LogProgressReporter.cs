@@ -22,7 +22,7 @@ namespace GodotPCKExplorer
 
         void timer_callback(object state)
         {
-
+            can_write = true;
         }
 
         public void Dispose()
