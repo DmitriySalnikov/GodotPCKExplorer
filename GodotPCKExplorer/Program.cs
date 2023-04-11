@@ -99,6 +99,7 @@ namespace GodotPCKExplorer
         }
 
         #region Logs
+        // TODO: need more log for progress
         public static void Log(string txt)
         {
             if (logger == null)
