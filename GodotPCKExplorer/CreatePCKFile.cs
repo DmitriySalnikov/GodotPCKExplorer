@@ -143,7 +143,7 @@ namespace GodotPCKExplorer
 
             if (res == DialogResult.OK)
             {
-                bool p_res = PCKActions.PackPCKRun(files.Values, file, ver.ToString(), (uint)nud_alignment.Value, cb_embed.Checked);
+                bool p_res = PCKActions.PackPCKRun(files.Values, file, ver.ToString(), (uint)nud_alignment.Value, cb_embed.Checked, Utils.HexStringToByteArray(GUIConfig.Instance.EncryptionKey));
 
                 GUIConfig.Instance.PackedVersion = ver;
                 GUIConfig.Instance.EmbedPCK = cb_embed.Checked;

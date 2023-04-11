@@ -134,12 +134,13 @@ namespace GodotPCKExplorer
             {
                 mtls.set_key(key);
                 mtls.decrypt_cfb(iv, binReader.ReadBytes((int)data_size_enc), data_size, out output);
+
+                byte[] dec_md5;
+                using (var md5_crypto = MD5.Create())
+                    dec_md5 = md5_crypto.ComputeHash(output);
+
+                return md5.SequenceEqual(dec_md5);
             }
-
-            var md5_crypto = MD5.Create();
-            var dec_md5 = md5_crypto.ComputeHash(output);
-
-            return md5.SequenceEqual(dec_md5);
         }
 
         // https://stackoverflow.com/a/30300521/8980874
@@ -268,8 +269,11 @@ namespace GodotPCKExplorer
                 return p_n + (p_alignment - rest);
         }
 
-        public static void AddPadding(BinaryWriter p_file, uint p_bytes)
+        public static void AddPadding(BinaryWriter p_file, long p_bytes)
         {
+            if (p_bytes < 0)
+                throw new ArgumentOutOfRangeException(nameof(p_bytes));
+
             if (p_bytes != 0)
                 p_file.Write(new byte[p_bytes]);
         }
