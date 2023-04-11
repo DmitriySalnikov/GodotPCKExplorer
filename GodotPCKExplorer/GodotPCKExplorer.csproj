@@ -164,6 +164,7 @@
     <Compile Include="PCKReader.cs" />
     <Compile Include="PCKVersion.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="LogProgressReporter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ShellIntegration.cs" />
     <Compile Include="TextBoxWithPlaceholder.cs">

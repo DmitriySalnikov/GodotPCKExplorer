@@ -73,10 +73,12 @@ namespace GodotPCKExplorer
 
             if (GetEncryptionKeyFunc != null)
                 EncryptionKey = Utils.HexStringToByteArray(GetEncryptionKeyFunc());
+            else
+                throw new ArgumentNullException("Encryption key");
             Program.Log($"Got encryption key: {Utils.ByteArrayToHexString(EncryptionKey)}");
         }
 
-        public bool OpenFile(string p_path, bool show_not_pck_error = true, Func<string> get_encryption_key = null)
+        public bool OpenFile(string p_path, bool show_not_pck_error = true, Func<string> get_encryption_key = null, bool log_names_progress = true)
         {
             Close();
 
@@ -93,8 +95,13 @@ namespace GodotPCKExplorer
 
             GetEncryptionKeyFunc = get_encryption_key;
 
+            var op = "Open PCK";
+            var lpr = new LogProgressReporter(op);
+
             try
             {
+                Program.LogProgress(op, $"Opening: {p_path}");
+
                 int magic = binReader.ReadInt32(); // 0-3
 
                 if (magic != Utils.PCK_MAGIC)
@@ -145,12 +152,18 @@ namespace GodotPCKExplorer
 
                 PCK_Flags = 0;
                 PCK_FileBase = 0;
+
                 if (PCK_VersionPack == 2)
                 {
                     PCK_Flags = binReader.ReadInt32(); // 20-23
                     PCK_FileBaseAddressOffset = binReader.BaseStream.Position;
                     PCK_FileBase = binReader.ReadInt64(); // 24-31
+                }
 
+                Program.LogProgress(op, $"Version: {PCK_VersionPack}.{PCK_VersionMajor}.{PCK_VersionMinor}.{PCK_VersionRevision}, Flags: {PCK_Flags}");
+
+                if (PCK_VersionPack == 2)
+                {
                     if (IsEncrypted && (EncryptionKey == null || EncryptionKey.Length != 32))
                     {
                         TryGetEncryptionKey();
@@ -160,6 +173,7 @@ namespace GodotPCKExplorer
                 binReader.ReadBytes(16 * sizeof(int)); // 32-95 reserved
 
                 int file_count = binReader.ReadInt32();
+                Program.LogProgress(op, $"File count: {file_count}");
 
                 BinaryReader tmp_reader = binReader;
 
@@ -181,7 +195,9 @@ namespace GodotPCKExplorer
                         flags = tmp_reader.ReadInt32();
                     }
 
-                    Files.Add(path, new PackedFile(binReader, path, ofs, pos_of_ofs, size, md5, flags));
+                    if (log_names_progress)
+                        Program.LogProgress(op, $"{path} S: {size} F: {flags}");
+                    Files.Add(path, new PackedFile(binReader, path, ofs, pos_of_ofs, size, md5, flags, PCK_VersionPack));
                 };
 
                 if (IsEncrypted)
@@ -189,6 +205,8 @@ namespace GodotPCKExplorer
                     tmp_reader.Close();
                     tmp_reader.Dispose();
                 }
+
+                Program.LogProgress(op, "Completed!");
             }
             catch (Exception ex)
             {
@@ -199,18 +217,24 @@ namespace GodotPCKExplorer
                 Program.Log(ex.StackTrace);
                 return false;
             }
+            finally
+            {
+                lpr.Dispose();
+            }
 
             PackPath = p_path;
             return true;
         }
 
-        public bool ExtractAllFiles(string folder, bool overwriteExisting = true)
+        public bool ExtractAllFiles(string folder, bool overwriteExisting = true, bool check_md5 = true)
         {
             return ExtractFiles(Files.Keys.ToList(), folder, overwriteExisting);
         }
 
-        public bool ExtractFiles(IEnumerable<string> names, string folder, bool overwriteExisting = true)
+        public bool ExtractFiles(IEnumerable<string> names, string folder, bool overwriteExisting = true, bool check_md5 = true)
         {
+            var op = "Extract files";
+
             var bp = new BackgroundProgress();
             var bw = bp.bg_worker;
             var are = new AutoResetEvent(false);
@@ -226,8 +250,12 @@ namespace GodotPCKExplorer
 
             bw.DoWork += (sender, ev) =>
             {
+                var lpr = new LogProgressReporter(op);
+
                 try
                 {
+                    Program.LogProgress(op, "Started");
+
                     string basePath = folder;
 
                     int count = 0;
@@ -252,16 +280,18 @@ namespace GodotPCKExplorer
                                 continue;
                             }
 
+                            Program.LogProgress(op, Files[path].FilePath);
+
                             PackedFile.VoidInt upd = (p) =>
                             {
-                                bw.ReportProgress((int)(((double)count / files_count * 100) + (p * one_file_in_progress_line)));
+                                Utils.ReportProgress((int)(((double)count / files_count * 100) + (p * one_file_in_progress_line)), bw, lpr);
                             };
                             Files[path].OnProgress += upd;
 
                             if (Files[path].IsEncrypted && (EncryptionKey == null || EncryptionKey.Length != 32))
                                 TryGetEncryptionKey();
 
-                            if (!Files[path].ExtractFile(basePath, overwriteExisting, bw, EncryptionKey))
+                            if (!Files[path].ExtractFile(basePath, overwriteExisting, bw, EncryptionKey, check_md5))
                             {
                                 Files[path].OnProgress -= upd;
                                 result = false;
@@ -272,7 +302,7 @@ namespace GodotPCKExplorer
                         }
 
                         count++;
-                        bw.ReportProgress((int)((double)count / files_count * 100));
+                        Utils.ReportProgress((int)((double)count / files_count * 100), bw, lpr);
 
                         if (bw.CancellationPending)
                         {
@@ -280,10 +310,13 @@ namespace GodotPCKExplorer
                             return;
                         }
                     }
-                    bw.ReportProgress(100);
+
+                    Utils.ReportProgress(100, bw, lpr);
+                    Program.LogProgress(op, "Completed!");
                 }
                 finally
                 {
+                    lpr.Dispose();
                     are.Set();
                 }
             };
@@ -303,6 +336,8 @@ namespace GodotPCKExplorer
                 return false;
             }
 
+            var op = "Rip PCK file from EXE";
+
             var bp = new BackgroundProgress();
             var bw = bp.bg_worker;
             var are = new AutoResetEvent(false);
@@ -310,8 +345,12 @@ namespace GodotPCKExplorer
 
             bw.DoWork += (sender, ev) =>
             {
+                var lpr = new LogProgressReporter(op);
+
                 try
                 {
+                    Program.LogProgress(op, "Started");
+
                     string dir = Path.GetDirectoryName(outPath);
                     BinaryWriter file;
 
@@ -346,7 +385,7 @@ namespace GodotPCKExplorer
                                 file.Write(read);
                                 to_write -= read.Length;
 
-                                bw.ReportProgress(100 - (int)((double)to_write / size * 100));
+                                Utils.ReportProgress(100 - (int)((double)to_write / size * 100), bw, lpr);
 
                                 if (bw.CancellationPending)
                                 {
@@ -384,10 +423,13 @@ namespace GodotPCKExplorer
                     }
 
                     file.Close();
-                    bw.ReportProgress(100);
+
+                    Utils.ReportProgress(100, bw, lpr);
+                    Program.LogProgress(op, "Completed!");
                 }
                 finally
                 {
+                    lpr.Dispose();
                     are.Set();
                 }
             };
@@ -401,6 +443,8 @@ namespace GodotPCKExplorer
 
         public bool MergePCKFileIntoExe(string exePath)
         {
+            var op = "Merge PCK into EXE";
+
             var bp = new BackgroundProgress();
             var bw = bp.bg_worker;
             var are = new AutoResetEvent(false);
@@ -408,11 +452,15 @@ namespace GodotPCKExplorer
 
             bw.DoWork += (sender, ev) =>
             {
+                var lpr = new LogProgressReporter(op);
+
                 try
                 {
+                    Program.LogProgress(op, "Started");
+
                     using (var p = new PCKReader())
                     {
-                        if (p.OpenFile(exePath, false))
+                        if (p.OpenFile(exePath, false, log_names_progress: false))
                         {
                             Program.CommandLog("File already contains '.pck' inside.", "Error", false, MessageType.Error);
                             result = false;
@@ -465,7 +513,7 @@ namespace GodotPCKExplorer
                                 file.Write(read);
                                 to_write -= read.Length;
 
-                                bw.ReportProgress(100 - (int)((double)to_write / size * 100));
+                                Utils.ReportProgress(100 - (int)((double)to_write / size * 100), bw, lpr);
 
                                 if (bw.CancellationPending)
                                 {
@@ -511,10 +559,13 @@ namespace GodotPCKExplorer
                     }
 
                     file.Close();
-                    bw.ReportProgress(100);
+
+                    Utils.ReportProgress(100, bw, lpr);
+                    Program.LogProgress(op, "Completed!");
                 }
                 finally
                 {
+                    lpr.Dispose();
                     are.Set();
                 }
             };

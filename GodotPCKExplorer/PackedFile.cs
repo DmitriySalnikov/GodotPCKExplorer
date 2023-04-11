@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 
 namespace GodotPCKExplorer
 {
@@ -33,7 +34,9 @@ namespace GodotPCKExplorer
         /// </summary>
         public int Flags;
 
-        public PackedFile(BinaryReader reader, string path, long contentOffset, long positionOfOffsetValue, long size, byte[] MD5, int flags)
+        public int PackVersion;
+
+        public PackedFile(BinaryReader reader, string path, long contentOffset, long positionOfOffsetValue, long size, byte[] MD5, int flags, int pack_version)
         {
             this.reader = reader;
             FilePath = path;
@@ -42,6 +45,8 @@ namespace GodotPCKExplorer
             Size = size;
             this.MD5 = MD5;
             Flags = flags;
+
+            PackVersion = pack_version;
         }
 
         public delegate void VoidInt(int progress);
@@ -52,7 +57,7 @@ namespace GodotPCKExplorer
             get => (Flags & Utils.PCK_FILE_ENCRYPTED) != 0;
         }
 
-        public bool ExtractFile(string basePath, bool overwriteExisting = true, BackgroundWorker bw = null, byte[] encKey = null)
+        public bool ExtractFile(string basePath, bool overwriteExisting = true, BackgroundWorker bw = null, byte[] encKey = null, bool check_md5 = true)
         {
             string path = basePath + "/" + FilePath.Replace("res://", "");
             string dir = Path.GetDirectoryName(path);
@@ -104,6 +109,17 @@ namespace GodotPCKExplorer
                         tmp_reader.Close();
                         tmp_reader.Dispose();
                     }
+                    file.Close();
+
+                    if (check_md5 && PackVersion > 1)
+                    {
+                        var exp_md5 = Utils.GetFileMD5(path);
+                        if (!exp_md5.SequenceEqual(MD5))
+                        {
+                            Program.ShowMessage($"The MD5 of the exported file is not equal to the MD5 specified in the PCK.\n{Utils.ByteArrayToHexString(MD5, " ")} != {Utils.ByteArrayToHexString(exp_md5, " ")}", "Error", MessageType.Error);
+                            return false;
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -122,7 +138,6 @@ namespace GodotPCKExplorer
                 }
             }
 
-            file.Close();
             return true;
         }
     }

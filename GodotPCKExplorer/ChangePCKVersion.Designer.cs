@@ -48,14 +48,14 @@
             // 
             this.cb_ver.FormattingEnabled = true;
             this.cb_ver.Items.AddRange(new object[] {
-            "0",
-            "1"});
+            "1",
+            "2"});
             this.cb_ver.Location = new System.Drawing.Point(29, 92);
             this.cb_ver.MaxLength = 2;
             this.cb_ver.Name = "cb_ver";
             this.cb_ver.Size = new System.Drawing.Size(70, 21);
             this.cb_ver.TabIndex = 17;
-            this.cb_ver.Text = "1";
+            this.cb_ver.Text = "2";
             // 
             // nud_revision
             // 
@@ -80,11 +80,6 @@
             this.nud_minor.Name = "nud_minor";
             this.nud_minor.Size = new System.Drawing.Size(65, 20);
             this.nud_minor.TabIndex = 15;
-            this.nud_minor.Value = new decimal(new int[] {
-            2,
-            0,
-            0,
-            0});
             // 
             // nud_major
             // 
@@ -98,7 +93,7 @@
             this.nud_major.Size = new System.Drawing.Size(65, 20);
             this.nud_major.TabIndex = 14;
             this.nud_major.Value = new decimal(new int[] {
-            3,
+            4,
             0,
             0,
             0});

@@ -86,8 +86,13 @@ namespace GodotPCKExplorer
             {
                 bool NeedToEncrypt = GUIConfig.Instance.EncryptPCK;
 
+                var op = "Pack files";
+                var lpr = new LogProgressReporter(op);
+
                 try
                 {
+                    Program.LogProgress(op, "Starting.");
+
                     // delete if not embbeding
                     if (!embed)
                     {
@@ -139,6 +144,8 @@ namespace GodotPCKExplorer
 
                     try
                     {
+                        Program.LogProgress(op, "Writing the file index");
+
                         binWriter.Write(Utils.PCK_MAGIC);
                         binWriter.Write(godotVersion.PackVersion);
                         binWriter.Write(godotVersion.Major);
@@ -234,6 +241,8 @@ namespace GodotPCKExplorer
                         }
 
                         // write actual files data
+                        Program.LogProgress(op, "Writing the content of files");
+
                         int count = 0;
                         foreach (var file in files)
                         {
@@ -244,6 +253,7 @@ namespace GodotPCKExplorer
                                 result = false;
                                 return;
                             }
+                            Program.LogProgress(op, file.OriginalPath);
 
                             // go back to store the file's offset
                             {
@@ -267,7 +277,7 @@ namespace GodotPCKExplorer
                             {
                                 actual_file_size = PackEncryptedBlock(binWriter, File.ReadAllBytes(file.OriginalPath), encKey);
 
-                                bw.ReportProgress((int)((double)binWriter.BaseStream.Position / total_size * 100)); // update progress bar
+                                Utils.ReportProgress((int)((double)binWriter.BaseStream.Position / total_size * 100), bw, lpr); // update progress bar
                             }
                             else
                             {
@@ -280,7 +290,7 @@ namespace GodotPCKExplorer
                                         binWriter.Write(read);
                                         to_write -= read.Length;
 
-                                        bw.ReportProgress((int)((double)binWriter.BaseStream.Position / total_size * 100)); // update progress bar
+                                        Utils.ReportProgress((int)((double)binWriter.BaseStream.Position / total_size * 100), bw, lpr); // update progress bar
 
                                         // cancel packing
                                         if (bw.CancellationPending)
@@ -326,7 +336,8 @@ namespace GodotPCKExplorer
                             binWriter.Write((int)Utils.PCK_MAGIC);
                         }
 
-                        bw.ReportProgress(100);
+                        Utils.ReportProgress(100, bw, lpr);
+                        Program.LogProgress(op, "Completed!");
                     }
                     catch (Exception ex)
                     {
@@ -340,6 +351,7 @@ namespace GodotPCKExplorer
                 }
                 finally
                 {
+                    lpr.Dispose();
                     are.Set();
                 }
             };
