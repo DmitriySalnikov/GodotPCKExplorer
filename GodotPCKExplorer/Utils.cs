@@ -19,6 +19,8 @@ namespace GodotPCKExplorer
 
     public class Utils
     {
+        public const int PCK_VERSION_GODOT_3 = 1;
+        public const int PCK_VERSION_GODOT_4 = 2;
         public const int PCK_MAGIC = 0x43504447;
         public const int PCK_DIR_ENCRYPTED = 1 << 0;
         public const int PCK_FILE_ENCRYPTED = 1 << 0;
@@ -65,6 +67,9 @@ namespace GodotPCKExplorer
         // does the same thing as here https://github.com/godotengine/godot/blob/cfab3d2f57976913a03a891b30eaa0a5da4ff64f/core/io/pck_packer.cpp#L61
         public static byte[] HexStringToByteArray(string hex)
         {
+            if (string.IsNullOrWhiteSpace(hex))
+                return null;
+
             hex = hex.Replace("-", "").Replace(" ", "").Replace("\r", "").Replace("\n", "");
 
             return Enumerable.Range(0, hex.Length)
@@ -75,6 +80,9 @@ namespace GodotPCKExplorer
 
         public static bool HexStringValidate(string hex, uint expected_size_in_bytes = 0)
         {
+            if (string.IsNullOrWhiteSpace(hex))
+                return false;
+
             hex = hex.Replace("-", "").Replace(" ", "").Replace("\r", "").Replace("\n", "");
 
             var matches = Regex.Matches(hex, "[0-9A-Fa-f]+");
@@ -285,6 +293,5 @@ namespace GodotPCKExplorer
             if (p_bytes != 0)
                 p_file.Write(new byte[p_bytes]);
         }
-
     }
 }

@@ -33,6 +33,12 @@ namespace GodotPCKExplorer
         // 8 bytes for size of data
         // 16 bytes for IV
         const int ENCRYPTED_HEADER_SIZE = 16 + 8 + 16;
+        public byte[] EncryptionKey = null;
+
+        public PCKPacker(byte[] encKey = null)
+        {
+            EncryptionKey = encKey;
+        }
 
         void CloseAndDeleteFile(BinaryWriter writer, string out_pck)
         {
@@ -48,7 +54,7 @@ namespace GodotPCKExplorer
             }
         }
 
-        public bool PackFiles(string out_pck, IEnumerable<FileToPack> files, uint alignment, PCKVersion godotVersion, bool embed, byte[] encKey = null)
+        public bool PackFiles(string out_pck, IEnumerable<FileToPack> files, uint alignment, PCKVersion godotVersion, bool embed)
         {
             var bp = new BackgroundProgress();
             var bw = bp.bg_worker;
@@ -155,7 +161,7 @@ namespace GodotPCKExplorer
                         long file_base_address = -1;
 
                         var is_index_encrypted = GUIConfig.Instance.EncryptIndex && NeedToEncrypt;
-                        if (godotVersion.PackVersion == 2)
+                        if (godotVersion.PackVersion == Utils.PCK_VERSION_GODOT_4)
                         {
                             binWriter.Write((int)(is_index_encrypted ? 1 : 0));
                             file_base_address = binWriter.BaseStream.Position;
@@ -183,7 +189,7 @@ namespace GodotPCKExplorer
                                 var str_len = str.Count;
 
                                 // Godot 4's PCK uses padding for some reason...
-                                if (godotVersion.PackVersion == 2)
+                                if (godotVersion.PackVersion == Utils.PCK_VERSION_GODOT_4)
                                     str_len = (int)Utils.AlignAddress(str_len, 4); // align with 4
 
                                 // store pascal string (size, data)
@@ -191,7 +197,7 @@ namespace GodotPCKExplorer
                                 index_writer.Write(str.ToArray());
 
                                 // Add padding for string
-                                if (godotVersion.PackVersion == 2)
+                                if (godotVersion.PackVersion == Utils.PCK_VERSION_GODOT_4)
                                     Utils.AddPadding(index_writer, str_len - str.Count);
 
                                 file.OffsetPosition = index_writer.BaseStream.Position;
@@ -200,7 +206,7 @@ namespace GodotPCKExplorer
 
                                 total_size += file.Size; // for progress bar
 
-                                if (godotVersion.PackVersion < 2)
+                                if (godotVersion.PackVersion < Utils.PCK_VERSION_GODOT_4)
                                 {
                                     // # empty md5
                                     Utils.AddPadding(index_writer, 16 * sizeof(byte));
@@ -232,7 +238,7 @@ namespace GodotPCKExplorer
                         Utils.AddPadding(binWriter, offset - binWriter.BaseStream.Position);
 
                         long file_base = offset;
-                        if (godotVersion.PackVersion == 2)
+                        if (godotVersion.PackVersion == Utils.PCK_VERSION_GODOT_4)
                         {
                             // update actual address of file_base in the header
                             binWriter.BaseStream.Seek(file_base_address, SeekOrigin.Begin);
@@ -260,7 +266,7 @@ namespace GodotPCKExplorer
                                 long pos = index_writer.BaseStream.Position;
                                 index_writer.BaseStream.Seek(file.OffsetPosition, SeekOrigin.Begin);
 
-                                if (godotVersion.PackVersion < 2)
+                                if (godotVersion.PackVersion < Utils.PCK_VERSION_GODOT_4)
                                 {
                                     index_writer.Write((long)offset);
                                 }
@@ -275,7 +281,7 @@ namespace GodotPCKExplorer
                             long actual_file_size = file.Size;
                             if (file.is_encrypted)
                             {
-                                actual_file_size = PackEncryptedBlock(binWriter, File.ReadAllBytes(file.OriginalPath), encKey);
+                                actual_file_size = PackEncryptedBlock(binWriter, File.ReadAllBytes(file.OriginalPath), EncryptionKey);
 
                                 Utils.ReportProgress((int)((double)binWriter.BaseStream.Position / total_size * 100), bw, lpr); // update progress bar
                             }
@@ -316,7 +322,7 @@ namespace GodotPCKExplorer
                             long pos = binWriter.BaseStream.Position;
                             binWriter.BaseStream.Seek(index_begin_pos, SeekOrigin.Begin);
 
-                            PackEncryptedBlock(binWriter, (MemoryStream)index_writer.BaseStream, encKey);
+                            PackEncryptedBlock(binWriter, (MemoryStream)index_writer.BaseStream, EncryptionKey);
                             index_writer.Close();
                             index_writer.Dispose();
                             index_writer = null;
@@ -349,6 +355,10 @@ namespace GodotPCKExplorer
                     result = true;
                     return;
                 }
+                catch(Exception ex)
+                {
+                    Program.Log(ex);
+                }
                 finally
                 {
                     lpr.Dispose();
@@ -366,6 +376,7 @@ namespace GodotPCKExplorer
             return result;
         }
 
+        // TODO: encrypt data in parts, not all data at once
         long PackEncryptedBlock(BinaryWriter binWriter, MemoryStream stream, byte[] key)
         {
             var data = stream.ToArray();

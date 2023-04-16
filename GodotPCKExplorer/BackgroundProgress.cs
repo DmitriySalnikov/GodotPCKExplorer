@@ -23,15 +23,11 @@ namespace GodotPCKExplorer
             if (!bg_worker.CancellationPending && !UnknowPercents)
             {
                 var prct = Math.Max(0, Math.Min(100, e.ProgressPercentage));
-                if ((DateTime.Now - prevUpdateTime).TotalSeconds > 2 || (prct - prevPercent) > 10)
+                if ((DateTime.Now - prevUpdateTime).TotalSeconds > 2 || (prct - prevPercent) > 5)
                 {
                     prevUpdateTime = DateTime.Now;
-                    if (Program.CMDMode)
-                    {
-                        Program.Log($"{prct}%");
-                        prevPercent = prct;
-                    }
-
+                    
+                    prevPercent = prct;
                     l_status.Text = $"Progress: {prct}%";
                 }
                 progressBar1.Value = prct;
