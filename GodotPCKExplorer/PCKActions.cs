@@ -14,14 +14,12 @@ namespace GodotPCKExplorer
             return true;
         }
 
-        // TODO: add encryption key everywhere
-
         public static void Init()
         {
             Program.Init();
         }
 
-        public static bool OpenPCKRun(string path)
+        public static bool OpenPCKRun(string path, string encKey = null)
         {
             Program.CMDMode = false;
             if (File.Exists(path))
@@ -29,13 +27,13 @@ namespace GodotPCKExplorer
                 if (Program.mainForm == null)
                 {
                     Program.mainForm = new Form1();
-                    Program.mainForm.OpenFile(path);
+                    Program.mainForm.OpenFile(path, encKey);
 
                     Application.Run(Program.mainForm);
                 }
                 else
                 {
-                    Program.mainForm.OpenFile(path);
+                    Program.mainForm.OpenFile(path, encKey);
                 }
                 return true;
             }
@@ -56,7 +54,7 @@ namespace GodotPCKExplorer
             Program.Cleanup();
         }
 
-        public static bool InfoPCKRun(string filePath)
+        public static bool InfoPCKRun(string filePath, bool list_files = false, string encKey = null)
         {
             Program.Log("PCK Info started");
 
@@ -64,8 +62,12 @@ namespace GodotPCKExplorer
             {
                 using (var pckReader = new PCKReader())
                 {
-                    if (pckReader.OpenFile(filePath))
-                        Program.CommandLog($"\"{pckReader.PackPath}\"\nPack version {pckReader.PCK_VersionPack}. Godot version {pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}\nVersion string for this program: {pckReader.PCK_VersionPack}.{pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}", "Pack Info", false, MessageType.Info);
+                    if (pckReader.OpenFile(filePath, get_encryption_key: () => encKey, read_only_header_godot4: !list_files))
+                        Program.CommandLog($"\"{pckReader.PackPath}\"\n" +
+                            $"Pack version {pckReader.PCK_VersionPack}. Godot version {pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}\n" +
+                            $"Version string for this program: {pckReader.PCK_VersionPack}.{pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}\n" +
+                            $"File count: {pckReader.PCK_FileCount}" +
+                            (pckReader.IsEncrypted ? "\nThe file index is encrypted" : ""), "Pack Info", false, MessageType.Info);
                     else
                         return false;
                 }
@@ -135,7 +137,7 @@ namespace GodotPCKExplorer
             return false;
         }
 
-        public static bool ExtractPCKRun(string filePath, string dirPath, bool overwriteExisting = true, IEnumerable<string> files = null, bool check_md5 = true)
+        public static bool ExtractPCKRun(string filePath, string dirPath, bool overwriteExisting = true, IEnumerable<string> files = null, bool check_md5 = true, string encKey = null)
         {
             Program.Log("Extract PCK started");
 
@@ -143,7 +145,7 @@ namespace GodotPCKExplorer
             {
                 using (var pckReader = new PCKReader())
                 {
-                    if (pckReader.OpenFile(filePath))
+                    if (pckReader.OpenFile(filePath, get_encryption_key: () => encKey))
                     {
                         if (files != null)
                             return pckReader.ExtractFiles(files, dirPath, overwriteExisting, check_md5);
@@ -163,7 +165,7 @@ namespace GodotPCKExplorer
             return false;
         }
 
-        public static bool PackPCKRun(string dirPath, string filePath, string strVer, uint alignment = 16, bool embed = false, byte[] encKey = null)
+        public static bool PackPCKRun(string dirPath, string filePath, string strVer, uint alignment = 16, bool embed = false, string encKey = null)
         {
             if (Directory.Exists(dirPath))
             {
@@ -176,7 +178,7 @@ namespace GodotPCKExplorer
             return false;
         }
 
-        public static bool PackPCKRun(IEnumerable<PCKPacker.FileToPack> files, string filePath, string strVer, uint alignment = 16, bool embed = false, byte[] encKey = null)
+        public static bool PackPCKRun(IEnumerable<PCKPacker.FileToPack> files, string filePath, string strVer, uint alignment = 16, bool embed = false, string encKey = null)
         {
             if (!files.Any())
             {
@@ -186,7 +188,7 @@ namespace GodotPCKExplorer
 
             Program.Log("Pack PCK started");
 
-            var pckPacker = new PCKPacker();
+            var pckPacker = new PCKPacker(Utils.HexStringToByteArray(encKey));
             var ver = new PCKVersion(strVer);
 
             if (!ver.IsValid)
@@ -213,7 +215,7 @@ namespace GodotPCKExplorer
                 }
             }
 
-            if (pckPacker.PackFiles(filePath, files, alignment, ver, embed, encKey))
+            if (pckPacker.PackFiles(filePath, files, alignment, ver, embed))
             {
                 return true;
             }
@@ -246,7 +248,7 @@ namespace GodotPCKExplorer
 
                 using (var pckReader = new PCKReader())
                 {
-                    res = pckReader.OpenFile(exeFile, false, log_names_progress: false);
+                    res = pckReader.OpenFile(exeFile, false, log_names_progress: false, read_only_header_godot4: true);
                     if (!res)
                     {
                         Program.CommandLog($"The file does not contain '.pck' inside", "Error", false, MessageType.Error);
@@ -366,7 +368,7 @@ namespace GodotPCKExplorer
             {
                 using (var pckReader = new PCKReader())
                 {
-                    bool res = pckReader.OpenFile(pckFile, log_names_progress: false);
+                    bool res = pckReader.OpenFile(pckFile, log_names_progress: false, read_only_header_godot4: true);
 
                     if (!res)
                     {

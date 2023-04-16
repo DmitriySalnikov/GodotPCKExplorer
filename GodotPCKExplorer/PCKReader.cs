@@ -11,6 +11,7 @@ namespace GodotPCKExplorer
     {
         BinaryReader binReader = null;
         public Dictionary<string, PackedFile> Files = new Dictionary<string, PackedFile>();
+        public int PCK_FileCount = -1;
         public string PackPath = "";
         public byte[] EncryptionKey = null;
 
@@ -50,6 +51,7 @@ namespace GodotPCKExplorer
             binReader = null;
 
             Files.Clear();
+            PCK_FileCount = -1;
             PackPath = "";
             EncryptionKey = null;
 
@@ -70,15 +72,21 @@ namespace GodotPCKExplorer
         void TryGetEncryptionKey()
         {
             // TODO: add test for this key before use!
+            Program.Log("The package contains encrypted data. You need to specify the encryption key!");
 
             if (GetEncryptionKeyFunc != null)
                 EncryptionKey = Utils.HexStringToByteArray(GetEncryptionKeyFunc());
-            else
+
+            if (EncryptionKey == null)
                 throw new ArgumentNullException("Encryption key");
+
+            if (EncryptionKey.Length != 256 / 8)
+                throw new ArgumentOutOfRangeException("Encryption key");
+
             Program.Log($"Got encryption key: {Utils.ByteArrayToHexString(EncryptionKey)}");
         }
 
-        public bool OpenFile(string p_path, bool show_not_pck_error = true, Func<string> get_encryption_key = null, bool log_names_progress = true)
+        public bool OpenFile(string p_path, bool show_not_pck_error = true, Func<string> get_encryption_key = null, bool log_names_progress = true, bool read_only_header_godot4 = false)
         {
             Close();
 
@@ -162,7 +170,19 @@ namespace GodotPCKExplorer
 
                 Program.LogProgress(op, $"Version: {PCK_VersionPack}.{PCK_VersionMajor}.{PCK_VersionMinor}.{PCK_VersionRevision}, Flags: {PCK_Flags}");
 
-                if (PCK_VersionPack == 2)
+                binReader.ReadBytes(16 * sizeof(int)); // 32-95 reserved
+
+                PCK_FileCount = binReader.ReadInt32();
+                Program.LogProgress(op, $"File count: {PCK_FileCount}");
+
+                if (read_only_header_godot4 && PCK_VersionPack == Utils.PCK_VERSION_GODOT_4)
+                {
+                    Program.LogProgress(op, "Completed without reading the file index!");
+                    PackPath = p_path;
+                    return true;
+                }
+
+                if (PCK_VersionPack == Utils.PCK_VERSION_GODOT_4)
                 {
                     if (IsEncrypted && (EncryptionKey == null || EncryptionKey.Length != 32))
                     {
@@ -170,17 +190,12 @@ namespace GodotPCKExplorer
                     }
                 }
 
-                binReader.ReadBytes(16 * sizeof(int)); // 32-95 reserved
-
-                int file_count = binReader.ReadInt32();
-                Program.LogProgress(op, $"File count: {file_count}");
-
                 BinaryReader tmp_reader = binReader;
 
                 if (IsEncrypted)
                     tmp_reader = Utils.ReadEncryptedBlockIntoMemoryStream(binReader, EncryptionKey);
 
-                for (int i = 0; i < file_count; i++)
+                for (int i = 0; i < PCK_FileCount; i++)
                 {
                     int path_size = tmp_reader.ReadInt32();
                     string path = Encoding.UTF8.GetString(tmp_reader.ReadBytes(path_size)).Replace("\0", "");
@@ -190,7 +205,7 @@ namespace GodotPCKExplorer
                     byte[] md5 = tmp_reader.ReadBytes(16);
 
                     int flags = 0;
-                    if (PCK_VersionPack == 2)
+                    if (PCK_VersionPack == Utils.PCK_VERSION_GODOT_4)
                     {
                         flags = tmp_reader.ReadInt32();
                     }
@@ -255,6 +270,7 @@ namespace GodotPCKExplorer
                 try
                 {
                     Program.LogProgress(op, "Started");
+                    Program.LogProgress(op, $"Output folder: {folder}");
 
                     string basePath = folder;
 
@@ -313,6 +329,10 @@ namespace GodotPCKExplorer
 
                     Utils.ReportProgress(100, bw, lpr);
                     Program.LogProgress(op, "Completed!");
+                }
+                catch (Exception ex)
+                {
+                    Program.Log(ex);
                 }
                 finally
                 {
@@ -408,7 +428,7 @@ namespace GodotPCKExplorer
                     }
 
                     // Fix addresses
-                    if (PCK_VersionPack < 2)
+                    if (PCK_VersionPack < Utils.PCK_VERSION_GODOT_4)
                     {
                         foreach (var p in Files.Values)
                         {
@@ -426,6 +446,10 @@ namespace GodotPCKExplorer
 
                     Utils.ReportProgress(100, bw, lpr);
                     Program.LogProgress(op, "Completed!");
+                }
+                catch (Exception ex)
+                {
+                    Program.Log(ex);
                 }
                 finally
                 {
@@ -544,7 +568,7 @@ namespace GodotPCKExplorer
                     }
 
                     // Fix addresses
-                    if (PCK_VersionPack < 2)
+                    if (PCK_VersionPack < Utils.PCK_VERSION_GODOT_4)
                     {
                         foreach (var p in Files.Values)
                         {
@@ -562,6 +586,10 @@ namespace GodotPCKExplorer
 
                     Utils.ReportProgress(100, bw, lpr);
                     Program.LogProgress(op, "Completed!");
+                }
+                catch (Exception ex)
+                {
+                    Program.Log(ex);
                 }
                 finally
                 {

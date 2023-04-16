@@ -129,7 +129,7 @@ namespace GodotPCKExplorer
             }
         }
 
-        public void OpenFile(string path, string encKey = "")
+        public void OpenFile(string path, string encKey = null)
         {
             CloseFile();
 

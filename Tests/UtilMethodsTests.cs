@@ -12,6 +12,8 @@ using System.Collections;
 
 namespace Tests
 {
+    // TODO: add encryption tests
+
     [TestFixture]
     [Apartment(System.Threading.ApartmentState.STA)]
     [TestFixtureSource(typeof(MyFixtureData), nameof(MyFixtureData.FixtureParams))]
