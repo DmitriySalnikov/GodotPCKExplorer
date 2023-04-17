@@ -107,19 +107,40 @@ namespace Tests
             return name + ExecutableExtension;
         }
 
+        string RemoveTimestampFromLogs(string logs)
+        {
+            logs = logs.Replace("\r\n", "\n").Replace("\r", "\n").Trim();
+            var lines = logs.Split('\n');
+            for (int i = 0; i < lines.Length; i++)
+            {
+                var split = lines[i].Split(new char[] { '\t' }, 2);
+                if (split.Length == 2)
+                    lines[i] = split[1];
+            }
+
+            return string.Join(Environment.NewLine, lines);
+        }
+
         PCKVersion GetPCKVersion(string pack)
         {
             Console.WriteLine($"Getting version");
             string console_output = "";
-            PCKVersion ver;
+            PCKVersion ver = new PCKVersion();
             using (var output = new ConsoleOutputRedirect())
             {
                 Assert.IsTrue(PCKActions.InfoPCKRun(pack));
-                console_output = output.GetOuput();
-                var lines = console_output.Replace("\r", "").Split('\n');
-                var parts = lines[lines.Length - 2].Split(':');
-                ver = new PCKVersion(parts[parts.Length - 1]);
+                console_output = RemoveTimestampFromLogs(output.GetOuput());
+                var lines = console_output.Replace("\r\n", "\n").Replace("\r", "\n").Split('\n');
+                foreach (var l in lines)
+                {
+                    if (l.StartsWith("Version string for this program: "))
+                    {
+                        var parts = l.Split(':');
+                        ver = new PCKVersion(parts[parts.Length - 1]);
+                    }
+                }
             }
+
             Console.WriteLine(console_output);
             Console.WriteLine($"Got version: {ver}");
             return ver;
@@ -341,18 +362,18 @@ namespace Tests
             File.Copy(testEXE, out_exe);
 
             using (var r = new RunAppWithOutput(out_exe, ""))
-                Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
+                Assert.IsFalse(r.GetConsoleText().Trim().StartsWith(pck_error));
 
             // test embed pack
             using (var r = new RunAppWithOutput(testEmbedPack, ""))
-                Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
+                Assert.IsFalse(r.GetConsoleText().Trim().StartsWith(pck_error));
 
             Title("Run without PCK");
             if (File.Exists(newPckPath))
                 File.Delete(newPckPath);
 
             using (var r = new RunAppWithOutput(out_exe, ""))
-                Assert.IsTrue(r.GetConsoleText().Contains(pck_error));
+                Assert.IsTrue(r.GetConsoleText().Trim().StartsWith(pck_error));
         }
 
 
@@ -415,17 +436,20 @@ namespace Tests
 
             Title("Bad run");
             using (var r = new RunAppWithOutput(newEXE, ""))
-                Assert.IsTrue(r.GetConsoleText().Contains(pck_error));
+                Assert.IsTrue(r.GetConsoleText().Trim().StartsWith(pck_error));
 
             Title("Good runs");
             File.Delete(newEXE);
             File.Copy(testEXE, newEXE);
             Assert.IsTrue(PCKActions.MergePCKRun(testPCK, newEXE));
             using (var r = new RunAppWithOutput(newEXE, ""))
-                Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
+                Assert.IsFalse(r.GetConsoleText().Trim().StartsWith(pck_error));
 
             using (var r = new RunAppWithOutput(newEXE1Byte, ""))
-                Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
+                if (GodotVersion == 3)
+                    Assert.IsFalse(r.GetConsoleText().Trim().StartsWith(pck_error));
+                else if (GodotVersion == 3)
+                    Assert.IsTrue(r.GetConsoleText().Trim().StartsWith(pck_error));
         }
 
         [Test]
@@ -462,13 +486,13 @@ namespace Tests
 
             Title("Good run");
             using (var r = new RunAppWithOutput(new_exe, ""))
-                Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
+                Assert.IsFalse(r.GetConsoleText().Trim().StartsWith(pck_error));
 
             Title("Run without PCK");
             if (File.Exists(new_pck))
                 File.Delete(new_pck);
             using (var r = new RunAppWithOutput(new_exe, ""))
-                Assert.IsTrue(r.GetConsoleText().Contains(pck_error));
+                Assert.IsTrue(r.GetConsoleText().Trim().StartsWith(pck_error));
 
             Title("Rip locked");
 
@@ -514,10 +538,10 @@ namespace Tests
 
             Title("Good runs");
             using (var r = new RunAppWithOutput(exe, ""))
-                Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
+                Assert.IsFalse(r.GetConsoleText().Trim().StartsWith(pck_error));
 
             using (var r = new RunAppWithOutput(new_exe, ""))
-                Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
+                Assert.IsFalse(r.GetConsoleText().Trim().StartsWith(pck_error));
 
             Title("Bad runs");
             foreach (var f in new string[] { pck, new_pck })
@@ -525,10 +549,10 @@ namespace Tests
                     File.Delete(f);
 
             using (var r = new RunAppWithOutput(exe, ""))
-                Assert.IsTrue(r.GetConsoleText().Contains(pck_error));
+                Assert.IsTrue(r.GetConsoleText().Trim().StartsWith(pck_error));
 
             using (var r = new RunAppWithOutput(new_exe, ""))
-                Assert.IsTrue(r.GetConsoleText().Contains(pck_error));
+                Assert.IsTrue(r.GetConsoleText().Trim().StartsWith(pck_error));
 
             if (!Utils.IsRunningOnMono())
             {
@@ -569,13 +593,13 @@ namespace Tests
             Assert.AreEqual(newVersion, GetPCKVersion(pck));
 
             using (var r = new RunAppWithOutput(exe, ""))
-                Assert.IsTrue(r.GetConsoleText().Contains(pck_error));
+                Assert.IsTrue(r.GetConsoleText().Trim().StartsWith(pck_error));
 
             Assert.IsTrue(PCKActions.ChangePCKVersion(pck, origVersion.ToString()));
             Assert.AreEqual(origVersion, GetPCKVersion(pck));
 
             using (var r = new RunAppWithOutput(exe, ""))
-                Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
+                Assert.IsFalse(r.GetConsoleText().Trim().StartsWith(pck_error));
 
             Title("Embedded test runs");
 
@@ -583,13 +607,13 @@ namespace Tests
             Assert.AreEqual(newVersion, GetPCKVersion(exeEmbedded));
 
             using (var r = new RunAppWithOutput(exeEmbedded, ""))
-                Assert.IsTrue(r.GetConsoleText().Contains(pck_error));
+                Assert.IsTrue(r.GetConsoleText().Trim().StartsWith(pck_error));
 
             Assert.IsTrue(PCKActions.ChangePCKVersion(exeEmbedded, origVersion.ToString()));
             Assert.AreEqual(origVersion, GetPCKVersion(exeEmbedded));
 
             using (var r = new RunAppWithOutput(exeEmbedded, ""))
-                Assert.IsFalse(r.GetConsoleText().Contains(pck_error));
+                Assert.IsFalse(r.GetConsoleText().Trim().StartsWith(pck_error));
         }
     }
 
@@ -600,7 +624,7 @@ namespace Tests
             get
             {
                 yield return new TestFixtureData(3);
-                //yield return new TestFixtureData(4);
+                yield return new TestFixtureData(4);
             }
         }
     }
