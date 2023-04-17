@@ -12,8 +12,6 @@ using System.Collections;
 
 namespace Tests
 {
-    // TODO: add encryption tests
-
     [TestFixture]
     [Apartment(System.Threading.ApartmentState.STA)]
     [TestFixtureSource(typeof(MyFixtureData), nameof(MyFixtureData.FixtureParams))]
@@ -65,7 +63,7 @@ namespace Tests
 
         static string ZipFilePath
         {
-            get => Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), $"../../../Test{GodotVersion}.zip");
+            get => Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), $"../../../../Test{GodotVersion}.zip");
         }
 
         static string PlatformFolder
@@ -190,9 +188,11 @@ namespace Tests
             Application.Idle += (sender, e) => Application.Exit();
             Title("Open");
             Assert.IsTrue(PCKActions.OpenPCKRun(Path.Combine(binaries, "Test.pck")));
+            PCKActions.ClosePCK();
 
             Title("Wrong Path");
             Assert.IsFalse(PCKActions.OpenPCKRun(Path.Combine(binaries, "WrongPath/Test.pck")));
+            PCKActions.ClosePCK();
         }
 
         [Test]
@@ -337,7 +337,6 @@ namespace Tests
                 Assert.IsFalse(PCKActions.PackPCKRun(exportTestPath, testEmbedPack, ver, embed: true));
                 Assert.IsFalse(File.Exists(Path.ChangeExtension(testEmbedPack, Exe(".old"))));
             }
-            // TODO: test alignment param
 
             {
                 Title("Pack only selected files");
@@ -614,6 +613,82 @@ namespace Tests
 
             using (var r = new RunAppWithOutput(exeEmbedded, ""))
                 Assert.IsFalse(r.GetConsoleText().Trim().StartsWith(pck_error));
+        }
+
+        [Test]
+        public void TestEncryption()
+        {
+            if (GodotVersion == 3)
+                Assert.Inconclusive("Not applicable!");
+
+            string enc_key = "7FDBF68B69B838194A6F1055395225BBA3F1C5689D08D71DCD620A7068F61CBA";
+            string wrong_enc_key = "8FDBF68B69B838194A6F1055395225BBA3F1C5689D08D71DCD620A7068F61CBA";
+            string ver = "2.4.0.2";
+
+            string extracted = Path.Combine(binaries, "EncryptedExport");
+            string exe = Path.Combine(binaries, Exe("TestEncrypted"));
+            string pck = Path.Combine(binaries, "TestEncrypted.pck");
+            string exe_new = Path.Combine(binaries, Exe("TestEncryptedNew"));
+            string pck_new = Path.Combine(binaries, "TestEncryptedNew.pck");
+            string pck_new_files = Path.Combine(binaries, "TestEncryptedNewOnlyFiles.pck");
+            string pck_new_wrong_key = Path.Combine(binaries, "TestEncryptedWrongKey.pck");
+            string exe_new_wrong_key = Path.Combine(binaries, Exe("TestEncryptedWrongKey"));
+            string exe_new_files = Path.Combine(binaries, Exe("TestEncryptedNewOnlyFiles"));
+            string exe_ripped = Path.Combine(binaries, Exe("TestEncryptedRipped"));
+            string pck_ripped = Path.Combine(binaries, "TestEncryptedRipped.pck");
+            string exe_embedded = Path.Combine(binaries, Exe("TestEncryptedEmbedded"));
+
+            File.Copy(Path.Combine(binaries, Exe("Test")), exe);
+            File.Copy(Path.Combine(binaries, Exe("Test")), exe_embedded);
+            File.Copy(Path.Combine(binaries, Exe("Test")), exe_new);
+            File.Copy(Path.Combine(binaries, Exe("Test")), exe_new_files);
+            File.Copy(Path.Combine(binaries, Exe("Test")), exe_ripped);
+            File.Copy(Path.Combine(binaries, Exe("Test")), exe_new_wrong_key);
+
+            Title("PCK info");
+            Assert.IsTrue(PCKActions.InfoPCKRun(pck, true, enc_key));
+            Title("PCK info wrong");
+            Assert.IsFalse(PCKActions.InfoPCKRun(pck, true, wrong_enc_key));
+
+            Title("Extract PCK");
+            Assert.IsTrue(PCKActions.ExtractPCKRun(pck, extracted, true, encKey: enc_key));
+            Title("Extract PCK wrong");
+            Assert.IsFalse(PCKActions.ExtractPCKRun(pck, extracted + "Wrong", true, encKey: wrong_enc_key));
+
+            Title("Pack PCK");
+            Assert.IsTrue(PCKActions.PackPCKRun(extracted, pck_new, ver, encIndex: true, encFiles: true, encKey: enc_key));
+            Title("Pack PCK only files");
+            Assert.IsTrue(PCKActions.PackPCKRun(extracted, pck_new_files, ver, encIndex: false, encFiles: true, encKey: enc_key));
+            Title("Pack PCK wrong");
+            Assert.IsTrue(PCKActions.PackPCKRun(extracted, pck_new_wrong_key, ver, encIndex: true, encFiles: true, encKey: wrong_enc_key));
+
+            Title("Merge PCK");
+            Assert.IsTrue(PCKActions.MergePCKRun(pck, exe_embedded));
+
+            Title("Rip PCK");
+            Assert.IsTrue(PCKActions.RipPCKRun(exe_embedded, pck_ripped));
+
+            Title("PCK good test runs");
+
+            using (var r = new RunAppWithOutput(exe, ""))
+                Assert.IsFalse(r.GetConsoleText().Trim().StartsWith(pck_error));
+
+            using (var r = new RunAppWithOutput(exe_new, ""))
+                Assert.IsFalse(r.GetConsoleText().Trim().StartsWith(pck_error));
+
+            using (var r = new RunAppWithOutput(exe_new_files, ""))
+                Assert.IsFalse(r.GetConsoleText().Trim().StartsWith(pck_error));
+
+            using (var r = new RunAppWithOutput(exe_ripped, ""))
+                Assert.IsFalse(r.GetConsoleText().Trim().StartsWith(pck_error));
+
+            using (var r = new RunAppWithOutput(exe_embedded, ""))
+                Assert.IsFalse(r.GetConsoleText().Trim().StartsWith(pck_error));
+
+            Title("PCK bed test runs");
+
+            using (var r = new RunAppWithOutput(exe_new_wrong_key, ""))
+                Assert.IsTrue(r.GetConsoleText().Trim().StartsWith(pck_error));
         }
     }
 
