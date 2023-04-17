@@ -1,6 +1,6 @@
 # Godot PCK Explorer
 
-It is a viewer and editor for Godot Engine's PCK files with the ability to extract content and create new packages.
+It is a viewer and editor for Godot Engine's PCK files with the ability to extract content and create new packages. Supports Godot 3 and 4.
 
 [Download](#download).
 
@@ -14,6 +14,7 @@ It is a viewer and editor for Godot Engine's PCK files with the ability to extra
 * `Extract` whole embedded PCK
 * `Remove` embedded PCK
 * `Split` files with embedded PCK into two separate files
+* Supports encrypted PCK for Godot 4
 * Supports `Windows` and `Linux`. `Linux` needs `mono` to work. `macOS` no longer supports `WinForms` in `mono`
 * Integration with `Windows Explorer`
 * And also all these features are available via the `console`
