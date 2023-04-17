@@ -34,10 +34,14 @@ namespace GodotPCKExplorer
         // 16 bytes for IV
         const int ENCRYPTED_HEADER_SIZE = 16 + 8 + 16;
         public byte[] EncryptionKey = null;
+        public bool EncryptIndex = false;
+        public bool EncryptFiles = false;
 
-        public PCKPacker(byte[] encKey = null)
+        public PCKPacker(byte[] encKey = null, bool encrypt_index = false, bool encrypt_files = false)
         {
             EncryptionKey = encKey;
+            EncryptIndex = encrypt_index;
+            EncryptFiles = encrypt_files;
         }
 
         void CloseAndDeleteFile(BinaryWriter writer, string out_pck)
@@ -90,8 +94,6 @@ namespace GodotPCKExplorer
 
             bw.DoWork += (sender, ev) =>
             {
-                bool NeedToEncrypt = GUIConfig.Instance.EncryptPCK;
-
                 var op = "Pack files";
                 var lpr = new LogProgressReporter(op);
 
@@ -118,7 +120,7 @@ namespace GodotPCKExplorer
                     BinaryWriter binWriter = null;
                     try
                     {
-                        binWriter = new BinaryWriter(File.Open(out_pck, FileMode.Create, FileAccess.ReadWrite));
+                        binWriter = new BinaryWriter(File.Open(out_pck, FileMode.OpenOrCreate, FileAccess.ReadWrite));
                     }
                     catch (Exception ex)
                     {
@@ -160,10 +162,9 @@ namespace GodotPCKExplorer
 
                         long file_base_address = -1;
 
-                        var is_index_encrypted = GUIConfig.Instance.EncryptIndex && NeedToEncrypt;
                         if (godotVersion.PackVersion == Utils.PCK_VERSION_GODOT_4)
                         {
-                            binWriter.Write((int)(is_index_encrypted ? 1 : 0));
+                            binWriter.Write((int)(EncryptIndex ? 1 : 0));
                             file_base_address = binWriter.BaseStream.Position;
                             binWriter.Write((long)0);
                         }
@@ -179,7 +180,7 @@ namespace GodotPCKExplorer
                         long total_size = 0;
 
                         {
-                            if (is_index_encrypted)
+                            if (EncryptIndex)
                                 index_writer = new BinaryWriter(new MemoryStream());
 
                             // write pck index
@@ -216,12 +217,12 @@ namespace GodotPCKExplorer
                                     file.md5 = Utils.GetFileMD5(file.OriginalPath);
                                     index_writer.Write(file.md5);
 
-                                    file.is_encrypted = GUIConfig.Instance.EncryptFiles && NeedToEncrypt;
+                                    file.is_encrypted = EncryptFiles;
                                     index_writer.Write((int)(file.is_encrypted ? 1 : 0));
                                 }
                             };
 
-                            if (is_index_encrypted)
+                            if (EncryptIndex)
                             {
                                 // Later it will be encrypted and the data size will be aligned to 16 + encrypted header
                                 Utils.AddPadding(binWriter, Utils.AlignAddress(index_writer.BaseStream.Length, 16) + ENCRYPTED_HEADER_SIZE);
@@ -317,7 +318,7 @@ namespace GodotPCKExplorer
                         };
 
                         // If the index is encrypted, then it must be written after all other operations in order to properly handle file offsets
-                        if (is_index_encrypted)
+                        if (EncryptIndex)
                         {
                             long pos = binWriter.BaseStream.Position;
                             binWriter.BaseStream.Seek(index_begin_pos, SeekOrigin.Begin);
@@ -355,7 +356,7 @@ namespace GodotPCKExplorer
                     result = true;
                     return;
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Program.Log(ex);
                 }

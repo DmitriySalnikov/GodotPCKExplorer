@@ -32,6 +32,8 @@ namespace GodotPCKExplorer
         const int SW_HIDE = 0;
         const int SW_SHOW = 5;
 
+        static bool IsStylesInited = false;
+
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
@@ -65,7 +67,12 @@ namespace GodotPCKExplorer
             Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
 
             Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
+
+            if (!IsStylesInited)
+            {
+                Application.SetCompatibleTextRenderingDefault(false);
+                IsStylesInited = true;
+            }
 
             LoadNativeLibs();
 
