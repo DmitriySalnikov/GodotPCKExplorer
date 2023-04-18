@@ -15,8 +15,7 @@ It is a viewer and editor for Godot Engine's PCK files with the ability to extra
 * `Remove` embedded PCK
 * `Split` files with embedded PCK into two separate files
 * Supports encrypted Godot 4 PCK
-* Supports `Windows` and `Linux`. `Linux` needs `mono` to work. `macOS` no longer supports `WinForms` in `mono`
-* Integration with `Windows Explorer`
+* Supports only `Windows`
 * And also all these features are available via the `console`
 
 ![Main Window](Images/MainForm.png)
