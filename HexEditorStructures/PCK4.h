@@ -110,9 +110,32 @@ struct FileIndexEncrypted
 public struct GodotPCK4
 {
 	var start_of_pck = 0;
-	var pck_file_size = GetDocumentSize();
+	var doc_file_size = GetDocumentSize();
+
+	// Search for a regular or embedded PCK
+
+hidden:
+	int32 test_magic;
+visible:
+	if (test_magic == 0x43504447)
+	{
+		$shift_by(-4);
+	}
+	else
+	{
+		$shift_by(doc_file_size-4-4-8);
+		
+		[color_scheme("Size")]
+		int64 pck_data_size;
+		[color_scheme("FileRecordMagic")]
+		int32 footer_magic;
+		$assert(footer_magic == 0x43504447, "Invalid Footer Magic number");
+		
+		$shift_by(-8 - 4 - pck_data_size);
+		//$remove_to(ref(test_magic));
+	}
 	
-	// TODO: add support for embeded files
+visible:
 	[color_scheme("FileRecordMagic")]
 	int32 magic;
 	
