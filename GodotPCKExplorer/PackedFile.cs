@@ -1,9 +1,9 @@
 ﻿using System;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
-namespace GodotPCKExplorer.UI
+namespace GodotPCKExplorer
 {
     public class PackedFile
     {
@@ -54,10 +54,10 @@ namespace GodotPCKExplorer.UI
 
         public bool IsEncrypted
         {
-            get => (Flags & Utils.PCK_FILE_ENCRYPTED) != 0;
+            get => (Flags & PCKUtils.PCK_FILE_ENCRYPTED) != 0;
         }
 
-        public bool ExtractFile(string basePath, bool overwriteExisting = true, BackgroundWorker bw = null, byte[] encKey = null, bool check_md5 = true)
+        public bool ExtractFile(string basePath, bool overwriteExisting = true, byte[] encKey = null, bool check_md5 = true, CancellationToken? cancellationToken = null)
         {
             string path = basePath + "/" + FilePath.Replace("res://", "");
             string dir = Path.GetDirectoryName(path);
@@ -78,7 +78,7 @@ namespace GodotPCKExplorer.UI
             }
             catch (Exception ex)
             {
-                Program.ShowMessage(ex, "Error", MessageType.Error);
+                PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
                 return false;
             }
 
@@ -91,13 +91,13 @@ namespace GodotPCKExplorer.UI
                     BinaryReader tmp_reader = reader;
 
                     if (IsEncrypted)
-                        tmp_reader = Utils.ReadEncryptedBlockIntoMemoryStream(reader, encKey);
+                        tmp_reader = PCKUtils.ReadEncryptedBlockIntoMemoryStream(reader, encKey);
 
                     long to_write = Size;
 
                     while (to_write > 0)
                     {
-                        var read = tmp_reader.ReadBytes(Math.Min(Utils.BUFFER_MAX_SIZE, (int)to_write));
+                        var read = tmp_reader.ReadBytes(Math.Min(PCKUtils.BUFFER_MAX_SIZE, (int)to_write));
                         file.Write(read);
                         to_write -= read.Length;
 
@@ -113,10 +113,10 @@ namespace GodotPCKExplorer.UI
 
                     if (check_md5 && PackVersion > 1)
                     {
-                        var exp_md5 = Utils.GetFileMD5(path);
+                        var exp_md5 = PCKUtils.GetFileMD5(path);
                         if (!exp_md5.SequenceEqual(MD5))
                         {
-                            Program.ShowMessage($"The MD5 of the exported file is not equal to the MD5 specified in the PCK.\n{Utils.ByteArrayToHexString(MD5, " ")} != {Utils.ByteArrayToHexString(exp_md5, " ")}", "Error", MessageType.Error);
+                            PCKActions.progress?.ShowMessage($"The MD5 of the exported file is not equal to the MD5 specified in the PCK.\n{PCKUtils.ByteArrayToHexString(MD5, " ")} != {PCKUtils.ByteArrayToHexString(exp_md5, " ")}", "Error", MessageType.Error);
                             return false;
                         }
                     }
@@ -124,7 +124,7 @@ namespace GodotPCKExplorer.UI
             }
             catch (Exception ex)
             {
-                var res = Program.ShowMessage(ex, "Error", MessageType.Error, System.Windows.Forms.MessageBoxButtons.OKCancel);
+                var res = PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error, PCKMessageBoxButtons.OKCancel);
                 file.Close();
                 try
                 {
@@ -132,9 +132,10 @@ namespace GodotPCKExplorer.UI
                 }
                 catch { }
 
-                if (res == System.Windows.Forms.DialogResult.Cancel)
+                if (res == PCKDialogResult.Cancel)
                 {
-                    bw?.CancelAsync();
+                    // TODO test cancel in process
+                    return false;
                 }
             }
 

@@ -7,7 +7,7 @@
     <ProjectGuid>{F97C15B2-F26D-46E6-AF17-5A2495A9FAC8}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>GodotPCKExplorer.UI</RootNamespace>
-    <AssemblyName>GodotPCKExplorer</AssemblyName>
+    <AssemblyName>GodotPCKExplorer.UI</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -130,7 +130,6 @@
       <DependentUpon>ChangePCKVersion.cs</DependentUpon>
     </Compile>
     <Compile Include="ContextMenuRegistrator.cs" />
-    <Compile Include="mbedTLS.cs" />
     <Compile Include="OpenWithPCKEncryption.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -158,11 +157,6 @@
     </Compile>
     <Compile Include="GUIConfig.cs" />
     <Compile Include="Logger.cs" />
-    <Compile Include="PackedFile.cs" />
-    <Compile Include="PCKActions.cs" />
-    <Compile Include="PCKPacker.cs" />
-    <Compile Include="PCKReader.cs" />
-    <Compile Include="PCKVersion.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="LogProgressReporter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -223,12 +217,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="icon.ico" />
-    <AdditionalFiles Include="mbedTLS\x64\mbedTLS_AES.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AdditionalFiles>
-    <AdditionalFiles Include="mbedTLS\x86\mbedTLS_AES.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AdditionalFiles>
     <Content Include="pckAbout.png" />
     <None Include="Resources\HelpText.txt" />
   </ItemGroup>
@@ -244,6 +232,11 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\GodotPCKExplorer\GodotPCKExplorer.csproj">
+      <Project>{37268aa0-b7a7-494d-9df0-7c08240e44c4}</Project>
+      <Name>GodotPCKExplorer</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

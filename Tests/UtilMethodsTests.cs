@@ -4,8 +4,7 @@ using System.Reflection;
 using System;
 using System.Linq;
 using System.IO;
-using GodotPCKExplorer.UI;
-using System.Windows.Forms;
+using GodotPCKExplorer;
 using System.Collections.Generic;
 using Ionic.Zip;
 using System.Collections;
@@ -165,10 +164,14 @@ namespace Tests
         }
 
         [TearDown]
+        public void GodotPCKClear()
+        {
+            PCKActions.Cleanup();
+            ClearBinaries();
+        }
+
         public void ClearBinaries()
         {
-            PCKActions.CleanupApp();
-
             foreach (var d in Directory.GetDirectories(binaries_base))
                 Directory.Delete(d, true);
             foreach (var f in Directory.GetFiles(binaries_base, "*", SearchOption.AllDirectories))
@@ -182,6 +185,7 @@ namespace Tests
             Assert.IsTrue(PCKActions.HelpRun());
         }
 
+        /* TODO add UI tests?..
         [Test]
         public void TestOpenCommand()
         {
@@ -194,6 +198,7 @@ namespace Tests
             Assert.IsFalse(PCKActions.OpenPCKRun(Path.Combine(binaries, "WrongPath/Test.pck")));
             PCKActions.ClosePCK();
         }
+        */
 
         [Test]
         public void TestInfoCommand()
@@ -227,7 +232,7 @@ namespace Tests
             Assert.IsFalse(PCKActions.ExtractPCKRun(Path.Combine(binaries, "WrongPath/Test.pck"), exportTestPath, true));
 
             Title("Compare content with folder");
-            var list_of_files = Utils.ScanFoldersForFiles(Path.GetFullPath(exportTestPath));
+            var list_of_files = PCKUtils.ScanFoldersForFiles(Path.GetFullPath(exportTestPath));
             {
                 var pck = new PCKReader();
                 Assert.IsTrue(pck.OpenFile(testPCK));
@@ -258,7 +263,7 @@ namespace Tests
 
                 Assert.IsTrue(PCKActions.ExtractPCKRun(testPCK, exportTestSelectedPath, true, export_files));
 
-                var exportedSelectedList = Utils.ScanFoldersForFiles(exportTestSelectedPath);
+                var exportedSelectedList = PCKUtils.ScanFoldersForFiles(exportTestSelectedPath);
                 Assert.AreEqual(exportedSelectedList.Count, seleceted_files.Count);
 
                 foreach (var f in export_files)
@@ -299,7 +304,7 @@ namespace Tests
 
                 Assert.IsTrue(PCKActions.PackPCKRun(exportTestPath, newPckPath, ver));
 
-                if (!Utils.IsRunningOnMono())
+                if (/*!Utils.IsRunningOnMono()*/true)
                 {
                     Title("Locked file");
                     string locked_file = Path.Combine(exportTestPath, "out.lock");
@@ -404,7 +409,7 @@ namespace Tests
             File.Delete(newEXE);
             File.Copy(testEXE, newEXE);
 
-            if (!Utils.IsRunningOnMono())
+            if (/*!Utils.IsRunningOnMono()*/true)
             {
                 Title("Locked backup");
                 // creates new (old + ExecutableExtension) 0kb
@@ -468,7 +473,7 @@ namespace Tests
             Assert.IsFalse(PCKActions.RipPCKRun(Path.Combine(binaries, Exe("Test")), new_pck));
             Assert.IsFalse(PCKActions.RipPCKRun(new_pck, new_pck));
 
-            if (!Utils.IsRunningOnMono())
+            if (/*!Utils.IsRunningOnMono()*/true)
             {
                 Title("Locked file");
                 string locked_file = Path.Combine(binaries, "test.lock");
@@ -553,7 +558,7 @@ namespace Tests
             using (var r = new RunAppWithOutput(new_exe, ""))
                 Assert.IsTrue(r.GetConsoleText().Trim().StartsWith(pck_error));
 
-            if (!Utils.IsRunningOnMono())
+            if (/*!Utils.IsRunningOnMono()*/true)
             {
                 Title("Split with locked output");
                 foreach (var f in new string[] { new_exe, new_pck })

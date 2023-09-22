@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
+using GodotPCKExplorer;
 
 namespace GodotPCKExplorer.UI
 {
@@ -58,7 +59,7 @@ namespace GodotPCKExplorer.UI
                     var cancel = false;
 
                     bw.ReportProgress(0);
-                    Utils.ScanFoldersForFilesAdvanced(folder, filesScan, ref folder, ref cancel, bw);
+                    PCKUtils.ScanFoldersForFilesAdvanced(folder, filesScan, ref folder, ref cancel /*, bw TODO token*/);
                     if (cancel || bw.CancellationPending)
                         filesScan.Clear();
                 }

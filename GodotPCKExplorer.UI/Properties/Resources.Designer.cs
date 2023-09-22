@@ -63,12 +63,13 @@ namespace GodotPCKExplorer.UI.Properties {
         /// <summary>
         ///   Looks up a localized string similar to Godot can embed &apos;.pck&apos; files into other files.
         ///Therefore, GodotPCKExplorer.UI can open both &apos;.pck&apos; and files with embedded &apos;pck&apos;.
+        ///Encryption is only verified with PCK for Godot 4.
         ///&quot;&quot; - Paths and other arguments must be without spaces or inside quotes.
         ///{} - Optional arguments
         ///
         ///Examples of valid commands:
         ///-o	Open pack file
-        ///	-o [path to pack]
+        ///	-o [path to pack] {[encryption key]}
         ///	-o C:/Game.exe
         ///	-o C:/Game.pck
         ///
@@ -76,9 +77,8 @@ namespace GodotPCKExplorer.UI.Properties {
         ///	-i [path to pack]
         ///	-i C:/Game.exe
         ///	-i C:/Game.pck
-        ///
-        ///-e	Extract content from a pack to a folder. Automatically overwrites existing files
-        ///	-e [path to p [rest of string was truncated]&quot;;.
+        ///	
+        ///-l	Show pack file info wi [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string HelpText {
             get {

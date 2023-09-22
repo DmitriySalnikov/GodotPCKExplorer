@@ -5,12 +5,13 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
+using GodotPCKExplorer;
 
 namespace GodotPCKExplorer.UI
 {
     internal static class Program
     {
-        public static string AppName = "GodotPCKExplorer.UI";
+        public static string AppName = "GodotPCKExplorer";
         public static string AppDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppName);
 
         public static bool CMDMode = false;
@@ -19,13 +20,9 @@ namespace GodotPCKExplorer.UI
         static Logger logger;
         static bool runWithArgs = false;
 
-        static bool libsLoaded = false;
-
         // https://stackoverflow.com/a/3571628/8980874
         [DllImport("kernel32.dll")]
         static extern IntPtr GetConsoleWindow();
-        [DllImport("kernel32.dll")]
-        private static extern IntPtr LoadLibrary(string dllToLoad);
         [DllImport("user32.dll")]
         static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
@@ -74,24 +71,11 @@ namespace GodotPCKExplorer.UI
                 IsStylesInited = true;
             }
 
-            LoadNativeLibs();
+            PCKActions.Init();
 
             ShowConsole();
             CMDMode = true;
             Log("");
-        }
-
-        // https://stackoverflow.com/a/30646096/8980874
-        static void LoadNativeLibs()
-        {
-            var myPath = new Uri(typeof(Program).Assembly.CodeBase).LocalPath;
-            var myFolder = Path.GetDirectoryName(myPath);
-            var subFolder = Path.Combine(myFolder, "mbedTLS", (Environment.Is64BitProcess ? "x64" : "x86"));
-
-            if (!libsLoaded)
-            {
-                LoadLibrary(Path.Combine(subFolder, "mbedTLS_AES.dll"));
-            }
         }
 
         public static void Cleanup()
@@ -253,19 +237,49 @@ namespace GodotPCKExplorer.UI
         static void HelpCommand()
         {
             runWithArgs = true;
-            PCKActions.HelpRun();
+            CommandLog("Help", "Help text", true);
             return;
 
         }
 
         static bool TestEncryptionKey(string key)
         {
-            if (!Utils.HexStringValidate(key, 256 / 8))
+            if (!PCKUtils.HexStringValidate(key, 256 / 8))
             {
                 CommandLog("Invalid encryption key provided!", "Error", false, MessageType.Error);
                 return false;
             }
             return true;
+        }
+
+        public static bool OpenPCKRun(string path, string encKey = null)
+        {
+            CMDMode = false;
+            if (File.Exists(path))
+            {
+                if (mainForm == null)
+                {
+                    mainForm = new Form1();
+                    mainForm.OpenFile(path, encKey);
+
+                    Application.Run(mainForm);
+                }
+                else
+                {
+                    mainForm.OpenFile(path, encKey);
+                }
+                return true;
+            }
+            else
+            {
+                CommandLog($"Specified file does not exists! '{path}'", "Error", false, MessageType.Error);
+            }
+            return false;
+        }
+
+        public static void ClosePCK()
+        {
+            mainForm?.CloseFile();
         }
 
         static void OpenPCKCommand(string[] args)
@@ -315,7 +329,7 @@ namespace GodotPCKExplorer.UI
                 runWithArgs = true;
 
                 CMDMode = false;
-                PCKActions.OpenPCKRun(path, encKey);
+                OpenPCKRun(path, encKey);
             }
         }
 

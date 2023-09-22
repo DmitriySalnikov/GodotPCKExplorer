@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace GodotPCKExplorer.UI
+namespace GodotPCKExplorer
 {
     public class mbedTLS : IDisposable
     {
@@ -79,7 +79,7 @@ namespace GodotPCKExplorer.UI
             if (p_iv.Length != 16)
                 throw new ArgumentOutOfRangeException($"The IV must be 16 bytes long. {nameof(p_iv)}");
 
-            var data = new byte[Utils.AlignAddress(p_src.Length, 16)];
+            var data = new byte[PCKUtils.AlignAddress(p_src.Length, 16)];
             Array.Copy(p_src, data, p_src.Length);
 
             r_dst = new byte[data.Length];
