@@ -29,13 +29,13 @@ set CPUs=%NUMBER_OF_PROCESSORS%
 
 title x64
 echo ----------- x64 ------------
-cmake -G "Visual Studio 17 2022" -A x64 -S . -B "build64"
+cmake -G "Visual Studio 17 2022" -A x64 -S . -B "build64" -DMSVC_STATIC_RUNTIME=1
 cmake --build build64 --config Debug -j %CPUs%
 cmake --build build64 --config Release -j %CPUs%
 
 title x86
 echo ----------- x86 ------------
-cmake -G "Visual Studio 17 2022" -A win32 -S . -B "build32"
+cmake -G "Visual Studio 17 2022" -A win32 -S . -B "build32" -DMSVC_STATIC_RUNTIME=1
 cmake --build build32 --config Debug -j %CPUs%
 cmake --build build32 --config Release -j %CPUs%
 

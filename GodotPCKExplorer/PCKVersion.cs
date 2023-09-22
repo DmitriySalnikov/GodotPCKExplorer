@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace GodotPCKExplorer.UI
+namespace GodotPCKExplorer
 {
     public struct PCKVersion
     {
@@ -12,7 +12,8 @@ namespace GodotPCKExplorer.UI
         public int Minor { get; set; }
         public int Revision { get; set; }
 
-        [Newtonsoft.Json.JsonIgnore]
+        // TODO https://stackoverflow.com/questions/25749509/how-can-i-tell-json-net-to-ignore-properties-in-a-3rd-party-object
+        // [Newtonsoft.Json.JsonIgnore]
         public bool IsValid
         {
             get

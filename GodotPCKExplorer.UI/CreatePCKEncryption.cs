@@ -1,4 +1,5 @@
-﻿using System;
+﻿using GodotPCKExplorer;
+using System;
 using System.Security.Cryptography;
 using System.Windows.Forms;
 
@@ -17,7 +18,7 @@ namespace GodotPCKExplorer.UI
 
         private void btn_ok_Click(object sender, EventArgs e)
         {
-            if (!string.IsNullOrWhiteSpace(tb_key.Text) && !Utils.HexStringValidate(tb_key.Text, 256 / 8))
+            if (!string.IsNullOrWhiteSpace(tb_key.Text) && !PCKUtils.HexStringValidate(tb_key.Text, 256 / 8))
             {
                 Program.ShowMessage($"The key\n\"{tb_key.Text}\"\nis not a valid key!\nThe key must be valid AES 256 bits.", "Invalid key");
                 return;

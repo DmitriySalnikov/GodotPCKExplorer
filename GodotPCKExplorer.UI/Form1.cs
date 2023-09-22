@@ -4,6 +4,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+using GodotPCKExplorer;
 
 namespace GodotPCKExplorer.UI
 {
@@ -169,7 +170,7 @@ namespace GodotPCKExplorer.UI
                 // Move to top
                 if (item != null)
                 {
-                    var str = Utils.ByteArrayToHexString(pckReader.EncryptionKey);
+                    var str = PCKUtils.ByteArrayToHexString(pckReader.EncryptionKey);
                     if (str != "")
                         item.EncryptionKey = str;
                     list.Remove(item);
@@ -177,7 +178,7 @@ namespace GodotPCKExplorer.UI
                 }
                 else
                 {
-                    list.Insert(0, new RecentFiles(path, Utils.ByteArrayToHexString(pckReader.EncryptionKey)));
+                    list.Insert(0, new RecentFiles(path, PCKUtils.ByteArrayToHexString(pckReader.EncryptionKey)));
                     while (list.Count > 16)
                         list.RemoveAt(list.Count - 1);
                 }
