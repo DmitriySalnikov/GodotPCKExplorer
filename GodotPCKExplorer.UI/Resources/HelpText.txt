@@ -1,0 +1,61 @@
+Godot can embed '.pck' files into other files.
+Therefore, GodotPCKExplorer.UI can open both '.pck' and files with embedded 'pck'.
+Encryption is only verified with PCK for Godot 4.
+"" - Paths and other arguments must be without spaces or inside quotes.
+{} - Optional arguments
+
+Examples of valid commands:
+-o	Open pack file
+	-o [path to pack] {[encryption key]}
+	-o C:/Game.exe
+	-o C:/Game.pck
+
+-i	Show pack file info
+	-i [path to pack]
+	-i C:/Game.exe
+	-i C:/Game.pck
+	
+-l	Show pack file info with a list of packed files
+	-l [path to pack] {[encryption key]}
+	-l C:/Game.exe
+	-l C:/Game.pck
+
+-e	Extract content from a pack to a folder. Automatically overwrites existing files
+	-e [path to pack] [path to output folder] {[encryption key]}
+	-e C:/Game.exe "C:/Path with Spaces"
+	-e C:/Game.pck Output_dir
+
+-es	Export like -e but skip existing files
+
+-p	Pack content of folder into .pck file
+	The version should be in this format: PACK_VERSION.GODOT_MINOR._MAJOR._PATCH
+	-p [path to folder] [output pack file] [version] {[alignment]} {[encryption key]}
+	-p "C:/Directory with files" C:/Game_New.pck 1.3.2.0
+	-p "C:/Directory with files" C:/Game_New.pck 2.4.0.1 16 
+
+-pe	Pack embedded. Equal to just -p, but embed '.pck' into target file
+	-p [path to folder] [exe to pack into] [version] {[alignment]} {[encryption key]}
+	-p "C:/Directory with files" C:/Game.exe 1.3.2.0
+	-p "C:/Directory with files" C:/Game.exe 2.4.0.0 32
+
+-m	Merge pack into target file. So you can copy the '.pck' from one file to another
+	-m [path to pack] [file to merge into]
+	-m C:/Game.pck C:/Game.exe
+	-m C:/GameEmbedded.exe C:/Game.exe
+
+-r	Rip '.pck' from file
+	If the output file is not specified, it will just be deleted from the original file
+	Otherwise, it will be extracted without changing the original file
+	-r [path to file] {[output pack file]}
+	-r C:/Game.exe C:/Game.pck
+	-r C:/Game.exe
+
+-s	Split file with embedded '.pck' into two separated files
+	-s [path to file] {[path to the new file (this name will also be used for '.pck')]}
+	-s C:/Game.exe "C:/Out Folder/NewGameSplitted.exe"
+	-s C:/Game.exe
+
+-c	Change version of the '.pck'
+	-c [path to pck] [new version]
+	-c C:/Game.pck 1.3.4.1
+	-c C:/Game.exe 2.4.0.2

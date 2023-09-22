@@ -4,7 +4,7 @@ using System.Reflection;
 using System;
 using System.Linq;
 using System.IO;
-using GodotPCKExplorer;
+using GodotPCKExplorer.UI;
 using System.Windows.Forms;
 using System.Collections.Generic;
 using Ionic.Zip;
