@@ -15,7 +15,7 @@ jobs:
     runs-on: windows-latest
 
     env:
-      Project_Name: GodotPCKExplorer
+      Project_Name: GodotPCKExplorer.UI
       Solution_Path: GodotPCKExplorer.sln
 
     steps:
@@ -35,7 +35,7 @@ jobs:
 
       - name: Build solution
         shell: powershell
-        run: msbuild ${{ env.Solution_Path }} /t:GodotPCKExplorer /p:Configuration=${{ matrix.configuration }} /p:Platform="x64" /m:2
+        run: msbuild ${{ env.Solution_Path }} /t:GodotPCKExplorer_UI /p:Configuration=${{ matrix.configuration }} /p:Platform="x64" /m:2
 
       - name: Prepare artifacts
         if: matrix.configuration == 'Release'
