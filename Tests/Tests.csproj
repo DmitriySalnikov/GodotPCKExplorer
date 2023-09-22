@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GodotPCKExplorer\GodotPCKExplorer.csproj" />
+    <ProjectReference Include="..\GodotPCKExplorer.UI\GodotPCKExplorer.UI.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -73,7 +73,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)mbedtls\build64\library\Debug;$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)GodotPCKExplorer\mbedTLS\$(PlatformShortName)\</OutDir>
+    <OutDir>$(SolutionDir)GodotPCKExplorer.UI\mbedTLS\$(PlatformShortName)\</OutDir>
     <IntDir>$(ProjectDir)$(Configuration)\</IntDir>
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
@@ -81,12 +81,12 @@
     <IncludePath>$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)mbedtls\build32\library\Debug;$(LibraryPath)</LibraryPath>
     <IntDir>$(ProjectDir)$(Configuration)\</IntDir>
-    <OutDir>$(SolutionDir)GodotPCKExplorer\mbedTLS\$(PlatformShortName)\</OutDir>
+    <OutDir>$(SolutionDir)GodotPCKExplorer.UI\mbedTLS\$(PlatformShortName)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)libs\x64;$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)GodotPCKExplorer\mbedTLS\$(PlatformShortName)\</OutDir>
+    <OutDir>$(SolutionDir)GodotPCKExplorer.UI\mbedTLS\$(PlatformShortName)\</OutDir>
     <IntDir>$(ProjectDir)$(Configuration)\</IntDir>
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
@@ -94,7 +94,7 @@
     <IncludePath>$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)libs\x86;$(LibraryPath)</LibraryPath>
     <IntDir>$(ProjectDir)$(Configuration)\</IntDir>
-    <OutDir>$(SolutionDir)GodotPCKExplorer\mbedTLS\$(PlatformShortName)\</OutDir>
+    <OutDir>$(SolutionDir)GodotPCKExplorer.UI\mbedTLS\$(PlatformShortName)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
