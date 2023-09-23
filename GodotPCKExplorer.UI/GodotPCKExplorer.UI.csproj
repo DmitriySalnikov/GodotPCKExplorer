@@ -168,6 +168,7 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Utils.cs" />
+    <Compile Include="VersionCheckGitHub.cs" />
     <EmbeddedResource Include="AboutBox1.resx">
       <DependentUpon>AboutBox1.cs</DependentUpon>
     </EmbeddedResource>
