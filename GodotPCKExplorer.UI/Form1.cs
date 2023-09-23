@@ -189,6 +189,28 @@ namespace GodotPCKExplorer.UI
             }
         }
 
+        string GetEncryptionStatusString()
+        {
+            var enc_text = "";
+            if (pckReader.IsEncrypted)
+            {
+                if (pckReader.IsEncryptedIndex != pckReader.IsEncryptedFiles)
+                {
+                    if (pckReader.IsEncryptedIndex)
+                        enc_text = "Encrypted Index";
+                    else
+                        enc_text = "Encrypted Files";
+                }
+                else
+                {
+                    enc_text = "Encrypted";
+                }
+            }
+            if (enc_text != "")
+                enc_text = " " + enc_text;
+            return enc_text;
+        }
+
         public void OpenFile(string path, string encKey = null)
         {
             CloseFile();
@@ -207,7 +229,7 @@ namespace GodotPCKExplorer.UI
                     {
                         d.ShowDialog();
 
-                        if (item != null)
+                        if (item != null && !string.IsNullOrWhiteSpace(d.EncryptionKey))
                         {
                             item.EncryptionKey = d.EncryptionKey;
                             GUIConfig.Instance.Save();
@@ -220,7 +242,8 @@ namespace GodotPCKExplorer.UI
             path = Path.GetFullPath(path);
             if (pckReader.OpenFile(path, get_encryption_key: get_enc_key))
             {
-                Text = $"\"{Utils.GetShortPath(pckReader.PackPath, 50)}\" Pack version: {pckReader.PCK_VersionPack}. Godot Version: {pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}";
+                var enc_text = GetEncryptionStatusString();
+                Text = $"\"{Utils.GetShortPath(pckReader.PackPath, 50)}\" Pack version: {pckReader.PCK_VersionPack}. Godot Version: {pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}{enc_text}";
 
                 // update recent files
                 var list = GUIConfig.Instance.RecentOpenedFiles;
@@ -315,9 +338,11 @@ namespace GodotPCKExplorer.UI
                     size += (long)f.Cells[2].Tag;
                 }
 
+                var enc_text = GetEncryptionStatusString();
                 tssl_version_and_stats.Text = $"Version: {pckReader.PCK_VersionPack} {pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}" +
                     $" Files count: {pckReader.Files.Count}" +
-                    $" Total size: {Utils.SizeSuffix(TotalOpenedSize)}";
+                    $" Total size: {Utils.SizeSuffix(TotalOpenedSize)}" +
+                    enc_text;
 
                 if (dataGridView1.SelectedRows.Count > 0)
                     tssl_selected_size.Text = $"Selected: {dataGridView1.SelectedRows.Count} Size: {Utils.SizeSuffix(size)}";
@@ -423,11 +448,17 @@ namespace GodotPCKExplorer.UI
 
                     if (File.Exists(files[0]))
                     {
+                        var old_state_cmd = Program.CMDMode;
+                        Program.CMDMode = true;
+
                         if (pck.OpenFile(files[0], false, log_names_progress: false))
                         {
+                            Program.CMDMode = old_state_cmd;
+
                             e.Effect = DragDropEffects.Copy;
                             return;
                         }
+                        Program.CMDMode = old_state_cmd;
                     }
                 }
             }

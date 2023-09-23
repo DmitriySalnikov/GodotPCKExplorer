@@ -56,10 +56,6 @@ namespace GodotPCKExplorer
         PCKDialogResult ShowMessage(string text, string title, MessageType messageType = MessageType.None, PCKMessageBoxButtons boxButtons = PCKMessageBoxButtons.OK);
 
         PCKDialogResult ShowMessage(Exception ex, string title, MessageType messageType = MessageType.None, PCKMessageBoxButtons boxButtons = PCKMessageBoxButtons.OK);
-
-        void CommandLog(string text, string title, MessageType messageType = MessageType.None, bool showHelp = false);
-
-        void CommandLog(Exception ex, string title, MessageType messageType = MessageType.None);
     }
 
     public class ProgressReporter : IProgressReporter
@@ -121,20 +117,6 @@ namespace GodotPCKExplorer
             Log(ex);
             return res;
         }
-
-        public void CommandLog(string text, string title, MessageType messageType = MessageType.None, bool showHelp = false)
-        {
-            //if (showHelp)
-            //ShowMessage(text + "\n\n" + Properties.Resources.HelpText, title, messageType);
-            //else
-            ShowMessage(text, title, messageType);
-        }
-
-        public void CommandLog(Exception ex, string title, MessageType messageType = MessageType.None)
-        {
-            Log(ex);
-            CommandLog(ex.Message, title, messageType, false);
-        }
     }
 
     public static class PCKActions
@@ -159,7 +141,7 @@ namespace GodotPCKExplorer
 
         public static void Init(IProgressReporter progressReporter = null)
         {
-            if (progress != null)
+            if (progressReporter != null)
             {
                 progress = progressReporter;
             }
@@ -200,6 +182,7 @@ namespace GodotPCKExplorer
         public static bool InfoPCKRun(string filePath, bool list_files = false, string encKey = null, CancellationToken? cancellationToken = null)
         {
             PCKActions.progress?.Log("PCK Info started");
+            PCKActions.progress?.Log($"Input file: {filePath}");
 
             if (File.Exists(filePath))
             {
@@ -207,11 +190,30 @@ namespace GodotPCKExplorer
                 {
                     if (pckReader.OpenFile(filePath, get_encryption_key: () => encKey, read_only_header_godot4: !list_files, cancellationToken: cancellationToken))
                     {
-                        PCKActions.progress?.CommandLog($"\"{pckReader.PackPath}\"\n" +
+                        var enc_text = "";
+                        if (pckReader.IsEncrypted)
+                        {
+                            if (pckReader.IsEncryptedIndex != pckReader.IsEncryptedFiles)
+                            {
+                                if (pckReader.IsEncryptedIndex)
+                                    enc_text = "Encrypted Index";
+                                else
+                                    enc_text = "Encrypted Files";
+                            }
+                            else
+                            {
+                                enc_text = "Encrypted";
+                            }
+                        }
+                        if (enc_text != "")
+                            enc_text = " " + enc_text;
+
+                        PCKActions.progress?.ShowMessage(
                             $"Pack version {pckReader.PCK_VersionPack}. Godot version {pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}\n" +
                             $"Version string for this program: {pckReader.PCK_VersionPack}.{pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}\n" +
                             $"File count: {pckReader.PCK_FileCount}" +
-                            (pckReader.IsEncrypted ? "\nThe file index is encrypted" : ""), "Pack Info", MessageType.Info);
+                            (pckReader.IsEncryptedIndex ? "\nThe file index is encrypted" : "") +
+                            (pckReader.IsEncryptedFiles ? "\nFiles are encrypted" : ""), "Pack Info", MessageType.Info);
                     }
                     else
                     {
@@ -222,21 +224,22 @@ namespace GodotPCKExplorer
             }
             else
             {
-                PCKActions.progress?.CommandLog($"Specified file does not exists! '{filePath}'", "Error", MessageType.Error);
+                PCKActions.progress?.ShowMessage($"Specified file does not exists! '{filePath}'", "Error", MessageType.Error);
             }
             return false;
         }
 
         public static bool ChangePCKVersion(string filePath, string strVersion)
         {
-            PCKActions.progress?.Log("Change PCK Version started");
+            PCKActions.progress?.Log($"Change PCK Version started for");
+            PCKActions.progress?.Log($"Input file: {filePath}");
 
             if (File.Exists(filePath))
             {
                 var newVersion = new PCKVersion(strVersion);
                 if (!newVersion.IsValid)
                 {
-                    PCKActions.progress?.CommandLog("The version is specified incorrectly.", "Error", MessageType.Error, true);
+                    PCKActions.progress?.ShowMessage("The version is specified incorrectly.", "Error", MessageType.Error);
                     return false;
                 }
 
@@ -272,14 +275,14 @@ namespace GodotPCKExplorer
                 }
                 catch (Exception ex)
                 {
-                    PCKActions.progress?.CommandLog(ex, "Error", MessageType.Error);
+                    PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
                     return false;
                 }
                 return true;
             }
             else
             {
-                PCKActions.progress?.CommandLog($"Specified file does not exists! '{filePath}'", "Error", MessageType.Error);
+                PCKActions.progress?.ShowMessage($"Specified file does not exists! '{filePath}'", "Error", MessageType.Error);
             }
             return false;
         }
@@ -287,6 +290,8 @@ namespace GodotPCKExplorer
         public static bool ExtractPCKRun(string filePath, string dirPath, bool overwriteExisting = true, IEnumerable<string> files = null, bool check_md5 = true, string encKey = null, CancellationToken? cancellationToken = null)
         {
             PCKActions.progress?.Log("Extract PCK started");
+            PCKActions.progress?.Log($"Input file: {filePath}");
+            PCKActions.progress?.Log($"Output directory: {dirPath}");
 
             if (File.Exists(filePath))
             {
@@ -307,7 +312,7 @@ namespace GodotPCKExplorer
             }
             else
             {
-                PCKActions.progress?.CommandLog($"Specified file does not exists! '{filePath}'", "Error", MessageType.Error);
+                PCKActions.progress?.ShowMessage($"Specified file does not exists! '{filePath}'", "Error", MessageType.Error);
             }
             return false;
         }
@@ -320,7 +325,7 @@ namespace GodotPCKExplorer
             }
             else
             {
-                PCKActions.progress?.CommandLog($"Specified directory does not exists! '{dirPath}'", "Error", MessageType.Error);
+                PCKActions.progress?.ShowMessage($"Specified directory does not exists! '{dirPath}'", "Error", MessageType.Error);
             }
             return false;
         }
@@ -329,18 +334,19 @@ namespace GodotPCKExplorer
         {
             if (!files.Any())
             {
-                PCKActions.progress?.CommandLog("No files to pack", "Error", MessageType.Error);
+                PCKActions.progress?.ShowMessage("No files to pack", "Error", MessageType.Error);
                 return false;
             }
 
             PCKActions.progress?.Log("Pack PCK started");
+            PCKActions.progress?.Log($"Output file: {filePath}");
 
             var pckPacker = new PCKPacker(PCKUtils.HexStringToByteArray(encKey), encIndex, encFiles);
             var ver = new PCKVersion(strVer);
 
             if (!ver.IsValid)
             {
-                PCKActions.progress?.CommandLog("The version is specified incorrectly.", "Error", MessageType.Error, true);
+                PCKActions.progress?.ShowMessage($"The version '{ver}' is specified incorrectly. Negative values are not allowed.", "Error", MessageType.Error);
                 return false;
             }
 
@@ -356,7 +362,7 @@ namespace GodotPCKExplorer
                 }
                 catch (Exception ex)
                 {
-                    PCKActions.progress?.CommandLog("Unable to create a backup copy of the file:\n" + ex.Message, "Error", MessageType.Error);
+                    PCKActions.progress?.ShowMessage("Unable to create a backup copy of the file:\n" + ex.Message, "Error", MessageType.Error);
                     PCKActions.progress?.Log(ex.StackTrace);
                     return false;
                 }
@@ -368,17 +374,20 @@ namespace GodotPCKExplorer
             }
             else
             {
-                // restore backup
-                try
+                if (embed)
                 {
-                    if (File.Exists(filePath))
-                        File.Delete(filePath);
-                    File.Move(oldPCKFile, filePath);
-                }
-                catch (Exception ex)
-                {
-                    PCKActions.progress?.Log("[Error] Can't restore backup file.\n" + ex.Message);
-                    PCKActions.progress?.Log(ex.StackTrace);
+                    // restore backup
+                    try
+                    {
+                        if (File.Exists(filePath))
+                            File.Delete(filePath);
+                        File.Move(oldPCKFile, filePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        PCKActions.progress?.Log("[Error] Can't restore backup file.\n" + ex.Message);
+                        PCKActions.progress?.Log(ex.StackTrace);
+                    }
                 }
             }
             return false;
@@ -387,6 +396,8 @@ namespace GodotPCKExplorer
         public static bool RipPCKRun(string exeFile, string outFile = null, bool removeBackup = false, bool show_message = true, CancellationToken? cancellationToken = null)
         {
             PCKActions.progress?.Log("Rip PCK started");
+            PCKActions.progress?.Log($"Input file: {exeFile}");
+            PCKActions.progress?.Log($"Output file: {outFile}");
 
             if (File.Exists(exeFile))
             {
@@ -398,20 +409,20 @@ namespace GodotPCKExplorer
                     res = pckReader.OpenFile(exeFile, false, log_names_progress: false, read_only_header_godot4: true, cancellationToken: cancellationToken);
                     if (!res)
                     {
-                        PCKActions.progress?.CommandLog($"The file does not contain '.pck' inside", "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage($"The file does not contain '.pck' inside", "Error", MessageType.Error);
                         return false;
                     }
                     to_write = pckReader.PCK_StartPosition;
 
                     if (!pckReader.PCK_Embedded)
                     {
-                        PCKActions.progress?.CommandLog($"The selected file is a regular '.pck'.\nOperation is not required..", "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage($"The selected file is a regular '.pck'.\nOperation is not required..", "Error", MessageType.Error);
                         return false;
                     }
 
                     if (outFile == exeFile)
                     {
-                        PCKActions.progress?.CommandLog($"The path to the new file cannot be equal to the original file", "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage($"The path to the new file cannot be equal to the original file", "Error", MessageType.Error);
                         return false;
                     }
 
@@ -420,7 +431,7 @@ namespace GodotPCKExplorer
                         if (pckReader.RipPCKFileFromExe(outFile))
                         {
                             if (show_message)
-                                PCKActions.progress?.CommandLog($"Extracting the '.pck' file from another file is complete.", "Progress", MessageType.Info);
+                                PCKActions.progress?.ShowMessage($"Extracting the '.pck' file from another file is complete.", "Progress", MessageType.Info);
                         }
                         else
                         {
@@ -440,7 +451,7 @@ namespace GodotPCKExplorer
                     }
                     catch (Exception ex)
                     {
-                        PCKActions.progress?.CommandLog("Unable to create a backup copy of the file:\n" + ex.Message, "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage("Unable to create a backup copy of the file:\n" + ex.Message, "Error", MessageType.Error);
                         PCKActions.progress?.Log(ex.StackTrace);
                         return false;
                     }
@@ -480,11 +491,11 @@ namespace GodotPCKExplorer
                             PCKActions.progress?.Log(e.StackTrace);
                         }
 
-                        PCKActions.progress?.CommandLog(ex, "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
                         return false;
                     }
                     if (show_message)
-                        PCKActions.progress?.CommandLog($"Removing '.pck' from another file is completed. The original file is renamed to \"{oldExeFile}\"", "Progress", MessageType.Info);
+                        PCKActions.progress?.ShowMessage($"Removing '.pck' from another file is completed. The original file is renamed to \"{oldExeFile}\"", "Progress", MessageType.Info);
 
                     // remove backup
                     try
@@ -494,7 +505,7 @@ namespace GodotPCKExplorer
                     }
                     catch (Exception ex)
                     {
-                        PCKActions.progress?.CommandLog(ex, "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
                     }
                 }
 
@@ -502,7 +513,7 @@ namespace GodotPCKExplorer
             }
             else
             {
-                PCKActions.progress?.CommandLog($"Specified file does not exists! '{exeFile}'", "Error", MessageType.Error);
+                PCKActions.progress?.ShowMessage($"Specified file does not exists! '{exeFile}'", "Error", MessageType.Error);
             }
             return false;
         }
@@ -510,6 +521,8 @@ namespace GodotPCKExplorer
         public static bool MergePCKRun(string pckFile, string exeFile, bool removeBackup = false, CancellationToken? cancellationToken = null)
         {
             PCKActions.progress?.Log("Merge PCK started");
+            PCKActions.progress?.Log($"Input file: {pckFile}");
+            PCKActions.progress?.Log($"Output file: {exeFile}");
 
             if (File.Exists(pckFile))
             {
@@ -520,14 +533,14 @@ namespace GodotPCKExplorer
                     if (!res)
                     {
                         pckReader.Close();
-                        PCKActions.progress?.CommandLog($"Unable to open PCK file", "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage($"Unable to open PCK file", "Error", MessageType.Error);
                         return false;
                     }
 
                     if (exeFile == pckFile)
                     {
                         pckReader.Close();
-                        PCKActions.progress?.CommandLog($"The path to the new file cannot be equal to the original file", "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage($"The path to the new file cannot be equal to the original file", "Error", MessageType.Error);
                         return false;
                     }
 
@@ -542,7 +555,7 @@ namespace GodotPCKExplorer
                     catch (Exception ex)
                     {
                         pckReader.Close();
-                        PCKActions.progress?.CommandLog("Unable to create a backup copy of the file:\n" + ex.Message, "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage("Unable to create a backup copy of the file:\n" + ex.Message, "Error", MessageType.Error);
                         PCKActions.progress?.Log(ex.StackTrace);
                         return false;
                     }
@@ -550,7 +563,7 @@ namespace GodotPCKExplorer
                     // merge
                     if (exeFile != null)
                         if (pckReader.MergePCKFileIntoExe(exeFile, cancellationToken))
-                            PCKActions.progress?.CommandLog($"Merging '.pck' into another file is complete.", "Progress", MessageType.Info);
+                            PCKActions.progress?.ShowMessage($"Merging '.pck' into another file is complete.", "Progress", MessageType.Info);
                         else
                         {
                             pckReader.Close();
@@ -579,7 +592,7 @@ namespace GodotPCKExplorer
                     }
                     catch (Exception ex)
                     {
-                        PCKActions.progress?.CommandLog(ex, "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
                     }
 
                     return res;
@@ -587,7 +600,7 @@ namespace GodotPCKExplorer
             }
             else
             {
-                PCKActions.progress?.CommandLog($"Specified file does not exists! '{pckFile}'", "Error", MessageType.Error);
+                PCKActions.progress?.ShowMessage($"Specified file does not exists! '{pckFile}'", "Error", MessageType.Error);
             }
             return false;
         }
@@ -595,6 +608,7 @@ namespace GodotPCKExplorer
         public static bool SplitPCKRun(string exeFile, string newExeName = null, bool removeBackup = true, CancellationToken? cancellationToken = null)
         {
             PCKActions.progress?.Log("Split PCK started");
+            PCKActions.progress?.Log($"Input file: {exeFile}");
 
             if (File.Exists(exeFile))
             {
@@ -605,7 +619,7 @@ namespace GodotPCKExplorer
 
                     if (name == exeFile)
                     {
-                        PCKActions.progress?.CommandLog($"The new pair cannot be named the same as the original file: {newExeName}", "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage($"The new pair cannot be named the same as the original file: {newExeName}", "Error", MessageType.Error);
                         return false;
                     }
 
@@ -622,7 +636,7 @@ namespace GodotPCKExplorer
                     }
                     catch (Exception ex)
                     {
-                        PCKActions.progress?.CommandLog(ex, "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
                         return false;
                     }
 
@@ -633,7 +647,7 @@ namespace GodotPCKExplorer
                 {
                     if (RipPCKRun(name, null, removeBackup, false, cancellationToken))
                     {
-                        PCKActions.progress?.CommandLog($"Split finished. Original file: \"{exeFile}\".\nNew files: \"{name}\" and \"{pckName}\"", "Progress", MessageType.Info);
+                        PCKActions.progress?.ShowMessage($"Split finished. Original file: \"{exeFile}\".\nNew files: \"{name}\" and \"{pckName}\"", "Progress", MessageType.Info);
                         return true;
                     }
                 }
@@ -649,7 +663,7 @@ namespace GodotPCKExplorer
                     }
                     catch (Exception ex)
                     {
-                        PCKActions.progress?.CommandLog(ex, "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
                     }
 
                     try
@@ -660,7 +674,7 @@ namespace GodotPCKExplorer
                     }
                     catch (Exception ex)
                     {
-                        PCKActions.progress?.CommandLog(ex, "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
                     }
                 }
 
@@ -668,7 +682,7 @@ namespace GodotPCKExplorer
             }
             else
             {
-                PCKActions.progress?.CommandLog($"Specified file does not exists! '{exeFile}'", "Error", MessageType.Error);
+                PCKActions.progress?.ShowMessage($"Specified file does not exists! '{exeFile}'", "Error", MessageType.Error);
             }
             return false;
         }

@@ -30,9 +30,18 @@ namespace GodotPCKExplorer
 
         public PCKVersion PCK_Version { get { return new PCKVersion(PCK_VersionPack, PCK_VersionMajor, PCK_VersionMinor, PCK_VersionRevision); } }
         public bool IsOpened { get { return binReader != null; } }
+
         public bool IsEncrypted
         {
+            get => IsEncryptedIndex || IsEncryptedFiles;
+        }
+        public bool IsEncryptedIndex
+        {
             get => (PCK_Flags & PCKUtils.PCK_DIR_ENCRYPTED) != 0;
+        }
+        public bool IsEncryptedFiles
+        {
+            get => Files.Count != 0 && Files.First().Value.IsEncrypted;
         }
 
         ~PCKReader()
@@ -69,10 +78,10 @@ namespace GodotPCKExplorer
             GetEncryptionKeyFunc = null;
         }
 
-        void TryGetEncryptionKey()
+        void TryGetEncryptionKey(string operation)
         {
             // TODO: add test for this key before use!
-            PCKActions.progress?.Log("The package contains encrypted data. You need to specify the encryption key!");
+            PCKActions.progress?.LogProgress(operation, "The package contains encrypted data. You need to specify the encryption key!");
 
             if (GetEncryptionKeyFunc != null)
                 EncryptionKey = PCKUtils.HexStringToByteArray(GetEncryptionKeyFunc());
@@ -83,7 +92,7 @@ namespace GodotPCKExplorer
             if (EncryptionKey.Length != 256 / 8)
                 throw new ArgumentOutOfRangeException("Encryption key");
 
-            PCKActions.progress?.Log($"Got encryption key: {PCKUtils.ByteArrayToHexString(EncryptionKey)}");
+            PCKActions.progress?.LogProgress(operation, $"Got encryption key: {PCKUtils.ByteArrayToHexString(EncryptionKey)}");
         }
 
         public bool OpenFile(string p_path, bool show_not_pck_error = true, Func<string> get_encryption_key = null, bool log_names_progress = true, bool read_only_header_godot4 = false, CancellationToken? cancellationToken = null)
@@ -185,13 +194,13 @@ namespace GodotPCKExplorer
                 {
                     if (IsEncrypted && (EncryptionKey == null || EncryptionKey.Length != 32))
                     {
-                        TryGetEncryptionKey();
+                        TryGetEncryptionKey(op);
                     }
                 }
 
                 BinaryReader tmp_reader = binReader;
 
-                if (IsEncrypted)
+                if (IsEncryptedIndex)
                     tmp_reader = PCKUtils.ReadEncryptedBlockIntoMemoryStream(binReader, EncryptionKey);
 
                 for (int i = 0; i < PCK_FileCount; i++)
@@ -214,7 +223,7 @@ namespace GodotPCKExplorer
                     Files.Add(path, new PackedFile(binReader, path, ofs, pos_of_ofs, size, md5, flags, PCK_VersionPack));
                 };
 
-                if (IsEncrypted)
+                if (IsEncryptedIndex)
                 {
                     tmp_reader.Close();
                     tmp_reader.Dispose();
@@ -251,7 +260,7 @@ namespace GodotPCKExplorer
 
             if (!names.Any())
             {
-                PCKActions.progress?.CommandLog("The list of files to export is empty", "Error", MessageType.Error);
+                PCKActions.progress?.ShowMessage("The list of files to export is empty", "Error", MessageType.Error);
                 return false;
             }
 
@@ -292,7 +301,7 @@ namespace GodotPCKExplorer
                         Files[path].OnProgress += upd;
 
                         if (Files[path].IsEncrypted && (EncryptionKey == null || EncryptionKey.Length != 32))
-                            TryGetEncryptionKey();
+                            TryGetEncryptionKey(op);
 
                         if (!Files[path].ExtractFile(basePath, overwriteExisting, EncryptionKey, check_md5, cancellationToken))
                         {
@@ -318,7 +327,7 @@ namespace GodotPCKExplorer
             }
             catch (Exception ex)
             {
-                PCKActions.progress?.Log(ex);
+                PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
                 return false;
             }
             finally
@@ -450,7 +459,7 @@ namespace GodotPCKExplorer
                 {
                     if (p.OpenFile(exePath, false, log_names_progress: false))
                     {
-                        PCKActions.progress?.CommandLog("File already contains '.pck' inside.", "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage("File already contains '.pck' inside.", "Error", MessageType.Error);
                         return false;
                     }
                 }

@@ -151,8 +151,8 @@ namespace GodotPCKExplorer.UI
                     (uint)nud_alignment.Value,
                     cb_embed.Checked,
                     GUIConfig.Instance.EncryptionKey,
-                    GUIConfig.Instance.EncryptPCK && cb_enable_encryption.Checked,
-                    GUIConfig.Instance.EncryptPCK && cb_enable_encryption.Checked
+                    GUIConfig.Instance.EncryptIndex && cb_enable_encryption.Checked,
+                    GUIConfig.Instance.EncryptFiles && cb_enable_encryption.Checked
                     );
 
                 GUIConfig.Instance.PackedVersion = ver;

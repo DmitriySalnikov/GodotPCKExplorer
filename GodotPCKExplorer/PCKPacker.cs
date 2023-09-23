@@ -54,7 +54,7 @@ namespace GodotPCKExplorer
             }
             catch (Exception ex)
             {
-                PCKActions.progress?.CommandLog(ex, "Error", MessageType.Error);
+                PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
             }
         }
 
@@ -70,7 +70,7 @@ namespace GodotPCKExplorer
             {
                 if (!File.Exists(out_pck))
                 {
-                    PCKActions.progress?.CommandLog("Attempt to embed a package in a non-existent file", "Error", MessageType.Error);
+                    PCKActions.progress?.ShowMessage("Attempt to embed a package in a non-existent file", "Error", MessageType.Error);
                     return false;
                 }
                 else
@@ -79,18 +79,25 @@ namespace GodotPCKExplorer
                     if (pck.OpenFile(out_pck, false))
                     {
                         pck.Close();
-                        PCKActions.progress?.CommandLog("Attempt to embed a package in a file with an already embedded package or in a regular '.pck' file", "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage("Attempt to embed a package in a file with an already embedded package or in a regular '.pck' file", "Error", MessageType.Error);
                         return false;
                     }
                 }
             }
 
-            //bw.DoWork += (sender, ev) =>
             var op = "Pack files";
 
             try
             {
                 PCKActions.progress?.LogProgress(op, "Starting.");
+                PCKActions.progress?.LogProgress(op, $"Version: {godotVersion}");
+                PCKActions.progress?.LogProgress(op, $"Alignment: {alignment}");
+                if (EncryptIndex || EncryptFiles)
+                {
+                    PCKActions.progress?.LogProgress(op, $"Encryption key: {PCKUtils.ByteArrayToHexString(EncryptionKey)}");
+                    PCKActions.progress?.LogProgress(op, $"Encrypt Index: {EncryptIndex}");
+                    PCKActions.progress?.LogProgress(op, $"Encrypt Files: {EncryptFiles}");
+                }
 
                 // delete if not embbeding
                 if (!embed)
@@ -273,7 +280,6 @@ namespace GodotPCKExplorer
                         long actual_file_size = file.Size;
                         if (file.is_encrypted)
                         {
-                            // TODO read by parts
                             actual_file_size = PackEncryptedBlock(binWriter, File.ReadAllBytes(file.OriginalPath), EncryptionKey);
 
                             PCKActions.progress?.LogProgress(op, (int)((double)binWriter.BaseStream.Position / total_size * 100)); // update progress bar
