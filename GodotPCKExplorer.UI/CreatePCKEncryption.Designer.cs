@@ -50,9 +50,9 @@
             this.cb_encrypt_index.AutoSize = true;
             this.cb_encrypt_index.Location = new System.Drawing.Point(12, 55);
             this.cb_encrypt_index.Name = "cb_encrypt_index";
-            this.cb_encrypt_index.Size = new System.Drawing.Size(138, 17);
+            this.cb_encrypt_index.Size = new System.Drawing.Size(144, 17);
             this.cb_encrypt_index.TabIndex = 2;
-            this.cb_encrypt_index.Text = "Encrypt Index (files info)";
+            this.cb_encrypt_index.Text = "Encrypt Index ( files info )";
             this.cb_encrypt_index.UseVisualStyleBackColor = true;
             // 
             // cb_encrypt_files
