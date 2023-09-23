@@ -4,7 +4,6 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
-using GodotPCKExplorer;
 
 namespace GodotPCKExplorer.UI
 {
@@ -15,6 +14,7 @@ namespace GodotPCKExplorer.UI
         long TotalOpenedSize = 0;
         Font MatchCaseNormal = null;
         Font MatchCaseStrikeout = null;
+        VersionCheckerGitHub versionCheckerGitHub = new VersionCheckerGitHub("DmitriySalnikov", "GodotPCKExplorer", Program.AppName, ShowMessageBoxForVersionCheck);
 
         public Form1()
         {
@@ -80,6 +80,7 @@ namespace GodotPCKExplorer.UI
             }
 
             searchText.KeyDown += new KeyEventHandler(searchText_KeyDown);
+            CheckVersion(true);
         }
 
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
@@ -96,6 +97,64 @@ namespace GodotPCKExplorer.UI
             {
                 OpenFile(ofd_open_pack.FileName);
             }
+        }
+
+        internal void CheckVersion(bool isSilent = true)
+        {
+            versionCheckerGitHub.VersionSkippedByUser += (s, e) =>
+            {
+                GUIConfig.Instance.SkipVersion = e.SkippedVersion.ToString();
+                GUIConfig.Instance.Save();
+            };
+
+            // Get SkipVersion for updater
+            try
+            {
+                versionCheckerGitHub.SkipVersion = new Version(GUIConfig.Instance.SkipVersion);
+            }
+            catch (Exception ex)
+            {
+                Program.Log("The SkipVersion string for the updater could not be parsed.");
+                Program.Log(ex.Message);
+            }
+
+            versionCheckerGitHub.CheckForUpdates(isSilent);
+        }
+
+        static VersionCheckerGitHub.MSGDialogResult ShowMessageBoxForVersionCheck(VersionCheckerGitHub.MSGType type, Dictionary<string, string> customData, Exception ex)
+        {
+            string text = "";
+            string caption = "";
+            MessageType msg_type = MessageType.None;
+            MessageBoxButtons buttons = MessageBoxButtons.OK;
+
+            switch (type)
+            {
+                case VersionCheckerGitHub.MSGType.InfoUpdateAvailable:
+                    text = $"Current version: {customData["current_version"]}\nNew version: {customData["new_version"]}\nWould you like to go to the download page?\n\nSelect \"No\" to skip this version.";
+                    caption = $"A new version of {Program.AppName} is available";
+                    msg_type = MessageType.Info;
+                    buttons = MessageBoxButtons.YesNoCancel;
+                    break;
+                case VersionCheckerGitHub.MSGType.InfoUsingLatestVersion:
+                    text = $"You are using the latest version: {customData["current_version"]}";
+                    msg_type = MessageType.Info;
+                    break;
+                case VersionCheckerGitHub.MSGType.FailedToRequestInfo:
+                    text = $"Failed to request info about the new version.\n{ex.Message}";
+                    msg_type = MessageType.Error;
+                    break;
+                case VersionCheckerGitHub.MSGType.FailedToGetInfo:
+                    text = $"Failed to get info about the new version.\n{ex.Message}";
+                    msg_type = MessageType.Error;
+                    break;
+                case VersionCheckerGitHub.MSGType.FailedToProcessData:
+                    text = $"Failed to check for update.\n{ex.Message}";
+                    msg_type = MessageType.Error;
+                    break;
+            }
+
+            return (VersionCheckerGitHub.MSGDialogResult)Program.ShowMessage(text, caption, msg_type, buttons, DialogResult.Cancel);
         }
 
         void UpdateShowConsole()

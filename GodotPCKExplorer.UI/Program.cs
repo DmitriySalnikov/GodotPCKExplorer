@@ -112,7 +112,7 @@ namespace GodotPCKExplorer.UI
             logger.Write(ex);
         }
 
-        public static DialogResult ShowMessage(string text, string title, MessageType messageType = MessageType.None, MessageBoxButtons boxButtons = MessageBoxButtons.OK)
+        public static DialogResult ShowMessage(string text, string title, MessageType messageType = MessageType.None, MessageBoxButtons boxButtons = MessageBoxButtons.OK, DialogResult defaultRes = DialogResult.OK)
         {
             Log($"[{messageType}] \"{title}\": {text}");
 
@@ -135,13 +135,16 @@ namespace GodotPCKExplorer.UI
 #if DEV_ENABLED
                 System.Diagnostics.Debugger.Break();
 #endif
-                return MessageBox.Show(text, title, boxButtons, icon);
+                var res = MessageBox.Show(text, title, boxButtons, icon);
+                Log($"[{messageType}] \"{title}\": Result = '{res}'");
+                return res;
             }
 
 #if DEV_ENABLED
             System.Diagnostics.Debugger.Break();
 #endif
-            return DialogResult.OK;
+            Log($"[{messageType}] \"{title}\": Skipped message box with result = '{defaultRes}'");
+            return defaultRes;
         }
 
         public static DialogResult ShowMessage(Exception ex, string title, MessageType messageType = MessageType.None, MessageBoxButtons boxButtons = MessageBoxButtons.OK)

@@ -27,7 +27,7 @@ namespace GodotPCKExplorer.UI
 
         #region Packing
 
-        public PCKVersion PackedVersion { get; set; } = new PCKVersion(1, 3, 4, 0);
+        public PCKVersion PackedVersion { get; set; } = new PCKVersion(2, 4, 1, 1);
         public bool EmbedPCK { get; set; } = false;
         public string FolderPath { get; set; } = "";
         public bool MatchCaseFilterPackingForm { get; set; } = false;
@@ -56,6 +56,7 @@ namespace GodotPCKExplorer.UI
         public List<RecentFiles> RecentOpenedFiles { get; set; } = new List<RecentFiles>();
         public bool MatchCaseFilterMainForm { get; set; } = false;
         public bool ShowConsole { get; set; } = false;
+        public string SkipVersion { get; set; } = "";
 
         #endregion
 
