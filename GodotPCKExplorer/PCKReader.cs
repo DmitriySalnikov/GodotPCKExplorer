@@ -80,7 +80,6 @@ namespace GodotPCKExplorer
 
         void TryGetEncryptionKey(string operation)
         {
-            // TODO: add test for this key before use!
             PCKActions.progress?.LogProgress(operation, "The package contains encrypted data. You need to specify the encryption key!");
 
             if (GetEncryptionKeyFunc != null)
@@ -406,7 +405,6 @@ namespace GodotPCKExplorer
                         File.Delete(outPath);
                     }
                     catch { }
-                    // TODO test?
                     return false;
                 }
 
@@ -533,7 +531,6 @@ namespace GodotPCKExplorer
                         File.Delete(exePath);
                     }
                     catch { }
-                    // TODO test?
                     return false;
                 }
 

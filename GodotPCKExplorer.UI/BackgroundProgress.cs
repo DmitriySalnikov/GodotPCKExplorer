@@ -23,10 +23,10 @@ namespace GodotPCKExplorer.UI
             if (!bg_worker.CancellationPending && !UnknowPercents)
             {
                 var prct = Math.Max(0, Math.Min(100, e.ProgressPercentage));
-                if ((DateTime.Now - prevUpdateTime).TotalSeconds > 2 || (prct - prevPercent) > 5)
+                if ((DateTime.Now - prevUpdateTime).TotalSeconds > 2 || (prct - prevPercent) >= 5)
                 {
                     prevUpdateTime = DateTime.Now;
-                    
+
                     prevPercent = prct;
                     l_status.Text = $"Progress: {prct}%";
                 }

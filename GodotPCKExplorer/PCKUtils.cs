@@ -75,7 +75,7 @@ namespace GodotPCKExplorer
         {
             using (var md5 = MD5.Create())
             {
-                using (var stream = File.OpenRead(path))
+                using (var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
                     var bytes = md5.ComputeHash(stream);
                     if (bytes.Length > 16)

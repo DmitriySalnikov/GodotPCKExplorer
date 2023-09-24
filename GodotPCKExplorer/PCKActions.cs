@@ -68,7 +68,7 @@ namespace GodotPCKExplorer
 
             if (((DateTime.Now - prev_time).TotalSeconds > 1) || (prev_progress != percent && percent % 5 == 0))
             {
-                Console.WriteLine($"[Progress] {operation}: {Math.Max(Math.Min(percent, 100), 0)}%");
+                Log($"[Progress] {operation}: {Math.Max(Math.Min(percent, 100), 0)}%");
 
                 prev_progress = percent;
                 prev_time = DateTime.Now;
@@ -78,7 +78,7 @@ namespace GodotPCKExplorer
 
         public void LogProgress(string operation, string str)
         {
-            Console.WriteLine($"[Progress] {operation}: {str}");
+            Log($"[Progress] {operation}: {str}");
         }
 
         public void Log(string txt)
