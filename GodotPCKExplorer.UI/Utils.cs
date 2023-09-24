@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
-using GodotPCKExplorer;
 using System.Text.RegularExpressions;
-using System.Windows.Forms;
 
 namespace GodotPCKExplorer.UI
 {
-    // TODO rename, remove
     public enum MessageType
     {
         None,
@@ -16,6 +12,7 @@ namespace GodotPCKExplorer.UI
         Error,
         Warning
     }
+
     public class Utils
     {
         // Source: https://stackoverflow.com/a/14488941

@@ -1,7 +1,9 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 
 namespace GodotPCKExplorer.UI
 {
@@ -72,7 +74,13 @@ namespace GodotPCKExplorer.UI
         {
             try
             {
-                File.WriteAllText(SaveFile, Newtonsoft.Json.JsonConvert.SerializeObject(this, Newtonsoft.Json.Formatting.Indented));
+                File.WriteAllText(SaveFile, JsonConvert.SerializeObject(
+                    this,
+                    Formatting.Indented,
+                    new JsonSerializerSettings()
+                    {
+                        ContractResolver = ShouldSerializeContractResolver.Instance
+                    }));
             }
             catch (Exception ex)
             {
@@ -85,7 +93,7 @@ namespace GodotPCKExplorer.UI
             try
             {
                 if (File.Exists(SaveFile))
-                    Instance = Newtonsoft.Json.JsonConvert.DeserializeObject<GUIConfig>(File.ReadAllText(SaveFile));
+                    Instance = JsonConvert.DeserializeObject<GUIConfig>(File.ReadAllText(SaveFile));
 
                 if (Instance == null)
                     Instance = new GUIConfig();
@@ -97,5 +105,24 @@ namespace GodotPCKExplorer.UI
         }
 
         #endregion
+
+        // https://stackoverflow.com/questions/25749509/how-can-i-tell-json-net-to-ignore-properties-in-a-3rd-party-object
+        public class ShouldSerializeContractResolver : DefaultContractResolver
+        {
+            public static ShouldSerializeContractResolver Instance { get; } = new ShouldSerializeContractResolver();
+
+            protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
+            {
+                JsonProperty property = base.CreateProperty(member, memberSerialization);
+                if (property.DeclaringType == typeof(PCKVersion) && property.PropertyType != typeof(int))
+                {
+#if DEV_ENABLED
+                    Console.WriteLine($"Ignoring {member.DeclaringType}.{member.Name} on save");
+#endif
+                    property.Ignored = true;
+                }
+                return property;
+            }
+        }
     }
 }
