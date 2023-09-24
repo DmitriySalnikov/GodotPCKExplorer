@@ -79,7 +79,7 @@ namespace GodotPCKExplorer.UI
 
         public void Write(Exception ex)
         {
-            Write($"Exception:\n{ex.Message}\nStackTrace:\n{ex.StackTrace}");
+            Write($"thrown {ex.GetType().Name}:\n{ex.Message}\nStackTrace:\n{ex.StackTrace}");
         }
     }
 }
