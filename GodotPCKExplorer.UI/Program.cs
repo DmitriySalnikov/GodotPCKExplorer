@@ -131,11 +131,11 @@ namespace GodotPCKExplorer.UI
                 return PCKDialogResult.OK;
             }
 
-            public PCKDialogResult ShowMessage(Exception ex, string title, GodotPCKExplorer.MessageType messageType = GodotPCKExplorer.MessageType.None, PCKMessageBoxButtons boxButtons = PCKMessageBoxButtons.OK)
+            public PCKDialogResult ShowMessage(Exception ex, GodotPCKExplorer.MessageType messageType = GodotPCKExplorer.MessageType.None, PCKMessageBoxButtons boxButtons = PCKMessageBoxButtons.OK)
             {
                 if (!CMDMode)
                 {
-                    return (PCKDialogResult)Program.ShowMessage(ex, title, (MessageType)messageType, (MessageBoxButtons)boxButtons);
+                    return (PCKDialogResult)Program.ShowMessage(ex, (MessageType)messageType, (MessageBoxButtons)boxButtons);
                 }
 
                 Program.Log(ex);
@@ -202,9 +202,9 @@ namespace GodotPCKExplorer.UI
             return defaultRes;
         }
 
-        public static DialogResult ShowMessage(Exception ex, string title, MessageType messageType = MessageType.None, MessageBoxButtons boxButtons = MessageBoxButtons.OK)
+        public static DialogResult ShowMessage(Exception ex, MessageType messageType = MessageType.None, MessageBoxButtons boxButtons = MessageBoxButtons.OK)
         {
-            var res = ShowMessage(ex.Message, title, messageType, boxButtons);
+            var res = ShowMessage(ex.Message, ex.GetType().Name, messageType, boxButtons);
             Log(ex);
             return res;
         }
@@ -212,17 +212,6 @@ namespace GodotPCKExplorer.UI
         public static void LogHelp()
         {
             Log("\n" + Properties.Resources.HelpText);
-        }
-
-        public static void CommandLog(string text, string title, MessageType messageType = MessageType.None)
-        {
-            ShowMessage(text, title, messageType);
-        }
-
-        public static void CommandLog(Exception ex, string title, MessageType messageType = MessageType.None)
-        {
-            Log(ex);
-            CommandLog(ex.Message, title, messageType);
         }
 
         #endregion
@@ -509,7 +498,7 @@ namespace GodotPCKExplorer.UI
                             {
                                 encType = args[6];
 
-                                if (!new string[] {"both", "index", "files" }.Contains(encType))
+                                if (!new string[] { "both", "index", "files" }.Contains(encType))
                                 {
                                     Log($"Invalid encryption type: {encType}");
                                     LogHelp();

@@ -78,6 +78,7 @@
             this.copyOffsetToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.copySizeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.copySizeInBytesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.copyMD5ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ofd_rip_select_pck = new System.Windows.Forms.OpenFileDialog();
             this.sfd_rip_save_pack = new System.Windows.Forms.SaveFileDialog();
             this.sfd_split_new_file = new System.Windows.Forms.SaveFileDialog();
@@ -448,33 +449,40 @@
             this.copyPathToolStripMenuItem,
             this.copyOffsetToolStripMenuItem,
             this.copySizeToolStripMenuItem,
-            this.copySizeInBytesToolStripMenuItem});
+            this.copySizeInBytesToolStripMenuItem,
+            this.copyMD5ToolStripMenuItem});
             this.cms_table_row.Name = "cms_table_row";
-            this.cms_table_row.Size = new System.Drawing.Size(170, 92);
+            this.cms_table_row.Size = new System.Drawing.Size(181, 136);
             // 
             // copyPathToolStripMenuItem
             // 
             this.copyPathToolStripMenuItem.Name = "copyPathToolStripMenuItem";
-            this.copyPathToolStripMenuItem.Size = new System.Drawing.Size(169, 22);
+            this.copyPathToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.copyPathToolStripMenuItem.Text = "Copy Path";
             // 
             // copyOffsetToolStripMenuItem
             // 
             this.copyOffsetToolStripMenuItem.Name = "copyOffsetToolStripMenuItem";
-            this.copyOffsetToolStripMenuItem.Size = new System.Drawing.Size(169, 22);
+            this.copyOffsetToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.copyOffsetToolStripMenuItem.Text = "Copy Offset";
             // 
             // copySizeToolStripMenuItem
             // 
             this.copySizeToolStripMenuItem.Name = "copySizeToolStripMenuItem";
-            this.copySizeToolStripMenuItem.Size = new System.Drawing.Size(169, 22);
+            this.copySizeToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.copySizeToolStripMenuItem.Text = "Copy Size";
             // 
             // copySizeInBytesToolStripMenuItem
             // 
             this.copySizeInBytesToolStripMenuItem.Name = "copySizeInBytesToolStripMenuItem";
-            this.copySizeInBytesToolStripMenuItem.Size = new System.Drawing.Size(169, 22);
+            this.copySizeInBytesToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.copySizeInBytesToolStripMenuItem.Text = "Copy Size in bytes";
+            // 
+            // copyMD5ToolStripMenuItem
+            // 
+            this.copyMD5ToolStripMenuItem.Name = "copyMD5ToolStripMenuItem";
+            this.copyMD5ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.copyMD5ToolStripMenuItem.Text = "Copy MD5";
             // 
             // ofd_rip_select_pck
             // 
@@ -591,6 +599,7 @@
         private System.Windows.Forms.ToolStripMenuItem tsmi_match_case_filter;
         private System.Windows.Forms.ToolStripMenuItem showConsoleToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem checkMD5OnExportToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem copyMD5ToolStripMenuItem;
     }
 }
 

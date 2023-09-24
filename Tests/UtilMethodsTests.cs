@@ -690,7 +690,7 @@ namespace Tests
             using (var r = new RunAppWithOutput(exe_embedded, ""))
                 Assert.IsFalse(r.GetConsoleText().Trim().StartsWith(pck_error));
 
-            Title("PCK bed test runs");
+            Title("PCK bad test runs");
 
             using (var r = new RunAppWithOutput(exe_new_wrong_key, ""))
                 Assert.IsTrue(r.GetConsoleText().Trim().StartsWith(pck_error));

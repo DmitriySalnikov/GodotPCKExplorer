@@ -55,7 +55,7 @@ namespace GodotPCKExplorer
 
         PCKDialogResult ShowMessage(string text, string title, MessageType messageType = MessageType.None, PCKMessageBoxButtons boxButtons = PCKMessageBoxButtons.OK);
 
-        PCKDialogResult ShowMessage(Exception ex, string title, MessageType messageType = MessageType.None, PCKMessageBoxButtons boxButtons = PCKMessageBoxButtons.OK);
+        PCKDialogResult ShowMessage(Exception ex, MessageType messageType = MessageType.None, PCKMessageBoxButtons boxButtons = PCKMessageBoxButtons.OK);
     }
 
     public class ProgressReporter : IProgressReporter
@@ -111,9 +111,9 @@ namespace GodotPCKExplorer
             return PCKDialogResult.OK;
         }
 
-        public PCKDialogResult ShowMessage(Exception ex, string title, MessageType messageType = MessageType.None, PCKMessageBoxButtons boxButtons = PCKMessageBoxButtons.OK)
+        public PCKDialogResult ShowMessage(Exception ex, MessageType messageType = MessageType.None, PCKMessageBoxButtons boxButtons = PCKMessageBoxButtons.OK)
         {
-            var res = ShowMessage(ex.Message, title, messageType, boxButtons);
+            var res = ShowMessage(ex.Message, ex.GetType().Name, messageType, boxButtons);
             Log(ex);
             return res;
         }
@@ -275,7 +275,7 @@ namespace GodotPCKExplorer
                 }
                 catch (Exception ex)
                 {
-                    PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
+                    PCKActions.progress?.ShowMessage(ex, MessageType.Error);
                     return false;
                 }
                 return true;
@@ -491,7 +491,7 @@ namespace GodotPCKExplorer
                             PCKActions.progress?.Log(e.StackTrace);
                         }
 
-                        PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage(ex, MessageType.Error);
                         return false;
                     }
                     if (show_message)
@@ -505,7 +505,7 @@ namespace GodotPCKExplorer
                     }
                     catch (Exception ex)
                     {
-                        PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage(ex, MessageType.Error);
                     }
                 }
 
@@ -592,7 +592,7 @@ namespace GodotPCKExplorer
                     }
                     catch (Exception ex)
                     {
-                        PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage(ex, MessageType.Error);
                     }
 
                     return res;
@@ -636,7 +636,7 @@ namespace GodotPCKExplorer
                     }
                     catch (Exception ex)
                     {
-                        PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage(ex, MessageType.Error);
                         return false;
                     }
 
@@ -663,7 +663,7 @@ namespace GodotPCKExplorer
                     }
                     catch (Exception ex)
                     {
-                        PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage(ex, MessageType.Error);
                     }
 
                     try
@@ -674,7 +674,7 @@ namespace GodotPCKExplorer
                     }
                     catch (Exception ex)
                     {
-                        PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage(ex, MessageType.Error);
                     }
                 }
 

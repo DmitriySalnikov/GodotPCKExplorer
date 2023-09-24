@@ -45,6 +45,7 @@ namespace GodotPCKExplorer.UI
             copyOffsetToolStripMenuItem.Click += (o, e) => { if (cms_table_row.Tag != null) Clipboard.SetText(dataGridView1.Rows[(int)cms_table_row.Tag].Cells[1].Value.ToString()); };
             copySizeToolStripMenuItem.Click += (o, e) => { if (cms_table_row.Tag != null) Clipboard.SetText(dataGridView1.Rows[(int)cms_table_row.Tag].Cells[2].Value.ToString()); };
             copySizeInBytesToolStripMenuItem.Click += (o, e) => { if (cms_table_row.Tag != null) Clipboard.SetText(dataGridView1.Rows[(int)cms_table_row.Tag].Cells[2].Tag.ToString()); };
+            copyMD5ToolStripMenuItem.Click += (o, e) => { if (cms_table_row.Tag != null) Clipboard.SetText(dataGridView1.Rows[(int)cms_table_row.Tag].Cells[1].Tag.ToString()); };
 
             if (Utils.IsRunningOnMono())
             {
@@ -318,7 +319,7 @@ namespace GodotPCKExplorer.UI
                     {
                         var tmpRow = new DataGridViewRow();
                         tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.FilePath });
-                        tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.Offset });
+                        tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.Offset, Tag = PCKUtils.ByteArrayToHexString(f.Value.MD5, " ") });
                         tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = Utils.SizeSuffix(f.Value.Size), Tag = f.Value.Size });
 
                         dataGridView1.Rows.Add(tmpRow);
@@ -496,6 +497,7 @@ namespace GodotPCKExplorer.UI
             if (ofd_rip_select_pck.ShowDialog() == DialogResult.OK)
             {
                 using (var pck = new PCKReader())
+                {
                     if (!pck.OpenFile(ofd_rip_select_pck.FileName, log_names_progress: false))
                     {
                         return;
@@ -505,6 +507,7 @@ namespace GodotPCKExplorer.UI
                         Program.ShowMessage("The selected file must contain an embedded '.pck' file", "Error", MessageType.Error);
                         return;
                     }
+                }
 
                 if (sfd_rip_save_pack.ShowDialog() == DialogResult.OK)
                 {

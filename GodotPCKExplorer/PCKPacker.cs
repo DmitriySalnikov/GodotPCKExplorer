@@ -54,7 +54,7 @@ namespace GodotPCKExplorer
             }
             catch (Exception ex)
             {
-                PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
+                PCKActions.progress?.ShowMessage(ex, MessageType.Error);
             }
         }
 
@@ -109,7 +109,7 @@ namespace GodotPCKExplorer
                     }
                     catch (Exception ex)
                     {
-                        PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage(ex, MessageType.Error);
                         return false;
                     }
                 }
@@ -122,7 +122,7 @@ namespace GodotPCKExplorer
                 catch (Exception ex)
                 {
                     CloseAndDeleteFile(binWriter, out_pck);
-                    PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
+                    PCKActions.progress?.ShowMessage(ex, MessageType.Error);
                     return false;
                 }
 
@@ -141,7 +141,7 @@ namespace GodotPCKExplorer
                     catch (Exception ex)
                     {
                         CloseAndDeleteFile(binWriter, out_pck);
-                        PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
+                        PCKActions.progress?.ShowMessage(ex, MessageType.Error);
                         return false;
                     }
 
@@ -213,6 +213,7 @@ namespace GodotPCKExplorer
                             }
                             else
                             {
+                                // TODO slow. Add progress reporting!
                                 file.md5 = PCKUtils.GetFileMD5(file.OriginalPath);
                                 index_writer.Write(file.md5);
 
@@ -235,7 +236,8 @@ namespace GodotPCKExplorer
                     long offset = binWriter.BaseStream.Position;
                     offset = PCKUtils.AlignAddress(offset, alignment);
 
-                    PCKUtils.AddPadding(binWriter, offset - binWriter.BaseStream.Position);
+                    // end of index
+                    PCKUtils.AddPadding(binWriter, offset - binWriter.BaseStream.Position, EncryptIndex); // fill random bytes between index and files
 
                     long file_base = offset;
                     if (godotVersion.PackVersion == PCKUtils.PCK_VERSION_GODOT_4)
@@ -280,7 +282,10 @@ namespace GodotPCKExplorer
                         long actual_file_size = file.Size;
                         if (file.is_encrypted)
                         {
-                            actual_file_size = PackEncryptedBlock(binWriter, File.ReadAllBytes(file.OriginalPath), EncryptionKey);
+                            using (var stream = File.Open(file.OriginalPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                            {
+                                actual_file_size = PackStreamEncrypted(binWriter, stream, EncryptionKey, file.md5);
+                            }
 
                             PCKActions.progress?.LogProgress(op, (int)((double)binWriter.BaseStream.Position / total_size * 100)); // update progress bar
                         }
@@ -309,7 +314,7 @@ namespace GodotPCKExplorer
 
                         // get offset of the next file and add some padding
                         offset = PCKUtils.AlignAddress(offset + actual_file_size, alignment);
-                        PCKUtils.AddPadding(binWriter, offset - binWriter.BaseStream.Position);
+                        PCKUtils.AddPadding(binWriter, offset - binWriter.BaseStream.Position, EncryptFiles); // fill random bytes between files
 
                         count += 1;
                     };
@@ -317,10 +322,14 @@ namespace GodotPCKExplorer
                     // If the index is encrypted, then it must be written after all other operations in order to properly handle file offsets
                     if (EncryptIndex)
                     {
+                        // Move to start of index
                         long pos = binWriter.BaseStream.Position;
                         binWriter.BaseStream.Seek(index_begin_pos, SeekOrigin.Begin);
 
-                        PackEncryptedBlock(binWriter, (MemoryStream)index_writer.BaseStream, EncryptionKey);
+                        // PackStreamEncrypted will generate MD5, so index_writer.Position must be moved to start
+                        index_writer.BaseStream.Position = 0;
+
+                        PackStreamEncrypted(binWriter, index_writer.BaseStream, EncryptionKey);
                         index_writer.Close();
                         index_writer.Dispose();
                         index_writer = null;
@@ -345,7 +354,7 @@ namespace GodotPCKExplorer
                 }
                 catch (Exception ex)
                 {
-                    PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
+                    PCKActions.progress?.ShowMessage(ex, MessageType.Error);
                     CloseAndDeleteFile(binWriter, out_pck);
                     return false;
                 }
@@ -365,36 +374,57 @@ namespace GodotPCKExplorer
             }
         }
 
-        // TODO: encrypt data in parts, not all data at once
-        long PackEncryptedBlock(BinaryWriter binWriter, MemoryStream stream, byte[] key)
+        byte[] temp_encryption_buffer;
+        long PackStreamEncrypted(BinaryWriter binWriter, Stream stream, byte[] key, byte[] md5 = null)
         {
-            var data = stream.ToArray();
-            return PackEncryptedBlock(binWriter, data, key);
-        }
+            if (temp_encryption_buffer == null)
+            {
+                temp_encryption_buffer = new byte[PCKUtils.BUFFER_MAX_SIZE];
+            }
 
-        long PackEncryptedBlock(BinaryWriter binWriter, byte[] data, byte[] key)
-        {
-            var md5 = new byte[16];
-            using (var md5_crypt = MD5.Create())
-                md5 = md5_crypt.ComputeHash(data);
+            if (md5 == null)
+            {
+                long stream_position = stream.Position;
+                using (var md5_crypt = MD5.Create())
+                    md5 = md5_crypt.ComputeHash(stream);
+                stream.Position = stream_position;
+            }
 
             binWriter.Write(md5);
-            binWriter.Write((long)data.Length);
+            binWriter.Write((long)stream.Length);
 
             var iv = new byte[16];
             Random rnd = new Random();
             rnd.NextBytes(iv);
 
             binWriter.Write(iv);
+            long total_size = 0;
 
             using (var mtls = new mbedTLS())
             {
                 mtls.set_key(key);
-                mtls.encrypt_cfb(iv.ToArray(), data, out byte[] output);
-                binWriter.Write(output);
 
-                return output.Length + ENCRYPTED_HEADER_SIZE;
+                while (stream.Position != stream.Length)
+                {
+                    if ((stream.Length - stream.Position) >= temp_encryption_buffer.Length)
+                    {
+                        var size = stream.Read(temp_encryption_buffer, 0, temp_encryption_buffer.Length);
+                        mtls.encrypt_cfb(iv, temp_encryption_buffer, out byte[] output);
+                        binWriter.Write(output);
+                        total_size += output.Length;
+                    }
+                    else
+                    {
+                        byte[] data = new byte[stream.Length - stream.Position];
+                        var size = stream.Read(data, 0, data.Length);
+                        mtls.encrypt_cfb(iv, data, out byte[] output);
+                        binWriter.Write(output);
+                        total_size += output.Length;
+                    }
+                }
             }
+
+            return total_size + ENCRYPTED_HEADER_SIZE;
         }
     }
 }

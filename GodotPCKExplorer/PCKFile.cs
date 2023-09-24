@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace GodotPCKExplorer
 {
-    public class PackedFile
+    public class PCKFile
     {
         private BinaryReader reader;
         /// <summary>
@@ -36,7 +36,7 @@ namespace GodotPCKExplorer
 
         public int PackVersion;
 
-        public PackedFile(BinaryReader reader, string path, long contentOffset, long positionOfOffsetValue, long size, byte[] MD5, int flags, int pack_version)
+        public PCKFile(BinaryReader reader, string path, long contentOffset, long positionOfOffsetValue, long size, byte[] MD5, int flags, int pack_version)
         {
             this.reader = reader;
             FilePath = path;
@@ -78,7 +78,7 @@ namespace GodotPCKExplorer
             }
             catch (Exception ex)
             {
-                PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
+                PCKActions.progress?.ShowMessage(ex, MessageType.Error);
                 return false;
             }
 
@@ -90,24 +90,30 @@ namespace GodotPCKExplorer
 
                     BinaryReader tmp_reader = reader;
 
-                    if (IsEncrypted)
-                        tmp_reader = PCKUtils.ReadEncryptedBlockIntoMemoryStream(reader, encKey);
-
                     long to_write = Size;
-
-                    while (to_write > 0)
-                    {
-                        var read = tmp_reader.ReadBytes(Math.Min(PCKUtils.BUFFER_MAX_SIZE, (int)to_write));
-                        file.Write(read);
-                        to_write -= read.Length;
-
-                        OnProgress?.Invoke(100 - (int)((double)to_write / Size * 100));
-                    }
-
                     if (IsEncrypted)
                     {
-                        tmp_reader.Close();
-                        tmp_reader.Dispose();
+                        using (var r = new PCKEncryptedReader(reader, encKey))
+                        {
+                            foreach (var chunk in r.ReadEncryptedBlocks())
+                            {
+                                file.Write(chunk);
+                                to_write -= chunk.Length;
+                                OnProgress?.Invoke(100 - (int)((double)to_write / Size * 100));
+                            }
+                        }
+                        OnProgress?.Invoke(100);
+                    }
+                    else
+                    {
+                        while (to_write > 0)
+                        {
+                            var read = tmp_reader.ReadBytes(Math.Min(PCKUtils.BUFFER_MAX_SIZE, (int)to_write));
+                            file.Write(read);
+                            to_write -= read.Length;
+
+                            OnProgress?.Invoke(100 - (int)((double)to_write / Size * 100));
+                        }
                     }
                     file.Close();
 
@@ -124,7 +130,7 @@ namespace GodotPCKExplorer
             }
             catch (Exception ex)
             {
-                var res = PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error, PCKMessageBoxButtons.OKCancel);
+                var res = PCKActions.progress?.ShowMessage(ex, MessageType.Error, PCKMessageBoxButtons.OKCancel);
                 file.Close();
                 try
                 {

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 
@@ -10,7 +11,7 @@ namespace GodotPCKExplorer
     public class PCKReader : IDisposable
     {
         BinaryReader binReader = null;
-        public Dictionary<string, PackedFile> Files = new Dictionary<string, PackedFile>();
+        public Dictionary<string, PCKFile> Files = new Dictionary<string, PCKFile>();
         public int PCK_FileCount = -1;
         public string PackPath = "";
         public byte[] EncryptionKey = null;
@@ -105,7 +106,7 @@ namespace GodotPCKExplorer
             }
             catch (Exception ex)
             {
-                PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
+                PCKActions.progress?.ShowMessage(ex, MessageType.Error);
                 return false;
             }
 
@@ -200,7 +201,31 @@ namespace GodotPCKExplorer
                 BinaryReader tmp_reader = binReader;
 
                 if (IsEncryptedIndex)
-                    tmp_reader = PCKUtils.ReadEncryptedBlockIntoMemoryStream(binReader, EncryptionKey);
+                {
+                    // Index should be read as a single buffer here
+                    var mem = new MemoryStream();
+                    using (var reader = new PCKEncryptedReader(binReader, EncryptionKey))
+                    {
+                        foreach (var chunk in reader.ReadEncryptedBlocks())
+                        {
+                            mem.Write(chunk, 0, chunk.Length);
+                        }
+
+                        // Test MD5 of decoded data
+                        mem.Position = 0;
+                        byte[] dec_md5;
+                        using (var md5_crypto = MD5.Create())
+                        {
+                            dec_md5 = md5_crypto.ComputeHash(mem);
+                        }
+                        if (!reader.MD5.SequenceEqual(dec_md5))
+                        {
+                            throw new CryptographicException("The decrypted data has an incorrect MD5 hash sum.");
+                        }
+                    }
+                    mem.Position = 0;
+                    tmp_reader = new BinaryReader(mem);
+                }
 
                 for (int i = 0; i < PCK_FileCount; i++)
                 {
@@ -219,7 +244,7 @@ namespace GodotPCKExplorer
 
                     if (log_names_progress)
                         PCKActions.progress?.LogProgress(op, $"{path} S: {size} F: {flags}");
-                    Files.Add(path, new PackedFile(binReader, path, ofs, pos_of_ofs, size, md5, flags, PCK_VersionPack));
+                    Files.Add(path, new PCKFile(binReader, path, ofs, pos_of_ofs, size, md5, flags, PCK_VersionPack));
                 };
 
                 if (IsEncryptedIndex)
@@ -293,7 +318,7 @@ namespace GodotPCKExplorer
 
                         PCKActions.progress?.LogProgress(op, Files[path].FilePath);
 
-                        PackedFile.VoidInt upd = (p) =>
+                        PCKFile.VoidInt upd = (p) =>
                         {
                             PCKActions.progress?.LogProgress(op, (int)(((double)count / files_count * 100) + (p * one_file_in_progress_line)));
                         };
@@ -326,7 +351,7 @@ namespace GodotPCKExplorer
             }
             catch (Exception ex)
             {
-                PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
+                PCKActions.progress?.ShowMessage(ex, MessageType.Error);
                 return false;
             }
             finally
@@ -368,7 +393,7 @@ namespace GodotPCKExplorer
                 }
                 catch (Exception ex)
                 {
-                    PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
+                    PCKActions.progress?.ShowMessage(ex, MessageType.Error);
                     return false;
                 }
 
@@ -398,7 +423,7 @@ namespace GodotPCKExplorer
                 }
                 catch (Exception ex)
                 {
-                    PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
+                    PCKActions.progress?.ShowMessage(ex, MessageType.Error);
                     file.Close();
                     try
                     {
@@ -470,7 +495,7 @@ namespace GodotPCKExplorer
                 }
                 catch (Exception ex)
                 {
-                    PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
+                    PCKActions.progress?.ShowMessage(ex, MessageType.Error);
                     return false;
                 }
 
@@ -483,7 +508,7 @@ namespace GodotPCKExplorer
                 }
                 catch (Exception ex)
                 {
-                    PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
+                    PCKActions.progress?.ShowMessage(ex, MessageType.Error);
                     return false;
                 }
 
@@ -524,7 +549,7 @@ namespace GodotPCKExplorer
                 }
                 catch (Exception ex)
                 {
-                    PCKActions.progress?.ShowMessage(ex, "Error", MessageType.Error);
+                    PCKActions.progress?.ShowMessage(ex, MessageType.Error);
                     file.Close();
                     try
                     {

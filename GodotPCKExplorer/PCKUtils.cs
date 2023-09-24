@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -17,8 +16,9 @@ namespace GodotPCKExplorer
         Warning
     }
 
-    public class PCKUtils
+    public static class PCKUtils
     {
+        static Random rng = new Random();
         public const int PCK_VERSION_GODOT_3 = 1;
         public const int PCK_VERSION_GODOT_4 = 2;
         public const int PCK_MAGIC = 0x43504447;
@@ -85,43 +85,6 @@ namespace GodotPCKExplorer
             }
         }
 
-        public static BinaryReader ReadEncryptedBlockIntoMemoryStream(BinaryReader reader, byte[] key)
-        {
-            byte[] data;
-            bool is_valid = ReadEncryptedBlock(reader, key, out data);
-
-            if (is_valid)
-            {
-                MemoryStream memoryStream = new MemoryStream(data);
-                return new BinaryReader(memoryStream);
-            }
-            else
-            {
-                throw new CryptographicException("The decrypted data has an incorrect MD5 hash sum.");
-            }
-        }
-
-        public static bool ReadEncryptedBlock(BinaryReader binReader, byte[] key, out byte[] output)
-        {
-            var md5 = binReader.ReadBytes(16);
-            var data_size = (int)binReader.ReadInt64();
-            var iv = binReader.ReadBytes(16);
-
-            var data_size_enc = AlignAddress(data_size, 16);
-
-            using (var mtls = new mbedTLS())
-            {
-                mtls.set_key(key);
-                mtls.decrypt_cfb(iv, binReader.ReadBytes((int)data_size_enc), data_size, out output);
-
-                byte[] dec_md5;
-                using (var md5_crypto = MD5.Create())
-                    dec_md5 = md5_crypto.ComputeHash(output);
-
-                return md5.SequenceEqual(dec_md5);
-            }
-        }
-
         public static long AlignAddress(long p_n, uint p_alignment)
         {
             if (p_alignment == 0)
@@ -134,13 +97,24 @@ namespace GodotPCKExplorer
                 return p_n + (p_alignment - rest);
         }
 
-        public static void AddPadding(BinaryWriter p_file, long p_bytes)
+        public static void AddPadding(BinaryWriter p_file, long p_bytes, bool randomFill = false)
         {
             if (p_bytes < 0)
                 throw new ArgumentOutOfRangeException(nameof(p_bytes));
 
             if (p_bytes != 0)
-                p_file.Write(new byte[p_bytes]);
+            {
+                if (randomFill)
+                {
+                    var buf = new byte[p_bytes];
+                    rng.NextBytes(buf);
+                    p_file.Write(buf);
+                }
+                else
+                {
+                    p_file.Write(new byte[p_bytes]);
+                }
+            }
         }
 
         static public List<PCKPacker.FileToPack> ScanFoldersForFiles(string folder)
