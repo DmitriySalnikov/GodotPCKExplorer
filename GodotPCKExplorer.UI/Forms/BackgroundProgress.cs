@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace GodotPCKExplorer.UI
@@ -11,19 +12,27 @@ namespace GodotPCKExplorer.UI
         DateTime prevUpdateTime = DateTime.Now;
         float delta_time = 1 / 30; // 30 fps
         int prevPercent = 0;
+        CancellationTokenSource cancellationTokenSource;
 
-        public BackgroundProgress()
+        public BackgroundProgress(CancellationTokenSource token)
         {
             InitializeComponent();
             Icon = Properties.Resources.icon;
             l_status.Text = "";
+            cancellationTokenSource = token;
         }
 
-        private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        public void ReportProgress(string operation, int percent)
         {
-            if (!bg_worker.CancellationPending && !UnknowPercents)
+            if (percent != PCKUtils.UnknownProgressStatus)
             {
-                var prct = Math.Max(0, Math.Min(100, e.ProgressPercentage));
+                if (Text != operation)
+                {
+                    Text = operation;
+                }
+
+                progressBar1.Style = ProgressBarStyle.Continuous;
+                var prct = Math.Max(0, Math.Min(100, percent));
                 if ((DateTime.Now - prevUpdateTime).TotalSeconds > delta_time || (prct - prevPercent) >= 5)
                 {
                     prevUpdateTime = DateTime.Now;
@@ -33,21 +42,20 @@ namespace GodotPCKExplorer.UI
                 }
                 progressBar1.Value = prct;
             }
-        }
-
-        private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            Close();
+            else
+            {
+                progressBar1.Style = ProgressBarStyle.Marquee;
+            }
         }
 
         private void btn_cancel_Click(object sender, EventArgs e)
         {
-            bg_worker.CancelAsync();
+            cancellationTokenSource.Cancel();
         }
 
         private void BackgroundProgress_FormClosing(object sender, FormClosingEventArgs e)
         {
-            bg_worker.CancelAsync();
+            cancellationTokenSource.Cancel();
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace GodotPCKExplorer.UI
@@ -14,8 +15,12 @@ namespace GodotPCKExplorer.UI
 
         static bool CMDMode = true;
         static MainForm mainForm = null;
+        static BackgroundProgress progressBar = null;
 
         static Logger logger;
+
+        static int prev_progress_percent = 0;
+        static DateTime prev_progress_time = DateTime.Now;
 
         // https://stackoverflow.com/a/3571628/8980874
         [DllImport("kernel32.dll")]
@@ -89,6 +94,33 @@ namespace GodotPCKExplorer.UI
                 logger = new Logger("log.txt");
 
             logger.Write($"[Progress] {operation}: {txt}");
+        }
+
+        public static void LogProgress(string operation, int percent)
+        {
+            if (((DateTime.Now - prev_progress_time).TotalSeconds > 1) || (prev_progress_percent != percent && Math.Abs(percent - prev_progress_percent) >= 5))
+            {
+                LogProgress(operation, $"{Math.Max(Math.Min(percent, 100), 0)}%");
+
+                prev_progress_percent = percent;
+                prev_progress_time = DateTime.Now;
+            }
+
+            // Always update ProgressBar
+            if (progressBar != null)
+            {
+                if (progressBar.InvokeRequired)
+                {
+                    progressBar.Invoke(new Action(() =>
+                    {
+                        progressBar.ReportProgress(operation, percent);
+                    }));
+                }
+                else
+                {
+                    progressBar.ReportProgress(operation, percent);
+                }
+            }
         }
 
         public static void Log(string txt)
@@ -181,6 +213,41 @@ namespace GodotPCKExplorer.UI
         {
             if (!Utils.IsRunningOnMono())
                 ShowWindow(GetConsoleWindow(), SW_HIDE);
+        }
+
+        public static void DoTaskWithProgressBar(Action<CancellationToken> work)
+        {
+            var token = new CancellationTokenSource();
+            progressBar = new BackgroundProgress(token);
+
+            var task = Task.Run(() =>
+            {
+                // Do work
+                work(token.Token);
+
+                // Force close window
+                token.Cancel();
+
+                while (progressBar == null || !progressBar.Visible)
+                {
+                    Thread.Sleep(1);
+                }
+
+                progressBar.Invoke(new Action(() =>
+                {
+                    progressBar.Close();
+                    progressBar?.Dispose();
+                    progressBar = null;
+                }
+                ));
+            });
+
+            // Wait until the task is completed
+            // or until the window closes
+            progressBar?.ShowDialog();
+            progressBar?.Dispose();
+            progressBar = null;
+            task.Wait();
         }
 
         public static void OpenMainForm(string path, string encKey = null)

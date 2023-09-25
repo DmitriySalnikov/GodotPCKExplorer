@@ -97,6 +97,8 @@ namespace GodotPCKExplorer
 
         public bool OpenFile(string p_path, bool show_not_pck_error = true, Func<string> get_encryption_key = null, bool log_names_progress = true, bool read_only_header_godot4 = false, CancellationToken? cancellationToken = null)
         {
+            var op = "Open PCK";
+
             Close();
 
             try
@@ -112,11 +114,10 @@ namespace GodotPCKExplorer
 
             GetEncryptionKeyFunc = get_encryption_key;
 
-            var op = "Open PCK";
-
             try
             {
                 PCKActions.progress?.LogProgress(op, $"Opening: {p_path}");
+                PCKActions.progress?.LogProgress(op, PCKUtils.UnknownProgressStatus);
 
                 int magic = binReader.ReadInt32(); // 0-3
 
@@ -185,6 +186,7 @@ namespace GodotPCKExplorer
 
                 if (read_only_header_godot4 && PCK_VersionPack == PCKUtils.PCK_VERSION_GODOT_4)
                 {
+                    PCKActions.progress?.LogProgress(op, 100);
                     PCKActions.progress?.LogProgress(op, "Completed without reading the file index!");
                     PackPath = p_path;
                     return true;
@@ -209,6 +211,9 @@ namespace GodotPCKExplorer
                         foreach (var chunk in reader.ReadEncryptedBlocks())
                         {
                             mem.Write(chunk, 0, chunk.Length);
+
+                            if (cancellationToken?.IsCancellationRequested ?? false)
+                                throw new OperationCanceledException();
                         }
 
                         // Test MD5 of decoded data
@@ -218,6 +223,7 @@ namespace GodotPCKExplorer
                         {
                             dec_md5 = md5_crypto.ComputeHash(mem);
                         }
+
                         if (!reader.MD5.SequenceEqual(dec_md5))
                         {
                             throw new CryptographicException("The decrypted index data has an incorrect MD5 hash sum.");
@@ -243,8 +249,14 @@ namespace GodotPCKExplorer
                     }
 
                     if (log_names_progress)
+                    {
                         PCKActions.progress?.LogProgress(op, $"{path}\nSize: {size} Flags: {flags}");
+                        PCKActions.progress?.LogProgress(op, (int)(((double)i / PCK_FileCount) * 100));
+                    }
                     Files.Add(path, new PCKFile(binReader, path, ofs, pos_of_ofs, size, md5, flags, PCK_VersionPack));
+
+                    if (cancellationToken?.IsCancellationRequested ?? false)
+                        throw new OperationCanceledException();
                 };
 
                 if (IsEncryptedIndex)
@@ -254,6 +266,7 @@ namespace GodotPCKExplorer
                 }
 
                 PCKActions.progress?.LogProgress(op, "Completed!");
+                PCKActions.progress?.LogProgress(op, 100);
                 PackPath = p_path;
                 return true;
             }
@@ -273,7 +286,7 @@ namespace GodotPCKExplorer
 
         public bool ExtractAllFiles(string folder, bool overwriteExisting = true, bool check_md5 = true, CancellationToken? cancellationToken = null)
         {
-            return ExtractFiles(Files.Keys.ToList(), folder, overwriteExisting);
+            return ExtractFiles(Files.Keys.ToList(), folder, overwriteExisting, check_md5, cancellationToken);
         }
 
         public bool ExtractFiles(IEnumerable<string> names, string folder, bool overwriteExisting = true, bool check_md5 = true, CancellationToken? cancellationToken = null)
@@ -301,9 +314,7 @@ namespace GodotPCKExplorer
                 foreach (var path in names)
                 {
                     if (cancellationToken?.IsCancellationRequested ?? false)
-                    {
                         return false;
-                    }
 
                     if (path != null)
                     {
@@ -340,9 +351,7 @@ namespace GodotPCKExplorer
                     PCKActions.progress?.LogProgress(op, (int)((double)count / files_count * 100));
 
                     if (cancellationToken?.IsCancellationRequested ?? false)
-                    {
                         return false;
-                    }
                 }
 
                 PCKActions.progress?.LogProgress(op, 100);
@@ -373,7 +382,6 @@ namespace GodotPCKExplorer
             }
 
             var op = "Rip PCK file from EXE";
-
 
             try
             {
@@ -415,9 +423,7 @@ namespace GodotPCKExplorer
                             PCKActions.progress?.LogProgress(op, 100 - (int)((double)to_write / size * 100));
 
                             if (cancellationToken?.IsCancellationRequested ?? false)
-                            {
                                 return false;
-                            }
                         }
                     }
                 }
@@ -533,9 +539,7 @@ namespace GodotPCKExplorer
                             PCKActions.progress?.LogProgress(op, 100 - (int)((double)to_write / size * 100));
 
                             if (cancellationToken?.IsCancellationRequested ?? false)
-                            {
                                 return false;
-                            }
                         }
 
                         // Ensure embedded data ends at a 64-bit multiple

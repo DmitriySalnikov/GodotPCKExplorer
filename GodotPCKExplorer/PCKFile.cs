@@ -100,8 +100,12 @@ namespace GodotPCKExplorer
                                 file.Write(chunk);
                                 to_write -= chunk.Length;
                                 OnProgress?.Invoke(100 - (int)((double)to_write / Size * 100));
+
+                                if (cancellationToken?.IsCancellationRequested ?? false)
+                                    return false;
                             }
                         }
+
                         OnProgress?.Invoke(100);
                     }
                     else
@@ -113,7 +117,12 @@ namespace GodotPCKExplorer
                             to_write -= read.Length;
 
                             OnProgress?.Invoke(100 - (int)((double)to_write / Size * 100));
+
+                            if (cancellationToken?.IsCancellationRequested ?? false)
+                                return false;
                         }
+
+                        OnProgress?.Invoke(100);
                     }
                     file.Close();
 
@@ -140,7 +149,6 @@ namespace GodotPCKExplorer
 
                 if (res == PCKDialogResult.Cancel)
                 {
-                    // TODO test cancel in process
                     return false;
                 }
             }

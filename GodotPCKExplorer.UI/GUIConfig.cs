@@ -22,7 +22,7 @@ namespace GodotPCKExplorer.UI
     class GUIConfig
     {
         [JsonIgnore]
-        static public GUIConfig Instance { get; private set; } = null;
+        public static GUIConfig Instance { get; private set; } = null;
 
         [JsonIgnore]
         static string SaveFile = Path.Combine(Program.AppDataPath, "settings.json");
@@ -88,7 +88,7 @@ namespace GodotPCKExplorer.UI
             }
         }
 
-        static public void Load()
+        public static void Load()
         {
             try
             {

@@ -66,7 +66,7 @@ namespace GodotPCKExplorer
         public void LogProgress(string operation, int percent)
         {
 
-            if (((DateTime.Now - prev_time).TotalSeconds > 1) || (prev_progress != percent && percent % 5 == 0))
+            if (((DateTime.Now - prev_time).TotalSeconds > 1) || (prev_progress != percent && Math.Abs(percent - prev_progress) >= 5))
             {
                 Log($"[Progress] {operation}: {Math.Max(Math.Min(percent, 100), 0)}%");
 

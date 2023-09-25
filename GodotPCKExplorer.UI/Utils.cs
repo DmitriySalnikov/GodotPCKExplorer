@@ -44,14 +44,6 @@ namespace GodotPCKExplorer.UI
                 SizeSuffixes[mag]);
         }
 
-        public static void ReportProgress(int progress, BackgroundWorker bw = null, LogProgressReporter lpr = null)
-        {
-            if (bw != null)
-                bw.ReportProgress(progress);
-            if (lpr != null)
-                lpr.ReportProgress(progress);
-        }
-
         // https://stackoverflow.com/a/30300521/8980874
         public static string WildCardToRegular(string value)
         {

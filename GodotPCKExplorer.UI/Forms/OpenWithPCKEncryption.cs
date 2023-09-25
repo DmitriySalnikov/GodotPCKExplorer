@@ -16,6 +16,7 @@ namespace GodotPCKExplorer.UI
             InitializeComponent();
 
             tb_key.Text = key;
+            DialogResult = DialogResult.Cancel;
         }
 
         private void btn_ok_Click(object sender, EventArgs e)
@@ -28,6 +29,7 @@ namespace GodotPCKExplorer.UI
 
             EncryptionKey = tb_key.Text;
 
+            DialogResult = DialogResult.OK;
             Close();
         }
     }
