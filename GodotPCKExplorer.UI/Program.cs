@@ -13,7 +13,7 @@ namespace GodotPCKExplorer.UI
         public static readonly string AppDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppName);
 
         static bool CMDMode = true;
-        static Form1 mainForm = null;
+        static MainForm mainForm = null;
 
         static Logger logger;
 
@@ -41,7 +41,7 @@ namespace GodotPCKExplorer.UI
                 // run..
                 CMDMode = false;
 
-                mainForm = new Form1();
+                mainForm = new MainForm();
                 Application.Run(mainForm);
             }
 
@@ -187,7 +187,7 @@ namespace GodotPCKExplorer.UI
         {
             if (mainForm == null)
             {
-                mainForm = new Form1();
+                mainForm = new MainForm();
                 mainForm.OpenFile(path, encKey);
 
                 Application.Run(mainForm);

@@ -7,7 +7,7 @@ using System.Windows.Forms;
 
 namespace GodotPCKExplorer.UI
 {
-    public partial class Form1 : Form
+    public partial class MainForm : Form
     {
         PCKReader pckReader = new PCKReader();
         string FormBaseTitle = "";
@@ -16,7 +16,7 @@ namespace GodotPCKExplorer.UI
         Font MatchCaseStrikeout = null;
         VersionCheckerGitHub versionCheckerGitHub = new VersionCheckerGitHub("DmitriySalnikov", "GodotPCKExplorer", Program.AppName, ShowMessageBoxForVersionCheck);
 
-        public Form1()
+        public MainForm()
         {
             GUIConfig.Load();
 
@@ -61,7 +61,7 @@ namespace GodotPCKExplorer.UI
                 searchText.Font = new Font("Segoe UI", 9F);
                 searchText.Name = "searchTextLinux";
                 searchText.Size = new Size(200, 23);
-                searchText.ToolTipText = "Filter text (? and * allowed)\n" + new System.ComponentModel.ComponentResourceManager(typeof(Form1)).GetString("searchText.ToolTipText");
+                searchText.ToolTipText = "Filter text (? and * allowed)\n" + new System.ComponentModel.ComponentResourceManager(typeof(MainForm)).GetString("searchText.ToolTipText");
                 menuStrip1.Items.Insert(menuStrip1.Items.IndexOf(tsmi_match_case_filter) + 1, searchText);
 
                 searchText.Text = "Filter text (? and * allowed)";

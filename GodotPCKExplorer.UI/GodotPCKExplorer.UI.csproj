@@ -111,49 +111,49 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AboutBox1.cs">
+    <Compile Include="Forms\AboutBox1.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="AboutBox1.Designer.cs">
+    <Compile Include="Forms\AboutBox1.Designer.cs">
       <DependentUpon>AboutBox1.cs</DependentUpon>
     </Compile>
-    <Compile Include="BackgroundProgress.cs">
+    <Compile Include="Forms\BackgroundProgress.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="BackgroundProgress.Designer.cs">
+    <Compile Include="Forms\BackgroundProgress.Designer.cs">
       <DependentUpon>BackgroundProgress.cs</DependentUpon>
     </Compile>
-    <Compile Include="ChangePCKVersion.cs">
+    <Compile Include="Forms\ChangePCKVersion.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="ChangePCKVersion.Designer.cs">
+    <Compile Include="Forms\ChangePCKVersion.Designer.cs">
       <DependentUpon>ChangePCKVersion.cs</DependentUpon>
     </Compile>
     <Compile Include="ConsoleCommands.cs" />
     <Compile Include="ContextMenuRegistrator.cs" />
-    <Compile Include="OpenWithPCKEncryption.cs">
+    <Compile Include="Forms\OpenWithPCKEncryption.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="OpenWithPCKEncryption.Designer.cs">
+    <Compile Include="Forms\OpenWithPCKEncryption.Designer.cs">
       <DependentUpon>OpenWithPCKEncryption.cs</DependentUpon>
     </Compile>
-    <Compile Include="CreatePCKFile.cs">
+    <Compile Include="Forms\CreatePCKFile.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="CreatePCKFile.Designer.cs">
+    <Compile Include="Forms\CreatePCKFile.Designer.cs">
       <DependentUpon>CreatePCKFile.cs</DependentUpon>
     </Compile>
     <Compile Include="DeferredAction.cs" />
-    <Compile Include="Form1.cs">
+    <Compile Include="Forms\MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Form1.Designer.cs">
-      <DependentUpon>Form1.cs</DependentUpon>
+    <Compile Include="Forms\MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="CreatePCKEncryption.cs">
+    <Compile Include="Forms\CreatePCKEncryption.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="CreatePCKEncryption.Designer.cs">
+    <Compile Include="Forms\CreatePCKEncryption.Designer.cs">
       <DependentUpon>CreatePCKEncryption.cs</DependentUpon>
     </Compile>
     <Compile Include="GUIConfig.cs" />
@@ -163,36 +163,36 @@
     <Compile Include="ProgressReporterUI.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ShellIntegration.cs" />
-    <Compile Include="TextBoxWithPlaceholder.cs">
+    <Compile Include="UIComponents\TextBoxWithPlaceholder.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="ToolStripTextBoxWithPlaceholder.cs">
+    <Compile Include="UIComponents\ToolStripTextBoxWithPlaceholder.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Utils.cs" />
     <Compile Include="VersionCheckGitHub.cs" />
-    <EmbeddedResource Include="AboutBox1.resx">
+    <EmbeddedResource Include="Forms\AboutBox1.resx">
       <DependentUpon>AboutBox1.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="BackgroundProgress.resx">
+    <EmbeddedResource Include="Forms\BackgroundProgress.resx">
       <DependentUpon>BackgroundProgress.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="ChangePCKVersion.resx">
+    <EmbeddedResource Include="Forms\ChangePCKVersion.resx">
       <DependentUpon>ChangePCKVersion.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="OpenWithPCKEncryption.resx">
+    <EmbeddedResource Include="Forms\OpenWithPCKEncryption.resx">
       <DependentUpon>OpenWithPCKEncryption.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="CreatePCKEncryption.resx">
+    <EmbeddedResource Include="Forms\CreatePCKEncryption.resx">
       <DependentUpon>CreatePCKEncryption.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="CreatePCKFile.resx">
+    <EmbeddedResource Include="Forms\CreatePCKFile.resx">
       <DependentUpon>CreatePCKFile.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="Form1.resx">
-      <DependentUpon>Form1.cs</DependentUpon>
+    <EmbeddedResource Include="Forms\MainForm.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
