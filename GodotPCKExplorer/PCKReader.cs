@@ -220,7 +220,7 @@ namespace GodotPCKExplorer
                         }
                         if (!reader.MD5.SequenceEqual(dec_md5))
                         {
-                            throw new CryptographicException("The decrypted data has an incorrect MD5 hash sum.");
+                            throw new CryptographicException("The decrypted index data has an incorrect MD5 hash sum.");
                         }
                     }
                     mem.Position = 0;
@@ -243,7 +243,7 @@ namespace GodotPCKExplorer
                     }
 
                     if (log_names_progress)
-                        PCKActions.progress?.LogProgress(op, $"{path} S: {size} F: {flags}");
+                        PCKActions.progress?.LogProgress(op, $"{path}\nSize: {size} Flags: {flags}");
                     Files.Add(path, new PCKFile(binReader, path, ofs, pos_of_ofs, size, md5, flags, PCK_VersionPack));
                 };
 

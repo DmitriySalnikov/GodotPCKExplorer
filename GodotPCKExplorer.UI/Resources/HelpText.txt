@@ -1,5 +1,5 @@
 Godot can embed '.pck' files into other files.
-Therefore, GodotPCKExplorer.UI can open both '.pck' and files with embedded 'pck'.
+Therefore, GodotPCKExplorer can open both '.pck' and files with embedded 'pck'.
 Encryption is only verified with PCK for Godot 4.
 "" - Paths and other arguments must be without spaces or inside quotes.
 {} - Optional arguments

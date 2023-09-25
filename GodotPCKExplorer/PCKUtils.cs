@@ -117,9 +117,8 @@ namespace GodotPCKExplorer
             }
         }
 
-        static public List<PCKPacker.FileToPack> ScanFoldersForFiles(string folder)
+        static public List<PCKPacker.FileToPack> ScanFoldersForFiles(string folder, CancellationToken? cancellationToken = null)
         {
-            // TODO start as operation
             if (!Directory.Exists(folder))
                 return new List<PCKPacker.FileToPack>();
 
@@ -127,10 +126,14 @@ namespace GodotPCKExplorer
             var files = new List<PCKPacker.FileToPack>();
             var cancel = false;
 
-            ScanFoldersForFilesAdvanced(folder, files, ref folder, ref cancel);
+            PCKActions.progress?.LogProgress("Scan folder", $"Started scanning files in '{folder}'");
+
+            ScanFoldersForFilesAdvanced(folder, files, ref folder, ref cancel, cancellationToken);
             if (cancel)
                 files.Clear();
             GC.Collect();
+
+            PCKActions.progress?.LogProgress("Scan folder", "Scan completed!");
 
             return files;
         }
@@ -154,8 +157,6 @@ namespace GodotPCKExplorer
                 if (cancel || (cancellationToken?.IsCancellationRequested ?? false))
                     return;
 
-                // TODO report progress as operation
-                //backgroundWorker?.ReportProgress(0, $"Found files: {files.Count}");
                 ScanFoldersForFilesAdvanced(d, files, ref basePath, ref cancel, cancellationToken);
             }
 
@@ -176,12 +177,11 @@ namespace GodotPCKExplorer
                 if (cancel || (cancellationToken?.IsCancellationRequested ?? false))
                     return;
 
-                // TODO report progress as operation
-                //backgroundWorker?.ReportProgress(0, $"Found files: {files.Count}");
                 try
                 {
                     var inf = new FileInfo(f);
                     files.Add(new PCKPacker.FileToPack(f, f.Replace(basePath + Path.DirectorySeparatorChar, "res://").Replace("\\", "/"), inf.Length));
+                    PCKActions.progress?.LogProgress("Scan folder", f);
                 }
                 catch (Exception ex)
                 {

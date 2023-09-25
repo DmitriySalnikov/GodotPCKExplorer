@@ -42,37 +42,8 @@ namespace GodotPCKExplorer.UI
 
         public void SetFolderPath(string path)
         {
-            var bp = new BackgroundProgress();
-            var bw = bp.bg_worker;
-            var are = new AutoResetEvent(false);
-
-            var filesScan = new List<PCKPacker.FileToPack>();
-
-            bw.DoWork += (s, e) =>
-            {
-                try
-                {
-                    if (!Directory.Exists(path))
-                        return;
-
-                    var folder = Path.GetFullPath(path);
-                    var cancel = false;
-
-                    bw.ReportProgress(0);
-                    PCKUtils.ScanFoldersForFilesAdvanced(folder, filesScan, ref folder, ref cancel /*, bw TODO token*/);
-                    if (cancel || bw.CancellationPending)
-                        filesScan.Clear();
-                }
-                finally
-                {
-                    are.Set();
-                }
-            };
-
-            bp.UnknowPercents = true;
-            bw.RunWorkerAsync();
-            bp.ShowDialog();
-            are.WaitOne();
+            // TODO progress bar
+            var filesScan = PCKUtils.ScanFoldersForFiles(Path.GetFullPath(path)/*, bw TODO token*/);
 
             GC.Collect();
             files = filesScan.ToDictionary((f) => f.OriginalPath);
