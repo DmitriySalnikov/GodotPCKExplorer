@@ -183,8 +183,10 @@ namespace GodotPCKExplorer
                             index_writer = new BinaryWriter(new MemoryStream());
 
                         // write pck index
+                        int file_idx = 0;
                         foreach (var file in files)
                         {
+                            file_idx++;
                             var str = Encoding.UTF8.GetBytes(file.Path).ToList();
                             var str_len = str.Count;
 
@@ -213,13 +215,17 @@ namespace GodotPCKExplorer
                             }
                             else
                             {
-                                // TODO slow. Add progress reporting!
+
                                 file.md5 = PCKUtils.GetFileMD5(file.OriginalPath);
                                 index_writer.Write(file.md5);
 
                                 file.is_encrypted = EncryptFiles;
                                 index_writer.Write((int)(file.is_encrypted ? 1 : 0));
+
+                                PCKActions.progress?.LogProgress(op, $"Calculated MD5: {file.OriginalPath}\n{PCKUtils.ByteArrayToHexString(file.md5, " ")}");
                             }
+
+                            PCKActions.progress?.LogProgress(op, (int)(((double)file_idx / files.Count()) * 100));
                         };
 
                         if (EncryptIndex)

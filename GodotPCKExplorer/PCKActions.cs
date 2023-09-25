@@ -73,7 +73,6 @@ namespace GodotPCKExplorer
                 prev_progress = percent;
                 prev_time = DateTime.Now;
             }
-
         }
 
         public void LogProgress(string operation, string str)

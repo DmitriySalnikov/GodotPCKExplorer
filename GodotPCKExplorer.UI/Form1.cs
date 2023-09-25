@@ -449,17 +449,28 @@ namespace GodotPCKExplorer.UI
 
                     if (File.Exists(files[0]))
                     {
-                        var old_state_cmd = Program.CMDMode;
-                        Program.CMDMode = true;
+                        var old_enabled = Program.IsMessageBoxesEnabled();
+                        Program.DisableMessageBoxes();
 
-                        if (pck.OpenFile(files[0], false, log_names_progress: false))
+                        try
                         {
-                            Program.CMDMode = old_state_cmd;
+                            if (pck.OpenFile(files[0], false, log_names_progress: false))
+                            {
+                                e.Effect = DragDropEffects.Copy;
+                                return;
+                            }
 
-                            e.Effect = DragDropEffects.Copy;
-                            return;
+                            if (pck.IsEncrypted)
+                            {
+                                e.Effect = DragDropEffects.Link;
+                                return;
+                            }
                         }
-                        Program.CMDMode = old_state_cmd;
+                        finally
+                        {
+                            if (old_enabled)
+                                Program.EnableMessageBoxes();
+                        }
                     }
                 }
             }
@@ -469,7 +480,7 @@ namespace GodotPCKExplorer.UI
 
         private void Form1_DragDrop(object sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop) && e.Effect == DragDropEffects.Copy)
+            if (e.Data.GetDataPresent(DataFormats.FileDrop) && new DragDropEffects[] { DragDropEffects.Copy, DragDropEffects.Link }.Contains(e.Effect))
             {
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 if (files.Length == 1)
