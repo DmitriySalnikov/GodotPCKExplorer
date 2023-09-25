@@ -29,7 +29,6 @@
 		private void InitializeComponent()
 		{
             this.progressBar1 = new System.Windows.Forms.ProgressBar();
-            this.bg_worker = new System.ComponentModel.BackgroundWorker();
             this.btn_cancel = new System.Windows.Forms.Button();
             this.l_status = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
@@ -42,14 +41,8 @@
             this.progressBar1.Location = new System.Drawing.Point(12, 12);
             this.progressBar1.Name = "progressBar1";
             this.progressBar1.Size = new System.Drawing.Size(414, 23);
+            this.progressBar1.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
             this.progressBar1.TabIndex = 0;
-            // 
-            // bg_worker
-            // 
-            this.bg_worker.WorkerReportsProgress = true;
-            this.bg_worker.WorkerSupportsCancellation = true;
-            this.bg_worker.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundWorker1_ProgressChanged);
-            this.bg_worker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorker1_RunWorkerCompleted);
             // 
             // btn_cancel
             // 
@@ -108,7 +101,6 @@
 
 		private System.Windows.Forms.ProgressBar progressBar1;
 		private System.Windows.Forms.Button btn_cancel;
-		public System.ComponentModel.BackgroundWorker bg_worker;
         private System.Windows.Forms.Label l_status;
         private System.Windows.Forms.Label label1;
     }

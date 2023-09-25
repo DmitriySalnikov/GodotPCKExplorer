@@ -60,6 +60,9 @@ namespace GodotPCKExplorer
 
         public bool PackFiles(string out_pck, IEnumerable<FileToPack> files, uint alignment, PCKVersion godotVersion, bool embed, CancellationToken? cancellationToken = null)
         {
+            const string baseOp = "Pack files";
+            var op = baseOp;
+
             if (!godotVersion.IsValid)
             {
                 PCKActions.progress?.ShowMessage("Incorrect version is specified!", "Error", MessageType.Error);
@@ -84,8 +87,6 @@ namespace GodotPCKExplorer
                     }
                 }
             }
-
-            var op = "Pack files";
 
             try
             {
@@ -182,10 +183,18 @@ namespace GodotPCKExplorer
                         if (EncryptIndex)
                             index_writer = new BinaryWriter(new MemoryStream());
 
+                        op = baseOp + ", writing an index";
                         // write pck index
                         int file_idx = 0;
                         foreach (var file in files)
                         {
+                            // cancel packing
+                            if (cancellationToken?.IsCancellationRequested ?? false)
+                            {
+                                CloseAndDeleteFile(binWriter, out_pck);
+                                return false;
+                            }
+
                             file_idx++;
                             var str = Encoding.UTF8.GetBytes(file.Path).ToList();
                             var str_len = str.Count;
@@ -215,7 +224,6 @@ namespace GodotPCKExplorer
                             }
                             else
                             {
-
                                 file.md5 = PCKUtils.GetFileMD5(file.OriginalPath);
                                 index_writer.Write(file.md5);
 
@@ -256,6 +264,7 @@ namespace GodotPCKExplorer
 
                     // write actual files data
                     PCKActions.progress?.LogProgress(op, "Writing the content of files");
+                    op = baseOp + ", writing file contents";
 
                     int count = 0;
                     foreach (var file in files)
@@ -290,10 +299,19 @@ namespace GodotPCKExplorer
                         {
                             using (var stream = File.Open(file.OriginalPath, FileMode.Open, FileAccess.Read, FileShare.Read))
                             {
-                                actual_file_size = PackStreamEncrypted(binWriter, stream, EncryptionKey, file.md5);
-                            }
+                                actual_file_size = PackStreamEncrypted(binWriter, stream, EncryptionKey, file.md5, () =>
+                                {
+                                    PCKActions.progress?.LogProgress(op, (int)((double)binWriter.BaseStream.Position / total_size * 100)); // update progress bar
+                                    return !(cancellationToken?.IsCancellationRequested ?? false);
+                                });
 
-                            PCKActions.progress?.LogProgress(op, (int)((double)binWriter.BaseStream.Position / total_size * 100)); // update progress bar
+                                // canceled
+                                if (actual_file_size == -1)
+                                {
+                                    CloseAndDeleteFile(binWriter, out_pck);
+                                    return false;
+                                }
+                            }
                         }
                         else
                         {
@@ -381,7 +399,7 @@ namespace GodotPCKExplorer
         }
 
         byte[] temp_encryption_buffer;
-        long PackStreamEncrypted(BinaryWriter binWriter, Stream stream, byte[] key, byte[] md5 = null)
+        long PackStreamEncrypted(BinaryWriter binWriter, Stream stream, byte[] key, byte[] md5 = null, Func<bool> onStep = null)
         {
             if (temp_encryption_buffer == null)
             {
@@ -426,6 +444,14 @@ namespace GodotPCKExplorer
                         mtls.encrypt_cfb(iv, data, out byte[] output);
                         binWriter.Write(output);
                         total_size += output.Length;
+                    }
+
+                    if (onStep != null)
+                    {
+                        if (!onStep.Invoke())
+                        {
+                            return -1;
+                        }
                     }
                 }
             }

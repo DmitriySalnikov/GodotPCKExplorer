@@ -206,7 +206,7 @@ namespace Tests
             Title("Info PCK");
             Assert.IsTrue(PCKActions.InfoPCKRun(Path.Combine(binaries, "Test.pck")));
             Title("Info EXE");
-            Assert.IsTrue(PCKActions.InfoPCKRun(Path.Combine(binaries, Exe("TestEmbedded"))));
+            Assert.IsTrue(PCKActions.InfoPCKRun(Path.Combine(binaries, Exe("TestEmbedded")), true));
             Title("Wrong path");
             Assert.IsFalse(PCKActions.InfoPCKRun(Path.Combine(binaries, "WrongPath/Test.pck")));
         }

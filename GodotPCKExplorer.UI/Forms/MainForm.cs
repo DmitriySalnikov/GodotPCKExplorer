@@ -7,6 +7,7 @@ using System.Windows.Forms;
 
 namespace GodotPCKExplorer.UI
 {
+    // TODO some actions with encoded PCK is not possible in UI
     public partial class MainForm : Form
     {
         PCKReader pckReader = new PCKReader();
@@ -215,6 +216,7 @@ namespace GodotPCKExplorer.UI
         public void OpenFile(string path, string encKey = null)
         {
             CloseFile();
+            bool enc_dialog_canceled = false;
 
             Func<string> get_enc_key = () =>
             {
@@ -228,7 +230,12 @@ namespace GodotPCKExplorer.UI
 
                     using (var d = new OpenWithPCKEncryption(item?.EncryptionKey ?? ""))
                     {
-                        d.ShowDialog();
+                        var res = d.ShowDialog();
+
+                        if (res == DialogResult.Cancel)
+                        {
+                            enc_dialog_canceled = true;
+                        }
 
                         if (item != null && !string.IsNullOrWhiteSpace(d.EncryptionKey))
                         {
@@ -283,6 +290,9 @@ namespace GodotPCKExplorer.UI
             }
             else
             {
+                if (enc_dialog_canceled)
+                    return;
+
                 // update recent files
                 var list = GUIConfig.Instance.RecentOpenedFiles;
 
@@ -379,7 +389,7 @@ namespace GodotPCKExplorer.UI
                 foreach (DataGridViewRow i in dataGridView1.SelectedRows)
                     rows.Add((string)i.Cells[0].Value);
 
-                pckReader.ExtractFiles(rows, fbd_extract_folder.SelectedPath, overwriteExported.Checked, GUIConfig.Instance.CheckMD5Extracted);
+                Program.DoTaskWithProgressBar((t) => pckReader.ExtractFiles(rows, fbd_extract_folder.SelectedPath, overwriteExported.Checked, GUIConfig.Instance.CheckMD5Extracted, cancellationToken: t));
             }
         }
 
@@ -388,7 +398,7 @@ namespace GodotPCKExplorer.UI
             var res = fbd_extract_folder.ShowDialog();
             if (res == DialogResult.OK)
             {
-                pckReader.ExtractFiles(pckReader.Files.Select((f) => f.Key), fbd_extract_folder.SelectedPath, overwriteExported.Checked, GUIConfig.Instance.CheckMD5Extracted);
+                Program.DoTaskWithProgressBar((t) => pckReader.ExtractFiles(pckReader.Files.Select((f) => f.Key), fbd_extract_folder.SelectedPath, overwriteExported.Checked, GUIConfig.Instance.CheckMD5Extracted, cancellationToken: t));
             }
         }
 
@@ -522,7 +532,7 @@ namespace GodotPCKExplorer.UI
 
                 if (sfd_rip_save_pack.ShowDialog() == DialogResult.OK)
                 {
-                    PCKActions.RipPCKRun(ofd_rip_select_pck.FileName, sfd_rip_save_pack.FileName);
+                    Program.DoTaskWithProgressBar((t) => PCKActions.RipPCKRun(ofd_rip_select_pck.FileName, sfd_rip_save_pack.FileName, cancellationToken: t));
                 }
             }
         }
@@ -545,7 +555,7 @@ namespace GodotPCKExplorer.UI
                 sfd_split_new_file.Filter = $"Original file extension|*{Path.GetExtension(ofd_split_exe_open.FileName)}|All Files|*.*";
                 if (sfd_split_new_file.ShowDialog() == DialogResult.OK)
                 {
-                    PCKActions.SplitPCKRun(ofd_split_exe_open.FileName, sfd_split_new_file.FileName);
+                    Program.DoTaskWithProgressBar((t) => PCKActions.SplitPCKRun(ofd_split_exe_open.FileName, sfd_split_new_file.FileName, cancellationToken: t));
                 }
             }
         }
@@ -562,7 +572,7 @@ namespace GodotPCKExplorer.UI
 
                 if (ofd_merge_target.ShowDialog() == DialogResult.OK)
                 {
-                    PCKActions.MergePCKRun(ofd_merge_pck.FileName, ofd_merge_target.FileName);
+                    Program.DoTaskWithProgressBar((t) => PCKActions.MergePCKRun(ofd_merge_pck.FileName, ofd_merge_target.FileName, cancellationToken: t));
                 }
             }
         }
@@ -571,7 +581,7 @@ namespace GodotPCKExplorer.UI
         {
             if (ofd_remove_pck_from_exe.ShowDialog() == DialogResult.OK)
             {
-                PCKActions.RipPCKRun(ofd_remove_pck_from_exe.FileName);
+                Program.DoTaskWithProgressBar((t) => PCKActions.RipPCKRun(ofd_remove_pck_from_exe.FileName, cancellationToken: t));
             }
         }
 
@@ -579,7 +589,7 @@ namespace GodotPCKExplorer.UI
         {
             if (ofd_split_in_place.ShowDialog() == DialogResult.OK)
             {
-                PCKActions.SplitPCKRun(ofd_split_in_place.FileName, null, false);
+                Program.DoTaskWithProgressBar((t) => PCKActions.SplitPCKRun(ofd_split_in_place.FileName, null, false, cancellationToken: t));
             }
         }
 

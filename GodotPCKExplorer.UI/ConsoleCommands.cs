@@ -126,6 +126,8 @@ namespace GodotPCKExplorer.UI
                 if (File.Exists(path))
                 {
                     runWithArgs = false;
+                    // force enable
+                    Program.EnableMessageBoxes();
                     Program.OpenMainForm(path, encKey);
                 }
                 else

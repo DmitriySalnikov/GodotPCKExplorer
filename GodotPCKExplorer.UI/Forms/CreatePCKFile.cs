@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Windows.Forms;
-using GodotPCKExplorer;
 
 namespace GodotPCKExplorer.UI
 {
@@ -42,8 +40,8 @@ namespace GodotPCKExplorer.UI
 
         public void SetFolderPath(string path)
         {
-            // TODO progress bar
-            var filesScan = PCKUtils.ScanFoldersForFiles(Path.GetFullPath(path)/*, bw TODO token*/);
+            List<PCKPacker.FileToPack> filesScan = new List<PCKPacker.FileToPack>();
+            Program.DoTaskWithProgressBar((t) => filesScan = PCKUtils.ScanFoldersForFiles(Path.GetFullPath(path), cancellationToken: t));
 
             GC.Collect();
             files = filesScan.ToDictionary((f) => f.OriginalPath);
@@ -115,16 +113,21 @@ namespace GodotPCKExplorer.UI
 
             if (res == DialogResult.OK)
             {
-                bool p_res = PCKActions.PackPCKRun(
-                    files.Values,
-                    file,
-                    ver.ToString(),
-                    (uint)nud_alignment.Value,
-                    cb_embed.Checked,
-                    GUIConfig.Instance.EncryptionKey,
-                    GUIConfig.Instance.EncryptIndex && cb_enable_encryption.Checked,
-                    GUIConfig.Instance.EncryptFiles && cb_enable_encryption.Checked
-                    );
+                bool p_res = false;
+                Program.DoTaskWithProgressBar((t) =>
+                {
+                    p_res = PCKActions.PackPCKRun(
+                        files.Values,
+                        file,
+                        ver.ToString(),
+                        (uint)nud_alignment.Value,
+                        cb_embed.Checked,
+                        GUIConfig.Instance.EncryptionKey,
+                        GUIConfig.Instance.EncryptIndex && cb_enable_encryption.Checked,
+                        GUIConfig.Instance.EncryptFiles && cb_enable_encryption.Checked,
+                        t
+                        );
+                });
 
                 GUIConfig.Instance.PackedVersion = ver;
                 GUIConfig.Instance.EmbedPCK = cb_embed.Checked;

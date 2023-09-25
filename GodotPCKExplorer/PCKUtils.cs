@@ -25,8 +25,8 @@ namespace GodotPCKExplorer
         public const int PCK_DIR_ENCRYPTED = 1 << 0;
         public const int PCK_FILE_ENCRYPTED = 1 << 0;
         public const int BUFFER_MAX_SIZE = 1024 * 1024;
-
-        public static string ByteArrayToHexString(byte[] data, string sepChar = "")
+        public const int UnknownProgressStatus = -1234;
+                public static string ByteArrayToHexString(byte[] data, string sepChar = "")
         {
             if (data != null)
                 return BitConverter.ToString(data).Replace("-", sepChar);
@@ -117,7 +117,7 @@ namespace GodotPCKExplorer
             }
         }
 
-        static public List<PCKPacker.FileToPack> ScanFoldersForFiles(string folder, CancellationToken? cancellationToken = null)
+        public static List<PCKPacker.FileToPack> ScanFoldersForFiles(string folder, CancellationToken? cancellationToken = null)
         {
             if (!Directory.Exists(folder))
                 return new List<PCKPacker.FileToPack>();
@@ -126,20 +126,23 @@ namespace GodotPCKExplorer
             var files = new List<PCKPacker.FileToPack>();
             var cancel = false;
 
-            PCKActions.progress?.LogProgress("Scan folder", $"Started scanning files in '{folder}'");
+            const string op = "Scan folder";
+            PCKActions.progress?.LogProgress(op, $"Started scanning files in '{folder}'");
+            PCKActions.progress?.LogProgress(op, PCKUtils.UnknownProgressStatus);
 
             ScanFoldersForFilesAdvanced(folder, files, ref folder, ref cancel, cancellationToken);
             if (cancel)
                 files.Clear();
             GC.Collect();
 
-            PCKActions.progress?.LogProgress("Scan folder", "Scan completed!");
+            PCKActions.progress?.LogProgress(op, "Scan completed!");
 
             return files;
         }
 
-        static public void ScanFoldersForFilesAdvanced(string folder, List<PCKPacker.FileToPack> files, ref string basePath, ref bool cancel, CancellationToken? cancellationToken = null)
+        public static void ScanFoldersForFilesAdvanced(string folder, List<PCKPacker.FileToPack> files, ref string basePath, ref bool cancel, CancellationToken? cancellationToken = null)
         {
+            const string op = "Scan folder";
             IEnumerable<string> dirEnums;
             try
             {
@@ -181,7 +184,7 @@ namespace GodotPCKExplorer
                 {
                     var inf = new FileInfo(f);
                     files.Add(new PCKPacker.FileToPack(f, f.Replace(basePath + Path.DirectorySeparatorChar, "res://").Replace("\\", "/"), inf.Length));
-                    PCKActions.progress?.LogProgress("Scan folder", f);
+                    PCKActions.progress?.LogProgress(op, f);
                 }
                 catch (Exception ex)
                 {
