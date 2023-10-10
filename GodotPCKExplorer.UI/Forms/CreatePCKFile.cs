@@ -41,7 +41,9 @@ namespace GodotPCKExplorer.UI
         public void SetFolderPath(string path)
         {
             List<PCKPacker.FileToPack> filesScan = new List<PCKPacker.FileToPack>();
-            Program.DoTaskWithProgressBar((t) => filesScan = PCKUtils.ScanFoldersForFiles(Path.GetFullPath(path), cancellationToken: t));
+
+            if (Directory.Exists(path))
+                Program.DoTaskWithProgressBar((t) => filesScan = PCKUtils.ScanFoldersForFiles(Path.GetFullPath(path), cancellationToken: t));
 
             GC.Collect();
             files = filesScan.ToDictionary((f) => f.OriginalPath);
