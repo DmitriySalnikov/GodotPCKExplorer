@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -215,15 +216,24 @@ namespace GodotPCKExplorer.UI
                 ShowWindow(GetConsoleWindow(), SW_HIDE);
         }
 
-        public static void DoTaskWithProgressBar(Action<CancellationToken> work)
+        public static void DoTaskWithProgressBar(Action<CancellationToken> work, [CallerFilePath] string _file = "", [CallerMemberName] string _func = "", [CallerLineNumber] int _line = 0)
         {
             var token = new CancellationTokenSource();
             progressBar = new BackgroundProgress(token);
 
             var task = Task.Run(() =>
             {
+                Thread.CurrentThread.Name = $"{Path.GetFileName(_file)}::{_func}::{_line}";
+
                 // Do work
-                work(token.Token);
+                try
+                {
+                    work(token.Token);
+                }
+                catch (Exception ex)
+                {
+                    ShowMessage(ex, MessageType.Error);
+                }
 
                 // Force close window
                 token.Cancel();
