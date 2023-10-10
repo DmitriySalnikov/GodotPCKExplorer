@@ -20,7 +20,7 @@ namespace GodotPCKExplorer.UI
             {
                 if (File.Exists(this.saveFile))
                     File.Delete(this.saveFile);
-                logWriter = new StreamWriter(File.OpenWrite(this.saveFile));
+                logWriter = new StreamWriter(File.Open(this.saveFile, FileMode.CreateNew, FileAccess.Write, FileShare.Read));
                 flushFileAction = new DeferredAction(() =>
                 logWriter.Flush(), 500);
             }
