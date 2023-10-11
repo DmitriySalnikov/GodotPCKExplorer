@@ -15,9 +15,9 @@ namespace GodotPCKExplorer.UI
             Program.Log(ex);
         }
 
-        public void LogProgress(string operation, int percent)
+        public void LogProgress(string operation, int number, string customPrefix = null)
         {
-            Program.LogProgress(operation, percent);
+            Program.LogProgress(operation, number, customPrefix);
         }
 
         public void LogProgress(string operation, string str)

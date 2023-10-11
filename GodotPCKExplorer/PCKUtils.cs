@@ -26,7 +26,7 @@ namespace GodotPCKExplorer
         public const int PCK_FILE_ENCRYPTED = 1 << 0;
         public const int BUFFER_MAX_SIZE = 1024 * 1024;
         public const int UnknownProgressStatus = -1234;
-                public static string ByteArrayToHexString(byte[] data, string sepChar = "")
+        public static string ByteArrayToHexString(byte[] data, string sepChar = "")
         {
             if (data != null)
                 return BitConverter.ToString(data).Replace("-", sepChar);
@@ -185,6 +185,7 @@ namespace GodotPCKExplorer
                     var inf = new FileInfo(f);
                     files.Add(new PCKPacker.FileToPack(f, f.Replace(basePath + Path.DirectorySeparatorChar, "res://").Replace("\\", "/"), inf.Length));
                     PCKActions.progress?.LogProgress(op, f);
+                    PCKActions.progress?.LogProgress(op, files.Count, "Found files: ");
                 }
                 catch (Exception ex)
                 {

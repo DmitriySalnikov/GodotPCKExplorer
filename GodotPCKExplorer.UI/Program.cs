@@ -55,6 +55,11 @@ namespace GodotPCKExplorer.UI
             return;
         }
 
+        static Program()
+        {
+            logger = new Logger("log.txt");
+        }
+
         public static void Init()
         {
             if (!Directory.Exists(AppDataPath))
@@ -91,52 +96,46 @@ namespace GodotPCKExplorer.UI
         #region Logs
         public static void LogProgress(string operation, string txt)
         {
-            if (logger == null)
-                logger = new Logger("log.txt");
-
             logger.Write($"[Progress] {operation}: {txt}");
         }
 
-        public static void LogProgress(string operation, int percent)
+        public static void LogProgress(string operation, int number, string customPrefix = null)
         {
-            if (((DateTime.Now - prev_progress_time).TotalSeconds > 1) || (prev_progress_percent != percent && Math.Abs(percent - prev_progress_percent) >= 5))
+            if (((DateTime.Now - prev_progress_time).TotalSeconds > 1) || (prev_progress_percent != number && Math.Abs(number - prev_progress_percent) >= 5))
             {
-                LogProgress(operation, $"{Math.Max(Math.Min(percent, 100), 0)}%");
+                if (customPrefix != null)
+                    LogProgress(operation, $"{number}");
+                else
+                    LogProgress(operation, $"{Math.Max(Math.Min(number, 100), 0)}%");
 
-                prev_progress_percent = percent;
+                prev_progress_percent = number;
                 prev_progress_time = DateTime.Now;
             }
 
             // Always update ProgressBar
-            if (progressBar != null)
+            if (progressBar != null && progressBar.Created)
             {
                 if (progressBar.InvokeRequired)
                 {
-                    progressBar.Invoke(new Action(() =>
+                    progressBar.BeginInvoke(new Action(() =>
                     {
-                        progressBar.ReportProgress(operation, percent);
+                        progressBar.ReportProgress(operation, number, customPrefix);
                     }));
                 }
                 else
                 {
-                    progressBar.ReportProgress(operation, percent);
+                    progressBar.ReportProgress(operation, number, customPrefix);
                 }
             }
         }
 
         public static void Log(string txt)
         {
-            if (logger == null)
-                logger = new Logger("log.txt");
-
             logger.Write(txt);
         }
 
         public static void Log(Exception ex)
         {
-            if (logger == null)
-                logger = new Logger("log.txt");
-
             logger.Write(ex);
         }
 
