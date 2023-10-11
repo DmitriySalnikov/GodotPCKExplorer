@@ -22,9 +22,9 @@ namespace GodotPCKExplorer.UI
             cancellationTokenSource = token;
         }
 
-        public void ReportProgress(string operation, int percent)
+        public void ReportProgress(string operation, int number, string customPrefix = null)
         {
-            if (percent != PCKUtils.UnknownProgressStatus)
+            if (number != PCKUtils.UnknownProgressStatus && customPrefix == null)
             {
                 if (Text != operation)
                 {
@@ -32,7 +32,7 @@ namespace GodotPCKExplorer.UI
                 }
 
                 progressBar1.Style = ProgressBarStyle.Continuous;
-                var prct = Math.Max(0, Math.Min(100, percent));
+                var prct = Math.Max(0, Math.Min(100, number));
                 if ((DateTime.Now - prevUpdateTime).TotalSeconds > delta_time || (prct - prevPercent) >= 5)
                 {
                     prevUpdateTime = DateTime.Now;
@@ -45,6 +45,15 @@ namespace GodotPCKExplorer.UI
             else
             {
                 progressBar1.Style = ProgressBarStyle.Marquee;
+
+                if (customPrefix != null)
+                {
+                    if ((DateTime.Now - prevUpdateTime).TotalSeconds > delta_time)
+                    {
+                        prevUpdateTime = DateTime.Now;
+                        l_status.Text = customPrefix + number.ToString();
+                    }
+                }
             }
         }
 

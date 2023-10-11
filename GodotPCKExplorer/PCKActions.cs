@@ -45,7 +45,13 @@ namespace GodotPCKExplorer
 
     public interface IProgressReporter
     {
-        void LogProgress(string operation, int percent);
+        /// <summary>
+        /// Output percent or some number if prefix is not null
+        /// </summary>
+        /// <param name="operation">current operation name</param>
+        /// <param name="number">number to print</param>
+        /// <param name="customPrefix">number prefix. If null, output percentages from 0 to 100. Otherwise - any number with a prefix.</param>
+        void LogProgress(string operation, int number, string customPrefix = null);
 
         void LogProgress(string operation, string str);
 
@@ -63,14 +69,16 @@ namespace GodotPCKExplorer
         int prev_progress = 0;
         DateTime prev_time = DateTime.Now;
 
-        public void LogProgress(string operation, int percent)
+        public void LogProgress(string operation, int number, string customPrefix = null)
         {
-
-            if (((DateTime.Now - prev_time).TotalSeconds > 1) || (prev_progress != percent && Math.Abs(percent - prev_progress) >= 5))
+            if (((DateTime.Now - prev_time).TotalSeconds > 1) || (prev_progress != number && Math.Abs(number - prev_progress) >= 5))
             {
-                Log($"[Progress] {operation}: {Math.Max(Math.Min(percent, 100), 0)}%");
+                if (customPrefix != null)
+                    Log($"[Progress] {operation}: {customPrefix}{number}");
+                else
+                    Log($"[Progress] {operation}: {Math.Max(Math.Min(number, 100), 0)}%");
 
-                prev_progress = percent;
+                prev_progress = number;
                 prev_time = DateTime.Now;
             }
         }
