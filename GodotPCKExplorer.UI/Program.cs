@@ -57,6 +57,9 @@ namespace GodotPCKExplorer.UI
 
         static Program()
         {
+            if (!Directory.Exists(AppDataPath))
+                Directory.CreateDirectory(AppDataPath);
+
             logger = new Logger("log.txt");
         }
 

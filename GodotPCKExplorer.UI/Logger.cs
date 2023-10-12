@@ -54,6 +54,10 @@ namespace GodotPCKExplorer.UI
 
             try
             {
+                string dir_name = Path.GetDirectoryName(this.saveFile);
+                if (!Directory.Exists(dir_name))
+                    Directory.CreateDirectory(dir_name);
+
                 if (File.Exists(this.saveFile))
                     File.Delete(this.saveFile);
                 logWriter = new StreamWriter(File.Open(this.saveFile, FileMode.CreateNew, FileAccess.Write, FileShare.Read));
@@ -130,7 +134,7 @@ namespace GodotPCKExplorer.UI
 
         public void Write(Exception ex)
         {
-            Write($"thrown {ex.GetType().Name}:\n{ex.Message}\nStackTrace:\n{ex.StackTrace}");
+            Write($"⚠ {ex.GetType().Name}:\n{ex.Message}\nStackTrace:\n{ex.StackTrace}");
         }
     }
 }
