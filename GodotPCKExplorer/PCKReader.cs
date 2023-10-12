@@ -38,7 +38,7 @@ namespace GodotPCKExplorer
         }
         public bool IsEncryptedIndex
         {
-            get => (PCK_Flags & PCKUtils.PCK_DIR_ENCRYPTED) != 0;
+            get => PCK_Flags != -1 && (PCK_Flags & PCKUtils.PCK_DIR_ENCRYPTED) != 0;
         }
         public bool IsEncryptedFiles
         {
@@ -97,14 +97,12 @@ namespace GodotPCKExplorer
 
         public bool OpenFile(string p_path, bool show_not_pck_error = true, Func<string> get_encryption_key = null, bool log_names_progress = true, bool read_only_header_godot4 = false, CancellationToken? cancellationToken = null)
         {
-            var op = "Open PCK";
-
-            Close();
+            BinaryReader reader;
 
             try
             {
                 p_path = Path.GetFullPath(p_path);
-                binReader = new BinaryReader(File.OpenRead(p_path));
+                reader = new BinaryReader(File.OpenRead(p_path));
             }
             catch (Exception ex)
             {
@@ -112,36 +110,52 @@ namespace GodotPCKExplorer
                 return false;
             }
 
+            return OpenFile(reader, show_not_pck_error, get_encryption_key, log_names_progress, read_only_header_godot4, cancellationToken);
+        }
+
+        public bool OpenFile(BinaryReader fileReader, bool show_not_pck_error = true, Func<string> get_encryption_key = null, bool log_names_progress = true, bool read_only_header_godot4 = false, CancellationToken? cancellationToken = null, bool disableExceptions = false)
+        {
+            var op = "Open PCK";
+
+            Close();
+
             GetEncryptionKeyFunc = get_encryption_key;
+
+            string file_path = "Data stream";
+            if (fileReader?.BaseStream is FileStream fs)
+            {
+                file_path = fs.Name;
+            }
 
             try
             {
-                PCKActions.progress?.LogProgress(op, $"Opening: {p_path}");
+
+                PCKActions.progress?.LogProgress(op, $"Opening: {file_path}");
                 PCKActions.progress?.LogProgress(op, PCKUtils.UnknownProgressStatus);
 
-                int magic = binReader.ReadInt32(); // 0-3
+                int magic = fileReader.ReadInt32(); // 0-3
 
                 if (magic != PCKUtils.PCK_MAGIC)
                 {
                     //maybe at the end.... self contained exe
-                    binReader.BaseStream.Seek(-4, SeekOrigin.End);
-                    magic = binReader.ReadInt32();
+                    fileReader.BaseStream.Seek(-4, SeekOrigin.End);
+                    magic = fileReader.ReadInt32();
                     if (magic != PCKUtils.PCK_MAGIC)
                     {
-                        binReader.Close();
+                        fileReader.Close();
                         if (show_not_pck_error)
                             PCKActions.progress?.ShowMessage("Not a Godot PCK file!", "Error", MessageType.Error);
                         return false;
                     }
-                    binReader.BaseStream.Seek(-12, SeekOrigin.Current);
+                    fileReader.BaseStream.Seek(-12, SeekOrigin.Current);
 
-                    long ds = binReader.ReadInt64();
-                    binReader.BaseStream.Seek(-ds - 8, SeekOrigin.Current);
+                    long ds = fileReader.ReadInt64();
+                    fileReader.BaseStream.Seek(-ds - 8, SeekOrigin.Current);
 
-                    magic = binReader.ReadInt32();
+                    magic = fileReader.ReadInt32();
                     if (magic != PCKUtils.PCK_MAGIC)
                     {
-                        binReader.Close();
+                        fileReader.Close();
                         if (show_not_pck_error)
                             PCKActions.progress?.ShowMessage("Not a Godot PCK file!", "Error", MessageType.Error);
 
@@ -151,44 +165,45 @@ namespace GodotPCKExplorer
                     {
                         // If embedded PCK
                         PCK_Embedded = true;
-                        PCK_StartPosition = binReader.BaseStream.Position - 4;
-                        PCK_EndPosition = binReader.BaseStream.Length - 12;
+                        PCK_StartPosition = fileReader.BaseStream.Position - 4;
+                        PCK_EndPosition = fileReader.BaseStream.Length - 12;
                     }
                 }
                 else
                 {
                     // If regular PCK
                     PCK_StartPosition = 0;
-                    PCK_EndPosition = binReader.BaseStream.Length;
+                    PCK_EndPosition = fileReader.BaseStream.Length;
                 }
 
-                PCK_VersionPack = binReader.ReadInt32(); // 4-7
-                PCK_VersionMajor = binReader.ReadInt32(); // 8-11
-                PCK_VersionMinor = binReader.ReadInt32(); // 12-15
-                PCK_VersionRevision = binReader.ReadInt32(); // 16-19
+                PCK_VersionPack = fileReader.ReadInt32(); // 4-7
+                PCK_VersionMajor = fileReader.ReadInt32(); // 8-11
+                PCK_VersionMinor = fileReader.ReadInt32(); // 12-15
+                PCK_VersionRevision = fileReader.ReadInt32(); // 16-19
 
                 PCK_Flags = 0;
                 PCK_FileBase = 0;
 
                 if (PCK_VersionPack == 2)
                 {
-                    PCK_Flags = binReader.ReadInt32(); // 20-23
-                    PCK_FileBaseAddressOffset = binReader.BaseStream.Position;
-                    PCK_FileBase = binReader.ReadInt64(); // 24-31
+                    PCK_Flags = fileReader.ReadInt32(); // 20-23
+                    PCK_FileBaseAddressOffset = fileReader.BaseStream.Position;
+                    PCK_FileBase = fileReader.ReadInt64(); // 24-31
                 }
 
                 PCKActions.progress?.LogProgress(op, $"Version: {PCK_VersionPack}.{PCK_VersionMajor}.{PCK_VersionMinor}.{PCK_VersionRevision}, Flags: {PCK_Flags}");
 
-                binReader.ReadBytes(16 * sizeof(int)); // 32-95 reserved
+                fileReader.ReadBytes(16 * sizeof(int)); // 32-95 reserved
 
-                PCK_FileCount = binReader.ReadInt32();
+                PCK_FileCount = fileReader.ReadInt32();
                 PCKActions.progress?.LogProgress(op, $"File count: {PCK_FileCount}");
 
                 if (read_only_header_godot4 && PCK_VersionPack == PCKUtils.PCK_VERSION_GODOT_4)
                 {
                     PCKActions.progress?.LogProgress(op, 100);
                     PCKActions.progress?.LogProgress(op, "Completed without reading the file index!");
-                    PackPath = p_path;
+                    PackPath = file_path;
+                    binReader = fileReader;
                     return true;
                 }
 
@@ -200,20 +215,25 @@ namespace GodotPCKExplorer
                     }
                 }
 
-                BinaryReader tmp_reader = binReader;
+                BinaryReader tmp_reader = fileReader;
 
                 if (IsEncryptedIndex)
                 {
                     // Index should be read as a single buffer here
                     var mem = new MemoryStream();
-                    using (var reader = new PCKEncryptedReader(binReader, EncryptionKey))
+                    using (var reader = new PCKEncryptedReader(fileReader, EncryptionKey))
                     {
                         foreach (var chunk in reader.ReadEncryptedBlocks())
                         {
                             mem.Write(chunk, 0, chunk.Length);
 
                             if (cancellationToken?.IsCancellationRequested ?? false)
-                                throw new OperationCanceledException();
+                            {
+                                if (disableExceptions)
+                                    return false;
+                                else
+                                    throw new OperationCanceledException();
+                            }
                         }
 
                         // Test MD5 of decoded data
@@ -226,7 +246,10 @@ namespace GodotPCKExplorer
 
                         if (!reader.MD5.SequenceEqual(dec_md5))
                         {
-                            throw new CryptographicException("The decrypted index data has an incorrect MD5 hash sum.");
+                            if (disableExceptions)
+                                return false;
+                            else
+                                throw new CryptographicException("The decrypted index data has an incorrect MD5 hash sum.");
                         }
                     }
                     mem.Position = 0;
@@ -253,10 +276,15 @@ namespace GodotPCKExplorer
                         PCKActions.progress?.LogProgress(op, $"{path}\nSize: {size} Flags: {flags}");
                         PCKActions.progress?.LogProgress(op, (int)(((double)i / PCK_FileCount) * 100));
                     }
-                    Files.Add(path, new PCKFile(binReader, path, ofs, pos_of_ofs, size, md5, flags, PCK_VersionPack));
+                    Files.Add(path, new PCKFile(fileReader, path, ofs, pos_of_ofs, size, md5, flags, PCK_VersionPack));
 
                     if (cancellationToken?.IsCancellationRequested ?? false)
-                        throw new OperationCanceledException();
+                    {
+                        if (disableExceptions)
+                            return false;
+                        else
+                            throw new OperationCanceledException();
+                    }
                 };
 
                 if (IsEncryptedIndex)
@@ -267,15 +295,16 @@ namespace GodotPCKExplorer
 
                 PCKActions.progress?.LogProgress(op, "Completed!");
                 PCKActions.progress?.LogProgress(op, 100);
-                PackPath = p_path;
+                PackPath = file_path;
+                binReader = fileReader;
                 return true;
             }
             catch (Exception ex)
             {
-                binReader.Close();
+                fileReader.Close();
                 binReader = null;
 
-                PCKActions.progress?.ShowMessage($"Can't read PCK file: {p_path}\n" + ex.Message, "Error", MessageType.Error);
+                PCKActions.progress?.ShowMessage($"Can't read PCK file: {file_path}\n" + ex.Message, "Error", MessageType.Error);
                 PCKActions.progress?.Log(ex.StackTrace);
                 return false;
             }
