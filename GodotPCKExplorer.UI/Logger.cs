@@ -16,7 +16,7 @@ namespace GodotPCKExplorer.UI
             Console.OutputEncoding = Encoding.Unicode;  // crucial
 
             // avoid special "ShadowBuffer" for hard-coded size 0x14000 in 'BufferedStream' 
-            str = new BufferedStream(Console.OpenStandardOutput(), 256000);
+            str = new BufferedStream(Console.OpenStandardOutput(), 128 * 1024);
         }
 
         public static void WriteLine(string s)
@@ -40,6 +40,8 @@ namespace GodotPCKExplorer.UI
 
     public class Logger : IDisposable
     {
+        public bool DuplicateToConsole = true;
+
         readonly string saveFile;
         TextWriter logWriter = null;
         DeferredAction flushFileAction = null;
@@ -54,6 +56,8 @@ namespace GodotPCKExplorer.UI
 
             try
             {
+                flushFastConsole = new DeferredAction(() => FastConsole.Flush(), 500);
+
                 string dir_name = Path.GetDirectoryName(this.saveFile);
                 if (!Directory.Exists(dir_name))
                     Directory.CreateDirectory(dir_name);
@@ -62,7 +66,6 @@ namespace GodotPCKExplorer.UI
                     File.Delete(this.saveFile);
                 logWriter = new StreamWriter(File.Open(this.saveFile, FileMode.CreateNew, FileAccess.Write, FileShare.Read));
                 flushFileAction = new DeferredAction(() => logWriter.Flush(), 500);
-                flushFastConsole = new DeferredAction(() => FastConsole.Flush(), 500);
             }
             catch (Exception ex)
             {
@@ -111,7 +114,9 @@ namespace GodotPCKExplorer.UI
 
             lock (dataLock)
             {
-                FastConsole.WriteLine(txt);
+                if (DuplicateToConsole)
+                    FastConsole.WriteLine(txt);
+
                 // Force write or continue buffering
                 if ((DateTime.UtcNow - timeFlushConsole).TotalMilliseconds > 500)
                 {

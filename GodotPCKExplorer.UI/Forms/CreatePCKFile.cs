@@ -43,7 +43,8 @@ namespace GodotPCKExplorer.UI
             List<PCKPacker.FileToPack> filesScan = new List<PCKPacker.FileToPack>();
 
             if (Directory.Exists(path))
-                Program.DoTaskWithProgressBar((t) => filesScan = PCKUtils.ScanFoldersForFiles(Path.GetFullPath(path), cancellationToken: t));
+                Program.DoTaskWithProgressBar((t) => filesScan = PCKUtils.ScanFoldersForFiles(Path.GetFullPath(path), cancellationToken: t),
+                    this);
 
             GC.Collect();
             files = filesScan.ToDictionary((f) => f.OriginalPath);
@@ -104,12 +105,12 @@ namespace GodotPCKExplorer.UI
 
             if (cb_embed.Checked)
             {
-                res = ofd_pack_into.ShowDialog();
+                res = ofd_pack_into.ShowDialog(this);
                 file = ofd_pack_into.FileName;
             }
             else
             {
-                res = sfd_save_pack.ShowDialog();
+                res = sfd_save_pack.ShowDialog(this);
                 file = sfd_save_pack.FileName;
             }
 
@@ -129,7 +130,7 @@ namespace GodotPCKExplorer.UI
                         GUIConfig.Instance.EncryptFiles && cb_enable_encryption.Checked,
                         t
                         );
-                });
+                }, this);
 
                 GUIConfig.Instance.PackedVersion = ver;
                 GUIConfig.Instance.EmbedPCK = cb_embed.Checked;
@@ -163,7 +164,7 @@ namespace GodotPCKExplorer.UI
 
         private void btn_browse_Click(object sender, EventArgs e)
         {
-            if (fbd_pack_folder.ShowDialog() == DialogResult.OK)
+            if (fbd_pack_folder.ShowDialog(this) == DialogResult.OK)
             {
                 tb_folder_path.Text = Path.GetFullPath(fbd_pack_folder.SelectedPath);
                 SetFolderPath(tb_folder_path.Text);
@@ -200,7 +201,11 @@ namespace GodotPCKExplorer.UI
 
         private void btn_generate_key_Click(object sender, EventArgs e)
         {
-            new CreatePCKEncryption().ShowDialog();
+            using (var tmp = new CreatePCKEncryption())
+            {
+                tmp.StartPosition = FormStartPosition.CenterParent;
+                tmp.ShowDialog(this);
+            }
         }
     }
 }

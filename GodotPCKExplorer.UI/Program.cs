@@ -4,7 +4,6 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace GodotPCKExplorer.UI
@@ -19,6 +18,7 @@ namespace GodotPCKExplorer.UI
         static BackgroundProgress progressBar = null;
 
         static Logger logger;
+        static bool IsConsoleVisible = false;
 
         static int prev_progress_percent = 0;
         static DateTime prev_progress_time = DateTime.UtcNow;
@@ -82,9 +82,9 @@ namespace GodotPCKExplorer.UI
 
             PCKActions.Init(new ProgressReporterUI());
 
-            ShowConsole();
             CMDMode = true;
             Log("");
+            ShowConsole();
         }
 
         public static void Cleanup()
@@ -210,56 +210,54 @@ namespace GodotPCKExplorer.UI
         {
             if (!Utils.IsRunningOnMono())
                 ShowWindow(GetConsoleWindow(), SW_SHOW);
+
+            if (!IsConsoleVisible)
+                Log("The console is displayed. The following logs will be duplicated into it!");
+            logger.DuplicateToConsole = true;
+            IsConsoleVisible = true;
         }
 
         public static void HideConsole()
         {
             if (!Utils.IsRunningOnMono())
                 ShowWindow(GetConsoleWindow(), SW_HIDE);
+
+            if (IsConsoleVisible)
+                Log("The console is hidden. The following logs will only be written to a file!");
+            logger.DuplicateToConsole = false;
+            IsConsoleVisible = false;
         }
 
-        public static void DoTaskWithProgressBar(Action<CancellationToken> work, [CallerFilePath] string _file = "", [CallerMemberName] string _func = "", [CallerLineNumber] int _line = 0)
+        public static void DoTaskWithProgressBar(Action<CancellationToken> work, Form parentForm = null, [CallerFilePath] string _file = "", [CallerMemberName] string _func = "", [CallerLineNumber] int _line = 0)
         {
-            var token = new CancellationTokenSource();
-            progressBar = new BackgroundProgress(token);
-
-            var task = Task.Run(() =>
+            Action<CancellationToken> action = (ct) =>
             {
                 Thread.CurrentThread.Name = $"{Path.GetFileName(_file)}::{_func}::{_line}";
 
                 // Do work
                 try
                 {
-                    work(token.Token);
+                    work(ct);
                 }
                 catch (Exception ex)
                 {
                     ShowMessage(ex, MessageType.Error);
                 }
+            };
 
-                // Force close window
-                token.Cancel();
+            progressBar = new BackgroundProgress(action);
+            if (parentForm != null)
+            {
+                progressBar.StartPosition = FormStartPosition.CenterParent;
+                progressBar.ShowDialog(parentForm);
+            }
+            else
+            {
+                progressBar.ShowDialog();
+            }
 
-                while (progressBar == null || !progressBar.Visible)
-                {
-                    Thread.Sleep(1);
-                }
-
-                progressBar.Invoke(new Action(() =>
-                {
-                    progressBar.Close();
-                    progressBar?.Dispose();
-                    progressBar = null;
-                }
-                ));
-            });
-
-            // Wait until the task is completed
-            // or until the window closes
-            progressBar?.ShowDialog();
             progressBar?.Dispose();
             progressBar = null;
-            task.Wait();
         }
 
         public static void OpenMainForm(string path, string encKey = null)
