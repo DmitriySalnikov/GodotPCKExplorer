@@ -37,6 +37,9 @@ namespace GodotPCKExplorer
         public bool EncryptIndex = false;
         public bool EncryptFiles = false;
 
+        [ThreadStatic]
+        static byte[] temp_encryption_buffer;
+
         public PCKPacker(byte[] encKey = null, bool encrypt_index = false, bool encrypt_files = false)
         {
             EncryptionKey = encKey;
@@ -398,13 +401,10 @@ namespace GodotPCKExplorer
             }
         }
 
-        byte[] temp_encryption_buffer;
         long PackStreamEncrypted(BinaryWriter binWriter, Stream stream, byte[] key, byte[] md5 = null, Func<bool> onStep = null)
         {
             if (temp_encryption_buffer == null)
-            {
                 temp_encryption_buffer = new byte[PCKUtils.BUFFER_MAX_SIZE];
-            }
 
             if (md5 == null)
             {

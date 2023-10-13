@@ -9,7 +9,7 @@ namespace GodotPCKExplorer.UI
     {
         public bool UnknowPercents { get; set; } = false;
 
-        DateTime prevUpdateTime = DateTime.Now;
+        DateTime prevUpdateTime = DateTime.UtcNow;
         float delta_time = 1 / 30; // 30 fps
         int prevPercent = 0;
         CancellationTokenSource cancellationTokenSource;
@@ -33,9 +33,9 @@ namespace GodotPCKExplorer.UI
 
                 progressBar1.Style = ProgressBarStyle.Continuous;
                 var prct = Math.Max(0, Math.Min(100, number));
-                if ((DateTime.Now - prevUpdateTime).TotalSeconds > delta_time || (prct - prevPercent) >= 5)
+                if ((DateTime.UtcNow - prevUpdateTime).TotalSeconds > delta_time || (prct - prevPercent) >= 5)
                 {
-                    prevUpdateTime = DateTime.Now;
+                    prevUpdateTime = DateTime.UtcNow;
 
                     prevPercent = prct;
                     l_status.Text = $"Progress: {prct}%";
@@ -48,9 +48,9 @@ namespace GodotPCKExplorer.UI
 
                 if (customPrefix != null)
                 {
-                    if ((DateTime.Now - prevUpdateTime).TotalSeconds > delta_time)
+                    if ((DateTime.UtcNow - prevUpdateTime).TotalSeconds > delta_time)
                     {
-                        prevUpdateTime = DateTime.Now;
+                        prevUpdateTime = DateTime.UtcNow;
                         l_status.Text = customPrefix + number.ToString();
                     }
                 }

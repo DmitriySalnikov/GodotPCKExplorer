@@ -67,11 +67,11 @@ namespace GodotPCKExplorer
     public class ProgressReporter : IProgressReporter
     {
         int prev_progress = 0;
-        DateTime prev_time = DateTime.Now;
+        DateTime prev_time = DateTime.UtcNow;
 
         public void LogProgress(string operation, int number, string customPrefix = null)
         {
-            if (((DateTime.Now - prev_time).TotalSeconds > 1) || (prev_progress != number && Math.Abs(number - prev_progress) >= 5))
+            if (((DateTime.UtcNow - prev_time).TotalSeconds > 1) || (prev_progress != number && Math.Abs(number - prev_progress) >= 5))
             {
                 if (customPrefix != null)
                     Log($"[Progress] {operation}: {customPrefix}{number}");
@@ -79,7 +79,7 @@ namespace GodotPCKExplorer
                     Log($"[Progress] {operation}: {Math.Max(Math.Min(number, 100), 0)}%");
 
                 prev_progress = number;
-                prev_time = DateTime.Now;
+                prev_time = DateTime.UtcNow;
             }
         }
 

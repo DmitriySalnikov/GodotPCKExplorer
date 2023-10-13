@@ -7,10 +7,13 @@ namespace GodotPCKExplorer
 {
     class PCKEncryptedReader : IDisposable
     {
+        [ThreadStatic]
+        static byte[] temp_encryption_buffer;
+
         public BinaryReader Stream;
         public byte[] Key;
 
-        long start_position;
+        readonly long start_position;
         long data_start_position;
         public byte[] MD5;
         public long DataSize;
@@ -41,8 +44,10 @@ namespace GodotPCKExplorer
 
         public IEnumerable<byte[]> ReadEncryptedBlocks()
         {
+            if (temp_encryption_buffer == null)
+                temp_encryption_buffer = new byte[PCKUtils.BUFFER_MAX_SIZE];
+
             byte[] iv = StartIV.ToArray();
-            byte[] temp_encryption_buffer = new byte[PCKUtils.BUFFER_MAX_SIZE];
             long end_position = Stream.BaseStream.Position + DataSizeEncoded;
 
             using (var mtls = new mbedTLS())
