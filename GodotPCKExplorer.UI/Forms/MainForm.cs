@@ -87,13 +87,16 @@ namespace GodotPCKExplorer.UI
 
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var tmpAbout = new AboutBox1();
-            tmpAbout.ShowDialog();
+            using (var tmpAbout = new AboutBox1())
+            {
+                tmpAbout.StartPosition = FormStartPosition.CenterParent;
+                tmpAbout.ShowDialog(this);
+            }
         }
 
         private void openFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var res = ofd_open_pack.ShowDialog();
+            var res = ofd_open_pack.ShowDialog(this);
 
             if (res == DialogResult.OK)
             {
@@ -183,7 +186,6 @@ namespace GodotPCKExplorer.UI
                     recentToolStripMenuItem.DropDownItems.Add(
                         new ToolStripButton(f.Path, null, (s, e) => OpenFile(f.Path, f.EncryptionKey)));
                 }
-
             }
             else
             {
@@ -230,7 +232,8 @@ namespace GodotPCKExplorer.UI
 
                     using (var d = new OpenWithPCKEncryption(item?.EncryptionKey ?? ""))
                     {
-                        var res = d.ShowDialog();
+                        d.StartPosition = FormStartPosition.CenterParent;
+                        var res = d.ShowDialog(this);
 
                         if (res == DialogResult.Cancel)
                         {
@@ -382,31 +385,35 @@ namespace GodotPCKExplorer.UI
 
         private void extractFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var res = fbd_extract_folder.ShowDialog();
+            var res = fbd_extract_folder.ShowDialog(this);
             if (res == DialogResult.OK)
             {
                 List<string> rows = new List<string>();
                 foreach (DataGridViewRow i in dataGridView1.SelectedRows)
                     rows.Add((string)i.Cells[0].Value);
 
-                Program.DoTaskWithProgressBar((t) => pckReader.ExtractFiles(rows, fbd_extract_folder.SelectedPath, overwriteExported.Checked, GUIConfig.Instance.CheckMD5Extracted, cancellationToken: t));
+                Program.DoTaskWithProgressBar((t) => pckReader.ExtractFiles(rows, fbd_extract_folder.SelectedPath, overwriteExported.Checked, GUIConfig.Instance.CheckMD5Extracted, cancellationToken: t),
+                    this);
             }
         }
 
         private void extractAllToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var res = fbd_extract_folder.ShowDialog();
+            var res = fbd_extract_folder.ShowDialog(this);
             if (res == DialogResult.OK)
             {
-                Program.DoTaskWithProgressBar((t) => pckReader.ExtractFiles(pckReader.Files.Select((f) => f.Key), fbd_extract_folder.SelectedPath, overwriteExported.Checked, GUIConfig.Instance.CheckMD5Extracted, cancellationToken: t));
+                Program.DoTaskWithProgressBar((t) => pckReader.ExtractFiles(pckReader.Files.Select((f) => f.Key), fbd_extract_folder.SelectedPath, overwriteExported.Checked, GUIConfig.Instance.CheckMD5Extracted, cancellationToken: t),
+                    this);
             }
         }
 
         private void packFolderToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var dlg = new CreatePCKFile();
-            dlg.ShowDialog();
-            dlg.Dispose();
+            using (var dlg = new CreatePCKFile())
+            {
+                dlg.StartPosition = FormStartPosition.CenterParent;
+                dlg.ShowDialog(this);
+            }
         }
 
         private void closeFileToolStripMenuItem_Click(object sender, EventArgs e)
@@ -515,7 +522,7 @@ namespace GodotPCKExplorer.UI
 
         private void ripPackFromFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (ofd_rip_select_pck.ShowDialog() == DialogResult.OK)
+            if (ofd_rip_select_pck.ShowDialog(this) == DialogResult.OK)
             {
                 using (var pck = new PCKReader())
                 {
@@ -530,16 +537,17 @@ namespace GodotPCKExplorer.UI
                     }
                 }
 
-                if (sfd_rip_save_pack.ShowDialog() == DialogResult.OK)
+                if (sfd_rip_save_pack.ShowDialog(this) == DialogResult.OK)
                 {
-                    Program.DoTaskWithProgressBar((t) => PCKActions.RipPCKRun(ofd_rip_select_pck.FileName, sfd_rip_save_pack.FileName, cancellationToken: t));
+                    Program.DoTaskWithProgressBar((t) => PCKActions.RipPCKRun(ofd_rip_select_pck.FileName, sfd_rip_save_pack.FileName, cancellationToken: t),
+                        this);
                 }
             }
         }
 
         private void splitExeToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (ofd_split_exe_open.ShowDialog() == DialogResult.OK)
+            if (ofd_split_exe_open.ShowDialog(this) == DialogResult.OK)
             {
                 using (var pck = new PCKReader())
                     if (!pck.OpenFile(ofd_split_exe_open.FileName, log_names_progress: false))
@@ -553,16 +561,17 @@ namespace GodotPCKExplorer.UI
                     }
 
                 sfd_split_new_file.Filter = $"Original file extension|*{Path.GetExtension(ofd_split_exe_open.FileName)}|All Files|*.*";
-                if (sfd_split_new_file.ShowDialog() == DialogResult.OK)
+                if (sfd_split_new_file.ShowDialog(this) == DialogResult.OK)
                 {
-                    Program.DoTaskWithProgressBar((t) => PCKActions.SplitPCKRun(ofd_split_exe_open.FileName, sfd_split_new_file.FileName, cancellationToken: t));
+                    Program.DoTaskWithProgressBar((t) => PCKActions.SplitPCKRun(ofd_split_exe_open.FileName, sfd_split_new_file.FileName, cancellationToken: t),
+                        this);
                 }
             }
         }
 
         private void mergePackIntoFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (ofd_merge_pck.ShowDialog() == DialogResult.OK)
+            if (ofd_merge_pck.ShowDialog(this) == DialogResult.OK)
             {
                 using (var pck = new PCKReader())
                     if (!pck.OpenFile(ofd_merge_pck.FileName, log_names_progress: false))
@@ -570,26 +579,29 @@ namespace GodotPCKExplorer.UI
                         return;
                     }
 
-                if (ofd_merge_target.ShowDialog() == DialogResult.OK)
+                if (ofd_merge_target.ShowDialog(this) == DialogResult.OK)
                 {
-                    Program.DoTaskWithProgressBar((t) => PCKActions.MergePCKRun(ofd_merge_pck.FileName, ofd_merge_target.FileName, cancellationToken: t));
+                    Program.DoTaskWithProgressBar((t) => PCKActions.MergePCKRun(ofd_merge_pck.FileName, ofd_merge_target.FileName, cancellationToken: t),
+                        this);
                 }
             }
         }
 
         private void removePackFromFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (ofd_remove_pck_from_exe.ShowDialog() == DialogResult.OK)
+            if (ofd_remove_pck_from_exe.ShowDialog(this) == DialogResult.OK)
             {
-                Program.DoTaskWithProgressBar((t) => PCKActions.RipPCKRun(ofd_remove_pck_from_exe.FileName, cancellationToken: t));
+                Program.DoTaskWithProgressBar((t) => PCKActions.RipPCKRun(ofd_remove_pck_from_exe.FileName, cancellationToken: t),
+                        this);
             }
         }
 
         private void splitExeInPlaceToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (ofd_split_in_place.ShowDialog() == DialogResult.OK)
+            if (ofd_split_in_place.ShowDialog(this) == DialogResult.OK)
             {
-                Program.DoTaskWithProgressBar((t) => PCKActions.SplitPCKRun(ofd_split_in_place.FileName, null, false, cancellationToken: t));
+                Program.DoTaskWithProgressBar((t) => PCKActions.SplitPCKRun(ofd_split_in_place.FileName, null, false, cancellationToken: t),
+                        this);
             }
         }
 
@@ -623,7 +635,7 @@ namespace GodotPCKExplorer.UI
 
         private void changePackVersionToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (ofd_change_version.ShowDialog() == DialogResult.OK)
+            if (ofd_change_version.ShowDialog(this) == DialogResult.OK)
             {
                 var cv = new ChangePCKVersion();
                 cv.ShowAndOpenFile(ofd_change_version.FileName);

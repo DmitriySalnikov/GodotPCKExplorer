@@ -92,6 +92,7 @@
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.Text = "Please wait";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.BackgroundProgress_FormClosing);
+            this.Shown += new System.EventHandler(this.BackgroundProgress_Shown);
             this.ResumeLayout(false);
             this.PerformLayout();
 

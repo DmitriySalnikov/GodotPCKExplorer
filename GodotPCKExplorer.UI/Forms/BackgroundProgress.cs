@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -12,14 +11,32 @@ namespace GodotPCKExplorer.UI
         DateTime prevUpdateTime = DateTime.UtcNow;
         float delta_time = 1 / 30; // 30 fps
         int prevPercent = 0;
+
+        Thread work = null;
+        Action<CancellationToken> work_action;
         CancellationTokenSource cancellationTokenSource;
 
-        public BackgroundProgress(CancellationTokenSource token)
+        public BackgroundProgress(Action<CancellationToken> action)
         {
             InitializeComponent();
+
+            work_action = action;
             Icon = Properties.Resources.icon;
             l_status.Text = "";
-            cancellationTokenSource = token;
+            cancellationTokenSource = new CancellationTokenSource();
+        }
+
+        private void BackgroundProgress_Shown(object sender, EventArgs e)
+        {
+            work = new Thread(new ThreadStart(() =>
+            {
+                work_action(cancellationTokenSource.Token);
+                if (!cancellationTokenSource.IsCancellationRequested)
+                {
+                    BeginInvoke(new Action(Close));
+                }
+            }));
+            work.Start();
         }
 
         public void ReportProgress(string operation, int number, string customPrefix = null)
@@ -60,11 +77,21 @@ namespace GodotPCKExplorer.UI
         private void btn_cancel_Click(object sender, EventArgs e)
         {
             cancellationTokenSource.Cancel();
+            Close();
         }
 
         private void BackgroundProgress_FormClosing(object sender, FormClosingEventArgs e)
         {
             cancellationTokenSource.Cancel();
+            if (work != null)
+            {
+                if (work.IsAlive)
+                    work.Join();
+            }
+            work = null;
+
+            work_action = null;
+            cancellationTokenSource.Dispose();
         }
     }
 }
