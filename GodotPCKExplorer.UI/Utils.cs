@@ -85,26 +85,5 @@ namespace GodotPCKExplorer.UI
         {
             return Type.GetType("Mono.Runtime") != null;
         }
-
-        public static long AlignAddress(long p_n, uint p_alignment)
-        {
-            if (p_alignment == 0)
-                return p_n;
-
-            long rest = p_n % p_alignment;
-            if (rest == 0)
-                return p_n;
-            else
-                return p_n + (p_alignment - rest);
-        }
-
-        public static void AddPadding(BinaryWriter p_file, long p_bytes)
-        {
-            if (p_bytes < 0)
-                throw new ArgumentOutOfRangeException(nameof(p_bytes));
-
-            if (p_bytes != 0)
-                p_file.Write(new byte[p_bytes]);
-        }
     }
 }

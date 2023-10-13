@@ -21,7 +21,7 @@ namespace GodotPCKExplorer.UI
         static Logger logger;
 
         static int prev_progress_percent = 0;
-        static DateTime prev_progress_time = DateTime.Now;
+        static DateTime prev_progress_time = DateTime.UtcNow;
 
         // https://stackoverflow.com/a/3571628/8980874
         [DllImport("kernel32.dll")]
@@ -104,7 +104,7 @@ namespace GodotPCKExplorer.UI
 
         public static void LogProgress(string operation, int number, string customPrefix = null)
         {
-            if (((DateTime.Now - prev_progress_time).TotalSeconds > 1) || (prev_progress_percent != number && Math.Abs(number - prev_progress_percent) >= 5))
+            if (((DateTime.UtcNow - prev_progress_time).TotalSeconds > 1) || (prev_progress_percent != number && Math.Abs(number - prev_progress_percent) >= 5))
             {
                 if (customPrefix != null)
                     LogProgress(operation, $"{number}");
@@ -112,7 +112,7 @@ namespace GodotPCKExplorer.UI
                     LogProgress(operation, $"{Math.Max(Math.Min(number, 100), 0)}%");
 
                 prev_progress_percent = number;
-                prev_progress_time = DateTime.Now;
+                prev_progress_time = DateTime.UtcNow;
             }
 
             // Always update ProgressBar

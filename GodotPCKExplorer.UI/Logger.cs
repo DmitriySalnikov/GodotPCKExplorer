@@ -46,7 +46,7 @@ namespace GodotPCKExplorer.UI
         readonly object dataLock = new object();
 
         DeferredAction flushFastConsole = null;
-        DateTime timeFlushConsole = DateTime.Now;
+        DateTime timeFlushConsole = DateTime.UtcNow;
 
         public Logger(string saveFile)
         {
@@ -113,11 +113,11 @@ namespace GodotPCKExplorer.UI
             {
                 FastConsole.WriteLine(txt);
                 // Force write or continue buffering
-                if ((DateTime.Now - timeFlushConsole).TotalMilliseconds > 500)
+                if ((DateTime.UtcNow - timeFlushConsole).TotalMilliseconds > 500)
                 {
                     FastConsole.Flush();
                     flushFastConsole.Cancel();
-                    timeFlushConsole = DateTime.Now;
+                    timeFlushConsole = DateTime.UtcNow;
                 }
                 else
                 {

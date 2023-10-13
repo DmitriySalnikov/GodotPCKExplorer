@@ -61,6 +61,7 @@ namespace GodotPCKExplorer
             if (p_src.Length - 16 > dst_size)
                 throw new ArgumentOutOfRangeException($"The length of the source and output arrays is too much different. The difference should not exceed 16 bytes.");
 
+            // TODO avoid thousands of allocations
             var output = new byte[p_src.Length];
             var res = decrypt_cfb(ctx, (ulong)p_src.Length, p_iv, p_src, output) == 0;
 
