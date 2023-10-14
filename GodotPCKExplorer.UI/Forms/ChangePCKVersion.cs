@@ -1,8 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Windows.Forms;
-
-namespace GodotPCKExplorer.UI
+﻿namespace GodotPCKExplorer.UI
 {
     public partial class ChangePCKVersion : Form
     {
@@ -46,7 +42,7 @@ namespace GodotPCKExplorer.UI
             }
         }
 
-        private void btn_ok_Click(object sender, EventArgs e)
+        private void btn_ok_Click(object? sender, EventArgs e)
         {
             if (PCKActions.ChangePCKVersion(FilePath, $"{cb_ver.Text}.{nud_major.Value}.{nud_minor.Value}.{nud_revision.Value}"))
                 Close();

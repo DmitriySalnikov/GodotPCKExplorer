@@ -10,11 +10,11 @@ namespace GodotPCKExplorer
 {
     public class PCKReader : IDisposable
     {
-        BinaryReader binReader = null;
+        BinaryReader? binReader = null;
         public Dictionary<string, PCKFile> Files = new Dictionary<string, PCKFile>();
         public int PCK_FileCount = -1;
         public string PackPath = "";
-        public byte[] EncryptionKey = null;
+        public byte[]? EncryptionKey = null;
 
         public int PCK_VersionPack = -1;
         public int PCK_VersionMajor = -1;
@@ -27,7 +27,7 @@ namespace GodotPCKExplorer
         public long PCK_EndPosition = 0;
         public bool PCK_Embedded = false;
 
-        Func<string> GetEncryptionKeyFunc = null;
+        Func<string?>? GetEncryptionKeyFunc = null;
 
         public PCKVersion PCK_Version { get { return new PCKVersion(PCK_VersionPack, PCK_VersionMajor, PCK_VersionMinor, PCK_VersionRevision); } }
         public bool IsOpened { get { return binReader != null; } }
@@ -95,7 +95,7 @@ namespace GodotPCKExplorer
             PCKActions.progress?.LogProgress(operation, $"Got encryption key: {PCKUtils.ByteArrayToHexString(EncryptionKey)}");
         }
 
-        public bool OpenFile(string p_path, bool show_not_pck_error = true, Func<string> get_encryption_key = null, bool log_names_progress = true, bool read_only_header_godot4 = false, CancellationToken? cancellationToken = null)
+        public bool OpenFile(string p_path, bool show_not_pck_error = true, Func<string?>? get_encryption_key = null, bool log_names_progress = true, bool read_only_header_godot4 = false, CancellationToken? cancellationToken = null)
         {
             BinaryReader reader;
 
@@ -113,7 +113,7 @@ namespace GodotPCKExplorer
             return OpenFile(reader, show_not_pck_error, get_encryption_key, log_names_progress, read_only_header_godot4, cancellationToken);
         }
 
-        public bool OpenFile(BinaryReader fileReader, bool show_not_pck_error = true, Func<string> get_encryption_key = null, bool log_names_progress = true, bool read_only_header_godot4 = false, CancellationToken? cancellationToken = null, bool disableExceptions = false)
+        public bool OpenFile(BinaryReader fileReader, bool show_not_pck_error = true, Func<string?>? get_encryption_key = null, bool log_names_progress = true, bool read_only_header_godot4 = false, CancellationToken? cancellationToken = null, bool disableExceptions = false)
         {
             var op = "Open PCK";
 
@@ -122,7 +122,14 @@ namespace GodotPCKExplorer
             GetEncryptionKeyFunc = get_encryption_key;
 
             string file_path = "Data stream";
-            if (fileReader?.BaseStream is FileStream fs)
+
+            if (fileReader == null)
+            {
+                PCKActions.progress?.ShowMessage("The File stream was null", "Error", MessageType.Error);
+                return false;
+            }
+
+            if (fileReader.BaseStream is FileStream fs)
             {
                 file_path = fs.Name;
             }
@@ -211,6 +218,7 @@ namespace GodotPCKExplorer
                 {
                     if (IsEncrypted && (EncryptionKey == null || EncryptionKey.Length != 32))
                     {
+                        // Throw Exception on error
                         TryGetEncryptionKey(op);
                     }
                 }
@@ -221,7 +229,7 @@ namespace GodotPCKExplorer
                 {
                     // Index should be read as a single buffer here
                     var mem = new MemoryStream();
-                    using (var reader = new PCKEncryptedReader(fileReader, EncryptionKey))
+                    using (var reader = new PCKEncryptedReader(fileReader, EncryptionKey ?? throw new NullReferenceException(nameof(EncryptionKey))))
                     {
                         foreach (var chunk in reader.ReadEncryptedBlocks())
                         {
@@ -358,10 +366,10 @@ namespace GodotPCKExplorer
 
                         PCKActions.progress?.LogProgress(op, Files[path].FilePath);
 
-                        PCKFile.VoidInt upd = (p) =>
+                        void upd(int p)
                         {
                             PCKActions.progress?.LogProgress(op, (int)(((double)count / files_count * 100) + (p * one_file_in_progress_line)));
-                        };
+                        }
                         Files[path].OnProgress += upd;
 
                         if (Files[path].IsEncrypted && (EncryptionKey == null || EncryptionKey.Length != 32))

@@ -1,17 +1,14 @@
-﻿using System;
-using System.Threading;
-
-namespace GodotPCKExplorer.UI
+﻿namespace GodotPCKExplorer.UI
 {
     public class DeferredAction : IDisposable
     {
-        Timer close_timer = null;
-        Action action = null;
-        int delay = 1000;
+        System.Threading.Timer? close_timer = null;
+        Action action;
+        readonly int delay = 1000;
 
         public DeferredAction(Action action, int delay = 1000)
         {
-            this.action = action ?? throw new ArgumentNullException("action");
+            this.action = action ?? throw new ArgumentNullException(nameof(action));
             this.delay = delay;
         }
 
@@ -29,18 +26,15 @@ namespace GodotPCKExplorer.UI
         public void CallDeferred()
         {
             close_timer?.Dispose();
-            close_timer = new Timer(CallAction, null, delay, Timeout.Infinite);
+            close_timer = new System.Threading.Timer(CallAction, null, delay, Timeout.Infinite);
         }
 
-        void CallAction(object obj)
+        void CallAction(object? obj)
         {
             close_timer?.Dispose();
             close_timer = null;
 
-            if (action != null)
-            {
-                action();
-            }
+            action();
         }
 
         ~DeferredAction()
@@ -52,7 +46,6 @@ namespace GodotPCKExplorer.UI
         {
             close_timer?.Dispose();
             close_timer = null;
-            action = null;
         }
     }
 }

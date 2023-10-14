@@ -63,6 +63,7 @@ namespace GodotPCKExplorer.UI
         static void HelpCommand()
         {
             runWithArgs = true;
+
             Program.Log("Help");
             Program.LogHelp();
             return;
@@ -81,8 +82,8 @@ namespace GodotPCKExplorer.UI
 
         static void OpenPCKCommand(string[] args)
         {
-            string path = null;
-            string encKey = null;
+            string? path = null;
+            string? encKey = null;
 
             try
             {
@@ -141,8 +142,8 @@ namespace GodotPCKExplorer.UI
         {
             runWithArgs = true;
 
-            string filePath = "";
-            string encKey = null;
+            string filePath;
+            string? encKey = null;
 
             try
             {
@@ -178,9 +179,9 @@ namespace GodotPCKExplorer.UI
         {
             runWithArgs = true;
 
-            string filePath = "";
-            string dirPath = "";
-            string encKey = null;
+            string filePath;
+            string dirPath;
+            string? encKey = null;
 
             try
             {
@@ -222,11 +223,11 @@ namespace GodotPCKExplorer.UI
         {
             runWithArgs = true;
 
-            string dirPath = "";
-            string filePath = "";
-            string strVer = "";
+            string dirPath;
+            string filePath;
+            string strVer;
             uint alignment = 16;
-            string encKey = null;
+            string? encKey = null;
             string encType = "both";
 
             try
@@ -299,8 +300,9 @@ namespace GodotPCKExplorer.UI
         {
             runWithArgs = true;
 
-            string exeFile = "";
-            string outFile = null;
+            string exeFile;
+            string? outFile = null;
+
             try
             {
                 if (args.Length >= 2)
@@ -336,8 +338,9 @@ namespace GodotPCKExplorer.UI
         {
             runWithArgs = true;
 
-            string pckFile = "";
-            string exeFile = "";
+            string pckFile;
+            string exeFile;
+
             try
             {
                 if (args.Length == 3)
@@ -365,8 +368,8 @@ namespace GodotPCKExplorer.UI
         {
             runWithArgs = true;
 
-            string exeFile = "";
-            string pairName = null;
+            string exeFile;
+            string? pairName = null;
             try
             {
                 if (args.Length >= 2)
@@ -403,8 +406,8 @@ namespace GodotPCKExplorer.UI
         {
             runWithArgs = true;
 
-            string pckFile = "";
-            string strVer = "";
+            string pckFile;
+            string strVer;
 
             try
             {

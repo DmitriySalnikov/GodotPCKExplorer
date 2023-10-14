@@ -1,24 +1,13 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace Tests
 {
     internal class RunAppWithOutput : IDisposable
     {
-        Process process = null;
-        System.Threading.Timer timer = null;
+        readonly Process process;
+        readonly Timer timer;
 
         public RunAppWithOutput(string name, string args, int closeDelay)
-        {
-            init(name, args, closeDelay);
-        }
-
-        public RunAppWithOutput(string name, string args)
-        {
-            init(name, args, UtilMethodsTests.ExecutableRunDelay);
-        }
-
-        void init(string name, string args, int closeDelay)
         {
             process = new Process();
             process.StartInfo = new ProcessStartInfo()
@@ -31,17 +20,18 @@ namespace Tests
             };
             process.Start();
 
-            timer = new System.Threading.Timer((s) =>
+            timer = new Timer((s) =>
             {
                 if (!process.HasExited)
                     Kill();
             }, null, closeDelay, -1);
         }
 
+        public RunAppWithOutput(string name, string args) : this(name, args, UtilMethodsTests.ExecutableRunDelay) { }
 
         void Kill()
         {
-            if (UtilMethodsTests.Platform != UtilMethodsTests.OS.Windows)
+            if (!OperatingSystem.IsWindows())
             {
                 var p = Process.Start("pkill", $"-TERM -P {process.Id}");
                 p.WaitForExit();
