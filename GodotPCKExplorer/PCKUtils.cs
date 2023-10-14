@@ -18,7 +18,7 @@ namespace GodotPCKExplorer
 
     public static class PCKUtils
     {
-        static Random rng = new Random();
+        static readonly Random rng = new Random();
         public const int PCK_VERSION_GODOT_3 = 1;
         public const int PCK_VERSION_GODOT_4 = 2;
         public const int PCK_MAGIC = 0x43504447;
@@ -26,7 +26,7 @@ namespace GodotPCKExplorer
         public const int PCK_FILE_ENCRYPTED = 1 << 0;
         public const int BUFFER_MAX_SIZE = 1024 * 1024;
         public const int UnknownProgressStatus = -1234;
-        public static string ByteArrayToHexString(byte[] data, string sepChar = "")
+        public static string ByteArrayToHexString(byte[]? data, string sepChar = "")
         {
             if (data != null)
                 return BitConverter.ToString(data).Replace("-", sepChar);
@@ -36,7 +36,7 @@ namespace GodotPCKExplorer
 
         // https://stackoverflow.com/a/321404/8980874
         // does the same thing as here https://github.com/godotengine/godot/blob/cfab3d2f57976913a03a891b30eaa0a5da4ff64f/core/io/pck_packer.cpp#L61
-        public static byte[] HexStringToByteArray(string hex)
+        public static byte[]? HexStringToByteArray(string? hex)
         {
             if (string.IsNullOrWhiteSpace(hex))
                 return null;
@@ -73,16 +73,13 @@ namespace GodotPCKExplorer
         // https://stackoverflow.com/a/10520086/8980874
         public static byte[] GetFileMD5(string path)
         {
-            using (var md5 = MD5.Create())
-            {
-                using (var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read))
-                {
-                    var bytes = md5.ComputeHash(stream);
-                    if (bytes.Length > 16)
-                        throw new FormatException("Wrong size of MD5 hash");
-                    return bytes;
-                }
-            }
+            using var md5 = MD5.Create();
+            using var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+            var bytes = md5.ComputeHash(stream);
+            if (bytes.Length > 16)
+                throw new FormatException("Wrong size of MD5 hash");
+            return bytes;
         }
 
         public static long AlignAddress(long p_n, uint p_alignment)

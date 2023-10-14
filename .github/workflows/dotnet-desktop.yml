@@ -1,22 +1,31 @@
-name: .NET Desktop
+name: 🛠️ .NET Desktop
 
 on:
   push:
-    branches: ["master"]
+    paths-ignore: [HexEditorStructures/**, Images/**, mbedTLS_AES/**, Tests/**, "*.*"]
   pull_request:
-    branches: ["master"]
+    paths-ignore: [HexEditorStructures/**, Images/**, mbedTLS_AES/**, Tests/**, "*.*"]
+
+# Stop the same workflow actions
+concurrency:
+  group: ${{github.workflow}}-${{github.event.pull_request.number || github.run_id}}
+  cancel-in-progress: true
 
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         configuration: [Debug, Release]
 
     runs-on: windows-latest
 
     env:
+      Artifact_Name: GodotPCKExplorer
       Project_Name: GodotPCKExplorer.UI
+      MSBuild_Project_Name: GodotPCKExplorer_UI
       Solution_Path: GodotPCKExplorer.sln
+      SDK_Name: net6.0-windows
 
     steps:
       - name: Checkout
@@ -24,26 +33,55 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Install the .NET Core workload
+      - name: Install .NET Core
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 6.0.x
+
+      # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
       - name: Setup MSBuild.exe
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@v1.3.1
 
       - name: Setup Nuget
         uses: Nuget/setup-nuget@v1.1.1
 
+      # Add nuget to cache
+      - name: Setup Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          # Look to see if there is a cache hit for the corresponding requirements file
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget
+
+      # Restore the application to populate the obj folder with RuntimeIdentifiers
       - name: Restore nuget packages
         run: nuget restore ${{ env.Solution_Path }}
 
       - name: Build solution
         shell: powershell
-        run: msbuild ${{ env.Solution_Path }} /t:GodotPCKExplorer_UI /p:Configuration=${{ matrix.configuration }} /p:Platform="x64" /m:2
+        run: msbuild ${{ env.Solution_Path }} /t:${{ env.MSBuild_Project_Name }} /p:Configuration=${{ matrix.configuration }} /p:Platform="x64" /m:2
 
       - name: Prepare artifacts
         if: matrix.configuration == 'Release'
         shell: powershell
-        run: Remove-Item ${{ env.Project_Name }}/bin/x64/${{ matrix.configuration }}/* -Include *.xml,*.pdb -Force
+        run: |
+          Get-ChildItem "${{ env.Project_Name }}/bin/x64/${{ matrix.configuration }}/" -Directory | ForEach-Object {
+             Get-ChildItem $_.FullName | Where-Object { ('.pdb', '.xml').Contains($_.Extension) } | Remove-Item -Force
+          }
 
       - name: Upload build artifacts
+        if: matrix.configuration == 'Release'
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ env.Project_Name }}_${{ matrix.configuration }}
-          path: ${{ env.Project_Name }}/bin/x64/${{ matrix.configuration }}/
+          name: ${{ env.Artifact_Name }}
+          path: ${{ env.Project_Name }}/bin/x64/${{ matrix.configuration }}/${{ env.SDK_Name }}
+
+      - name: Upload build artifacts
+        if: matrix.configuration != 'Release'
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.Artifact_Name }}_${{ matrix.configuration }}
+          path: ${{ env.Project_Name }}/bin/${{ matrix.configuration }}/${{ env.SDK_Name }}

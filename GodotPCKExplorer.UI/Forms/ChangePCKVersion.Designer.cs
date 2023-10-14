@@ -28,179 +28,175 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.cb_ver = new System.Windows.Forms.ComboBox();
-            this.nud_revision = new System.Windows.Forms.NumericUpDown();
-            this.nud_minor = new System.Windows.Forms.NumericUpDown();
-            this.nud_major = new System.Windows.Forms.NumericUpDown();
-            this.label1 = new System.Windows.Forms.Label();
-            this.l_path = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
-            this.l_version = new System.Windows.Forms.Label();
-            this.btn_ok = new System.Windows.Forms.Button();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_revision)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_minor)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_major)).BeginInit();
-            this.SuspendLayout();
+            cb_ver = new ComboBox();
+            nud_revision = new NumericUpDown();
+            nud_minor = new NumericUpDown();
+            nud_major = new NumericUpDown();
+            label1 = new Label();
+            l_path = new Label();
+            label2 = new Label();
+            label3 = new Label();
+            label4 = new Label();
+            l_version = new Label();
+            btn_ok = new Button();
+            ((System.ComponentModel.ISupportInitialize)nud_revision).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)nud_minor).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)nud_major).BeginInit();
+            SuspendLayout();
             // 
             // cb_ver
             // 
-            this.cb_ver.FormattingEnabled = true;
-            this.cb_ver.Items.AddRange(new object[] {
-            "1",
-            "2"});
-            this.cb_ver.Location = new System.Drawing.Point(29, 92);
-            this.cb_ver.MaxLength = 2;
-            this.cb_ver.Name = "cb_ver";
-            this.cb_ver.Size = new System.Drawing.Size(70, 21);
-            this.cb_ver.TabIndex = 17;
-            this.cb_ver.Text = "2";
+            cb_ver.FormattingEnabled = true;
+            cb_ver.Items.AddRange(new object[] { "1", "2" });
+            cb_ver.Location = new Point(34, 106);
+            cb_ver.Margin = new Padding(4, 3, 4, 3);
+            cb_ver.MaxLength = 2;
+            cb_ver.Name = "cb_ver";
+            cb_ver.Size = new Size(81, 23);
+            cb_ver.TabIndex = 17;
+            cb_ver.Text = "2";
             // 
             // nud_revision
             // 
-            this.nud_revision.Location = new System.Drawing.Point(256, 93);
-            this.nud_revision.Maximum = new decimal(new int[] {
-            99,
-            0,
-            0,
-            0});
-            this.nud_revision.Name = "nud_revision";
-            this.nud_revision.Size = new System.Drawing.Size(67, 20);
-            this.nud_revision.TabIndex = 16;
+            nud_revision.Location = new Point(299, 107);
+            nud_revision.Margin = new Padding(4, 3, 4, 3);
+            nud_revision.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
+            nud_revision.Name = "nud_revision";
+            nud_revision.Size = new Size(78, 23);
+            nud_revision.TabIndex = 16;
             // 
             // nud_minor
             // 
-            this.nud_minor.Location = new System.Drawing.Point(182, 93);
-            this.nud_minor.Maximum = new decimal(new int[] {
-            99,
-            0,
-            0,
-            0});
-            this.nud_minor.Name = "nud_minor";
-            this.nud_minor.Size = new System.Drawing.Size(65, 20);
-            this.nud_minor.TabIndex = 15;
+            nud_minor.Location = new Point(212, 107);
+            nud_minor.Margin = new Padding(4, 3, 4, 3);
+            nud_minor.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
+            nud_minor.Name = "nud_minor";
+            nud_minor.Size = new Size(76, 23);
+            nud_minor.TabIndex = 15;
             // 
             // nud_major
             // 
-            this.nud_major.Location = new System.Drawing.Point(108, 93);
-            this.nud_major.Maximum = new decimal(new int[] {
-            99,
-            0,
-            0,
-            0});
-            this.nud_major.Name = "nud_major";
-            this.nud_major.Size = new System.Drawing.Size(65, 20);
-            this.nud_major.TabIndex = 14;
-            this.nud_major.Value = new decimal(new int[] {
-            4,
-            0,
-            0,
-            0});
+            nud_major.Location = new Point(126, 107);
+            nud_major.Margin = new Padding(4, 3, 4, 3);
+            nud_major.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
+            nud_major.Name = "nud_major";
+            nud_major.Size = new Size(76, 23);
+            nud_major.TabIndex = 14;
+            nud_major.Value = new decimal(new int[] { 4, 0, 0, 0 });
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(26, 77);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(73, 13);
-            this.label1.TabIndex = 13;
-            this.label1.Text = "Pack Version:";
+            label1.AutoSize = true;
+            label1.Location = new Point(30, 89);
+            label1.Margin = new Padding(4, 0, 4, 0);
+            label1.Name = "label1";
+            label1.Size = new Size(76, 15);
+            label1.TabIndex = 13;
+            label1.Text = "Pack Version:";
             // 
             // l_path
             // 
-            this.l_path.AutoSize = true;
-            this.l_path.Location = new System.Drawing.Point(12, 9);
-            this.l_path.Name = "l_path";
-            this.l_path.Size = new System.Drawing.Size(325, 26);
-            this.l_path.TabIndex = 18;
-            this.l_path.Text = "File path:\r\nddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+            l_path.AutoSize = true;
+            l_path.Location = new Point(14, 10);
+            l_path.Margin = new Padding(4, 0, 4, 0);
+            l_path.Name = "l_path";
+            l_path.Size = new Size(378, 30);
+            l_path.TabIndex = 18;
+            l_path.Text = "File path:\r\nddddddddddddddddddddddddddddddddddddddddddddddddddddd";
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(105, 77);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(68, 13);
-            this.label2.TabIndex = 19;
-            this.label2.Text = "Godot Major:";
+            label2.AutoSize = true;
+            label2.Location = new Point(122, 89);
+            label2.Margin = new Padding(4, 0, 4, 0);
+            label2.Name = "label2";
+            label2.Size = new Size(77, 15);
+            label2.TabIndex = 19;
+            label2.Text = "Godot Major:";
             // 
             // label3
             // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(179, 77);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(68, 13);
-            this.label3.TabIndex = 20;
-            this.label3.Text = "Godot Minor:";
+            label3.AutoSize = true;
+            label3.Location = new Point(209, 89);
+            label3.Margin = new Padding(4, 0, 4, 0);
+            label3.Name = "label3";
+            label3.Size = new Size(78, 15);
+            label3.TabIndex = 20;
+            label3.Text = "Godot Minor:";
             // 
             // label4
             // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(253, 77);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(70, 13);
-            this.label4.TabIndex = 21;
-            this.label4.Text = "Godot Patch:";
+            label4.AutoSize = true;
+            label4.Location = new Point(295, 89);
+            label4.Margin = new Padding(4, 0, 4, 0);
+            label4.Name = "label4";
+            label4.Size = new Size(76, 15);
+            label4.TabIndex = 21;
+            label4.Text = "Godot Patch:";
             // 
             // l_version
             // 
-            this.l_version.AutoSize = true;
-            this.l_version.Location = new System.Drawing.Point(12, 39);
-            this.l_version.Name = "l_version";
-            this.l_version.Size = new System.Drawing.Size(325, 26);
-            this.l_version.TabIndex = 22;
-            this.l_version.Text = "Original Version:\r\nddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+            l_version.AutoSize = true;
+            l_version.Location = new Point(14, 45);
+            l_version.Margin = new Padding(4, 0, 4, 0);
+            l_version.Name = "l_version";
+            l_version.Size = new Size(378, 30);
+            l_version.TabIndex = 22;
+            l_version.Text = "Original Version:\r\nddddddddddddddddddddddddddddddddddddddddddddddddddddd";
             // 
             // btn_ok
             // 
-            this.btn_ok.Location = new System.Drawing.Point(124, 119);
-            this.btn_ok.Name = "btn_ok";
-            this.btn_ok.Size = new System.Drawing.Size(109, 23);
-            this.btn_ok.TabIndex = 23;
-            this.btn_ok.Text = "Change Version";
-            this.btn_ok.UseVisualStyleBackColor = true;
-            this.btn_ok.Click += new System.EventHandler(this.btn_ok_Click);
+            btn_ok.Location = new Point(145, 137);
+            btn_ok.Margin = new Padding(4, 3, 4, 3);
+            btn_ok.Name = "btn_ok";
+            btn_ok.Size = new Size(127, 27);
+            btn_ok.TabIndex = 23;
+            btn_ok.Text = "Change Version";
+            btn_ok.UseVisualStyleBackColor = true;
+            btn_ok.Click += btn_ok_Click;
             // 
             // ChangePCKVersion
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(349, 154);
-            this.Controls.Add(this.btn_ok);
-            this.Controls.Add(this.l_version);
-            this.Controls.Add(this.label4);
-            this.Controls.Add(this.label3);
-            this.Controls.Add(this.label2);
-            this.Controls.Add(this.l_path);
-            this.Controls.Add(this.cb_ver);
-            this.Controls.Add(this.nud_revision);
-            this.Controls.Add(this.nud_minor);
-            this.Controls.Add(this.nud_major);
-            this.Controls.Add(this.label1);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
-            this.Name = "ChangePCKVersion";
-            this.Text = "Change PCK Version";
-            ((System.ComponentModel.ISupportInitialize)(this.nud_revision)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_minor)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_major)).EndInit();
-            this.ResumeLayout(false);
-            this.PerformLayout();
-
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(407, 178);
+            Controls.Add(btn_ok);
+            Controls.Add(l_version);
+            Controls.Add(label4);
+            Controls.Add(label3);
+            Controls.Add(label2);
+            Controls.Add(l_path);
+            Controls.Add(cb_ver);
+            Controls.Add(nud_revision);
+            Controls.Add(nud_minor);
+            Controls.Add(nud_major);
+            Controls.Add(label1);
+            FormBorderStyle = FormBorderStyle.FixedToolWindow;
+            Margin = new Padding(4, 3, 4, 3);
+            MaximumSize = new Size(423, 217);
+            MinimumSize = new Size(423, 217);
+            Name = "ChangePCKVersion";
+            StartPosition = FormStartPosition.CenterParent;
+            Text = "Change PCK Version";
+            ((System.ComponentModel.ISupportInitialize)nud_revision).EndInit();
+            ((System.ComponentModel.ISupportInitialize)nud_minor).EndInit();
+            ((System.ComponentModel.ISupportInitialize)nud_major).EndInit();
+            ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
 
-        private System.Windows.Forms.ComboBox cb_ver;
-        private System.Windows.Forms.NumericUpDown nud_revision;
-        private System.Windows.Forms.NumericUpDown nud_minor;
-        private System.Windows.Forms.NumericUpDown nud_major;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Label l_path;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.Label l_version;
-        private System.Windows.Forms.Button btn_ok;
+        private ComboBox cb_ver;
+        private NumericUpDown nud_revision;
+        private NumericUpDown nud_minor;
+        private NumericUpDown nud_major;
+        private Label label1;
+        private Label l_path;
+        private Label label2;
+        private Label label3;
+        private Label label4;
+        private Label l_version;
+        private Button btn_ok;
     }
 }

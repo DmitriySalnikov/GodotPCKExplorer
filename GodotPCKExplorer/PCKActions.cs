@@ -51,7 +51,7 @@ namespace GodotPCKExplorer
         /// <param name="operation">current operation name</param>
         /// <param name="number">number to print</param>
         /// <param name="customPrefix">number prefix. If null, output percentages from 0 to 100. Otherwise - any number with a prefix.</param>
-        void LogProgress(string operation, int number, string customPrefix = null);
+        void LogProgress(string operation, int number, string? customPrefix = null);
 
         void LogProgress(string operation, string str);
 
@@ -69,7 +69,7 @@ namespace GodotPCKExplorer
         int prev_progress = 0;
         DateTime prev_time = DateTime.UtcNow;
 
-        public void LogProgress(string operation, int number, string customPrefix = null)
+        public void LogProgress(string operation, int number, string? customPrefix = null)
         {
             if (((DateTime.UtcNow - prev_time).TotalSeconds > 1) || (prev_progress != number && Math.Abs(number - prev_progress) >= 5))
             {
@@ -141,20 +141,21 @@ namespace GodotPCKExplorer
 
         internal static IProgressReporter progress;
 
+        static PCKActions()
+        {
+            progress = new ProgressReporter();
+        }
+
         public static bool HelpRun()
         {
             return true;
         }
 
-        public static void Init(IProgressReporter progressReporter = null)
+        public static void Init(IProgressReporter? progressReporter = null)
         {
             if (progressReporter != null)
             {
                 progress = progressReporter;
-            }
-            else
-            {
-                progress = new ProgressReporter();
             }
 
             LoadNativeLibs();
@@ -186,48 +187,47 @@ namespace GodotPCKExplorer
             }
         }
 
-        public static bool InfoPCKRun(string filePath, bool list_files = false, string encKey = null, CancellationToken? cancellationToken = null)
+        public static bool InfoPCKRun(string filePath, bool list_files = false, string? encKey = null, CancellationToken? cancellationToken = null)
         {
             PCKActions.progress?.Log("PCK Info started");
             PCKActions.progress?.Log($"Input file: {filePath}");
 
             if (File.Exists(filePath))
             {
-                using (var pckReader = new PCKReader())
+                using var pckReader = new PCKReader();
+                if (pckReader.OpenFile(filePath, get_encryption_key: () => encKey, read_only_header_godot4: !list_files, cancellationToken: cancellationToken))
                 {
-                    if (pckReader.OpenFile(filePath, get_encryption_key: () => encKey, read_only_header_godot4: !list_files, cancellationToken: cancellationToken))
+                    var enc_text = "";
+                    if (pckReader.IsEncrypted)
                     {
-                        var enc_text = "";
-                        if (pckReader.IsEncrypted)
+                        if (pckReader.IsEncryptedIndex != pckReader.IsEncryptedFiles)
                         {
-                            if (pckReader.IsEncryptedIndex != pckReader.IsEncryptedFiles)
-                            {
-                                if (pckReader.IsEncryptedIndex)
-                                    enc_text = "Encrypted Index";
-                                else
-                                    enc_text = "Encrypted Files";
-                            }
+                            if (pckReader.IsEncryptedIndex)
+                                enc_text = "Encrypted Index";
                             else
-                            {
-                                enc_text = "Encrypted";
-                            }
+                                enc_text = "Encrypted Files";
                         }
-                        if (enc_text != "")
-                            enc_text = " " + enc_text;
+                        else
+                        {
+                            enc_text = "Encrypted";
+                        }
+                    }
+                    if (enc_text != "")
+                        enc_text = " " + enc_text;
 
-                        PCKActions.progress?.ShowMessage(
-                            $"Pack version {pckReader.PCK_VersionPack}. Godot version {pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}\n" +
-                            $"Version string for this program: {pckReader.PCK_VersionPack}.{pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}\n" +
-                            $"File count: {pckReader.PCK_FileCount}" +
-                            (pckReader.IsEncryptedIndex ? "\nThe file index is encrypted" : "") +
-                            (pckReader.IsEncryptedFiles ? "\nFiles are encrypted" : ""), "Pack Info", MessageType.Info);
-                    }
-                    else
-                    {
-                        return false;
-                    }
+                    PCKActions.progress?.ShowMessage(
+                        $"Pack version {pckReader.PCK_VersionPack}. Godot version {pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}\n" +
+                        $"Version string for this program: {pckReader.PCK_VersionPack}.{pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}\n" +
+                        $"File count: {pckReader.PCK_FileCount}" +
+                        (pckReader.IsEncryptedIndex ? "\nThe file index is encrypted" : "") +
+                        (pckReader.IsEncryptedFiles ? "\nFiles are encrypted" : ""), "Pack Info", MessageType.Info);
+
+                    return true;
                 }
-                return true;
+                else
+                {
+                    return false;
+                }
             }
             else
             {
@@ -261,23 +261,21 @@ namespace GodotPCKExplorer
 
                 try
                 {
-                    using (var bw = new BinaryWriter(File.Open(filePath, FileMode.Open)))
-                    {
-                        using (var br = new BinaryReader(bw.BaseStream))
-                        {
-                            bw.BaseStream.Seek(pckStartPosition, SeekOrigin.Begin);
-                            if (br.ReadInt32() != PCKUtils.PCK_MAGIC)
-                            {
-                                PCKActions.progress?.ShowMessage("Not a Godot PCK file!", "Error", MessageType.Error);
-                                return false;
-                            }
+                    using var bw = new BinaryWriter(File.Open(filePath, FileMode.Open));
+                    using var br = new BinaryReader(bw.BaseStream);
 
-                            bw.Write((int)newVersion.PackVersion);
-                            bw.Write((int)newVersion.Major);
-                            bw.Write((int)newVersion.Minor);
-                            bw.Write((int)newVersion.Revision);
-                        }
+                    bw.BaseStream.Seek(pckStartPosition, SeekOrigin.Begin);
+                    if (br.ReadInt32() != PCKUtils.PCK_MAGIC)
+                    {
+                        PCKActions.progress?.ShowMessage("Not a Godot PCK file!", "Error", MessageType.Error);
+                        return false;
                     }
+
+                    bw.Write((int)newVersion.PackVersion);
+                    bw.Write((int)newVersion.Major);
+                    bw.Write((int)newVersion.Minor);
+                    bw.Write((int)newVersion.Revision);
+
                     PCKActions.progress?.ShowMessage($"Version changed. New version: {newVersion}", "Progress", MessageType.Info);
                 }
                 catch (Exception ex)
@@ -294,7 +292,7 @@ namespace GodotPCKExplorer
             return false;
         }
 
-        public static bool ExtractPCKRun(string filePath, string dirPath, bool overwriteExisting = true, IEnumerable<string> files = null, bool check_md5 = true, string encKey = null, CancellationToken? cancellationToken = null)
+        public static bool ExtractPCKRun(string filePath, string dirPath, bool overwriteExisting = true, IEnumerable<string>? files = null, bool check_md5 = true, string? encKey = null, CancellationToken? cancellationToken = null)
         {
             PCKActions.progress?.Log("Extract PCK started");
             PCKActions.progress?.Log($"Input file: {filePath}");
@@ -302,19 +300,18 @@ namespace GodotPCKExplorer
 
             if (File.Exists(filePath))
             {
-                using (var pckReader = new PCKReader())
+                using var pckReader = new PCKReader();
+
+                if (pckReader.OpenFile(filePath, get_encryption_key: () => encKey))
                 {
-                    if (pckReader.OpenFile(filePath, get_encryption_key: () => encKey))
-                    {
-                        if (files != null)
-                            return pckReader.ExtractFiles(files, dirPath, overwriteExisting, check_md5, cancellationToken);
-                        else
-                            return pckReader.ExtractAllFiles(dirPath, overwriteExisting, check_md5, cancellationToken);
-                    }
+                    if (files != null)
+                        return pckReader.ExtractFiles(files, dirPath, overwriteExisting, check_md5, cancellationToken);
                     else
-                    {
-                        return false;
-                    }
+                        return pckReader.ExtractAllFiles(dirPath, overwriteExisting, check_md5, cancellationToken);
+                }
+                else
+                {
+                    return false;
                 }
             }
             else
@@ -324,7 +321,7 @@ namespace GodotPCKExplorer
             return false;
         }
 
-        public static bool PackPCKRun(string dirPath, string filePath, string strVer, uint alignment = 16, bool embed = false, string encKey = null, bool encIndex = false, bool encFiles = false, CancellationToken? cancellationToken = null)
+        public static bool PackPCKRun(string dirPath, string filePath, string strVer, uint alignment = 16, bool embed = false, string? encKey = null, bool encIndex = false, bool encFiles = false, CancellationToken? cancellationToken = null)
         {
             if (Directory.Exists(dirPath))
             {
@@ -337,7 +334,7 @@ namespace GodotPCKExplorer
             return false;
         }
 
-        public static bool PackPCKRun(IEnumerable<PCKPacker.FileToPack> files, string filePath, string strVer, uint alignment = 16, bool embed = false, string encKey = null, bool encIndex = false, bool encFiles = false, CancellationToken? cancellationToken = null)
+        public static bool PackPCKRun(IEnumerable<PCKPacker.FileToPack> files, string filePath, string strVer, uint alignment = 16, bool embed = false, string? encKey = null, bool encIndex = false, bool encFiles = false, CancellationToken? cancellationToken = null)
         {
             if (!files.Any())
             {
@@ -400,7 +397,7 @@ namespace GodotPCKExplorer
             return false;
         }
 
-        public static bool RipPCKRun(string exeFile, string outFile = null, bool removeBackup = false, bool show_message = true, CancellationToken? cancellationToken = null)
+        public static bool RipPCKRun(string exeFile, string? outFile = null, bool removeBackup = false, bool show_message = true, CancellationToken? cancellationToken = null)
         {
             PCKActions.progress?.Log("Rip PCK started");
             PCKActions.progress?.Log($"Input file: {exeFile}");
@@ -463,8 +460,8 @@ namespace GodotPCKExplorer
                         return false;
                     }
 
-                    BinaryReader exeOld = null;
-                    BinaryWriter exeNew = null;
+                    BinaryReader? exeOld = null;
+                    BinaryWriter? exeNew = null;
 
                     // copy only exe part
                     try
@@ -533,77 +530,76 @@ namespace GodotPCKExplorer
 
             if (File.Exists(pckFile))
             {
-                using (var pckReader = new PCKReader())
+                using var pckReader = new PCKReader();
+
+                bool res = pckReader.OpenFile(pckFile, log_names_progress: false, read_only_header_godot4: true, cancellationToken: cancellationToken);
+
+                if (!res)
                 {
-                    bool res = pckReader.OpenFile(pckFile, log_names_progress: false, read_only_header_godot4: true, cancellationToken: cancellationToken);
+                    pckReader.Close();
+                    PCKActions.progress?.ShowMessage($"Unable to open PCK file", "Error", MessageType.Error);
+                    return false;
+                }
 
-                    if (!res)
+                if (exeFile == pckFile)
+                {
+                    pckReader.Close();
+                    PCKActions.progress?.ShowMessage($"The path to the new file cannot be equal to the original file", "Error", MessageType.Error);
+                    return false;
+                }
+
+                // create backup
+                var oldExeFile = Path.ChangeExtension(exeFile, "old" + Path.GetExtension(exeFile));
+                try
+                {
+                    if (File.Exists(oldExeFile))
+                        File.Delete(oldExeFile);
+                    File.Copy(exeFile, oldExeFile);
+                }
+                catch (Exception ex)
+                {
+                    pckReader.Close();
+                    PCKActions.progress?.ShowMessage("Unable to create a backup copy of the file:\n" + ex.Message, "Error", MessageType.Error);
+                    PCKActions.progress?.Log(ex.StackTrace);
+                    return false;
+                }
+
+                // merge
+                if (exeFile != null)
+                    if (pckReader.MergePCKFileIntoExe(exeFile, cancellationToken))
+                        PCKActions.progress?.ShowMessage($"Merging '.pck' into another file is complete.", "Progress", MessageType.Info);
+                    else
                     {
                         pckReader.Close();
-                        PCKActions.progress?.ShowMessage($"Unable to open PCK file", "Error", MessageType.Error);
-                        return false;
-                    }
 
-                    if (exeFile == pckFile)
-                    {
-                        pckReader.Close();
-                        PCKActions.progress?.ShowMessage($"The path to the new file cannot be equal to the original file", "Error", MessageType.Error);
-                        return false;
-                    }
-
-                    // create backup
-                    var oldExeFile = Path.ChangeExtension(exeFile, "old" + Path.GetExtension(exeFile));
-                    try
-                    {
-                        if (File.Exists(oldExeFile))
-                            File.Delete(oldExeFile);
-                        File.Copy(exeFile, oldExeFile);
-                    }
-                    catch (Exception ex)
-                    {
-                        pckReader.Close();
-                        PCKActions.progress?.ShowMessage("Unable to create a backup copy of the file:\n" + ex.Message, "Error", MessageType.Error);
-                        PCKActions.progress?.Log(ex.StackTrace);
-                        return false;
-                    }
-
-                    // merge
-                    if (exeFile != null)
-                        if (pckReader.MergePCKFileIntoExe(exeFile, cancellationToken))
-                            PCKActions.progress?.ShowMessage($"Merging '.pck' into another file is complete.", "Progress", MessageType.Info);
-                        else
+                        // restore backup
+                        try
                         {
-                            pckReader.Close();
-
-                            // restore backup
-                            try
-                            {
-                                if (File.Exists(exeFile))
-                                    File.Delete(exeFile);
-                                File.Move(oldExeFile, exeFile);
-                            }
-                            catch (Exception ex)
-                            {
-                                PCKActions.progress?.Log("[Error] Can't restore backup file.\n" + ex.Message);
-                                PCKActions.progress?.Log(ex.StackTrace);
-                            }
-
-                            return false;
+                            if (File.Exists(exeFile))
+                                File.Delete(exeFile);
+                            File.Move(oldExeFile, exeFile);
+                        }
+                        catch (Exception ex)
+                        {
+                            PCKActions.progress?.Log("[Error] Can't restore backup file.\n" + ex.Message);
+                            PCKActions.progress?.Log(ex.StackTrace);
                         }
 
-                    // remove backup
-                    try
-                    {
-                        if (removeBackup)
-                            File.Delete(oldExeFile);
-                    }
-                    catch (Exception ex)
-                    {
-                        PCKActions.progress?.ShowMessage(ex, MessageType.Error);
+                        return false;
                     }
 
-                    return res;
+                // remove backup
+                try
+                {
+                    if (removeBackup)
+                        File.Delete(oldExeFile);
                 }
+                catch (Exception ex)
+                {
+                    PCKActions.progress?.ShowMessage(ex, MessageType.Error);
+                }
+
+                return res;
             }
             else
             {
@@ -612,7 +608,7 @@ namespace GodotPCKExplorer
             return false;
         }
 
-        public static bool SplitPCKRun(string exeFile, string newExeName = null, bool removeBackup = true, CancellationToken? cancellationToken = null)
+        public static bool SplitPCKRun(string exeFile, string? newExeName = null, bool removeBackup = true, CancellationToken? cancellationToken = null)
         {
             PCKActions.progress?.Log("Split PCK started");
             PCKActions.progress?.Log($"Input file: {exeFile}");

@@ -17,7 +17,7 @@ namespace GodotPCKExplorer
             public long Size;
             public long OffsetPosition;
 
-            public byte[] md5 = null;
+            public byte[]? md5 = null;
             public bool is_encrypted = false;
 
             public FileToPack(string o_path, string path, long size)
@@ -33,21 +33,21 @@ namespace GodotPCKExplorer
         // 8 bytes for size of data
         // 16 bytes for IV
         const int ENCRYPTED_HEADER_SIZE = 16 + 8 + 16;
-        public byte[] EncryptionKey = null;
+        public byte[]? EncryptionKey = null;
         public bool EncryptIndex = false;
         public bool EncryptFiles = false;
 
         [ThreadStatic]
-        static byte[] temp_encryption_buffer;
+        static byte[]? temp_encryption_buffer;
 
-        public PCKPacker(byte[] encKey = null, bool encrypt_index = false, bool encrypt_files = false)
+        public PCKPacker(byte[]? encKey = null, bool encrypt_index = false, bool encrypt_files = false)
         {
             EncryptionKey = encKey;
             EncryptIndex = encrypt_index;
             EncryptFiles = encrypt_files;
         }
 
-        void CloseAndDeleteFile(BinaryWriter writer, string out_pck)
+        void CloseAndDeleteFile(BinaryWriter? writer, string out_pck)
         {
             writer?.Close();
 
@@ -91,6 +91,17 @@ namespace GodotPCKExplorer
                 }
             }
 
+            if (EncryptionKey == null)
+            {
+                if (EncryptIndex || EncryptFiles)
+                {
+                    // TODO add test
+                    PCKActions.progress?.ShowMessage("The encryption key is not specified, although the encryption mode is activated.", "Error", MessageType.Error);
+                    return false;
+                }
+            }
+
+
             try
             {
                 PCKActions.progress?.LogProgress(op, "Starting.");
@@ -118,7 +129,7 @@ namespace GodotPCKExplorer
                     }
                 }
 
-                BinaryWriter binWriter = null;
+                BinaryWriter? binWriter = null;
                 try
                 {
                     binWriter = new BinaryWriter(File.Open(out_pck, FileMode.OpenOrCreate, FileAccess.ReadWrite));
@@ -300,43 +311,41 @@ namespace GodotPCKExplorer
                         long actual_file_size = file.Size;
                         if (file.is_encrypted)
                         {
-                            using (var stream = File.Open(file.OriginalPath, FileMode.Open, FileAccess.Read, FileShare.Read))
-                            {
-                                actual_file_size = PackStreamEncrypted(binWriter, stream, EncryptionKey, file.md5, () =>
-                                {
-                                    PCKActions.progress?.LogProgress(op, (int)((double)binWriter.BaseStream.Position / total_size * 100)); // update progress bar
-                                    return !(cancellationToken?.IsCancellationRequested ?? false);
-                                });
+                            using var stream = File.Open(file.OriginalPath, FileMode.Open, FileAccess.Read, FileShare.Read);
 
-                                // canceled
-                                if (actual_file_size == -1)
-                                {
-                                    CloseAndDeleteFile(binWriter, out_pck);
-                                    return false;
-                                }
+                            actual_file_size = PackStreamEncrypted(binWriter, stream, EncryptionKey ?? throw new NullReferenceException(nameof(EncryptionKey)), file.md5, () =>
+                            {
+                                PCKActions.progress?.LogProgress(op, (int)((double)binWriter.BaseStream.Position / total_size * 100)); // update progress bar
+                                return !(cancellationToken?.IsCancellationRequested ?? false);
+                            });
+
+                            // canceled
+                            if (actual_file_size == -1)
+                            {
+                                CloseAndDeleteFile(binWriter, out_pck);
+                                return false;
                             }
                         }
                         else
                         {
-                            using (BinaryReader src = new BinaryReader(File.OpenRead(file.OriginalPath)))
+                            using BinaryReader src = new BinaryReader(File.OpenRead(file.OriginalPath));
+
+                            long to_write = file.Size;
+                            while (to_write > 0)
                             {
-                                long to_write = file.Size;
-                                while (to_write > 0)
+                                var read = src.ReadBytes(PCKUtils.BUFFER_MAX_SIZE);
+                                binWriter.Write(read);
+                                to_write -= read.Length;
+
+                                PCKActions.progress?.LogProgress(op, (int)((double)binWriter.BaseStream.Position / total_size * 100)); // update progress bar
+
+                                // cancel packing
+                                if (cancellationToken?.IsCancellationRequested ?? false)
                                 {
-                                    var read = src.ReadBytes(PCKUtils.BUFFER_MAX_SIZE);
-                                    binWriter.Write(read);
-                                    to_write -= read.Length;
-
-                                    PCKActions.progress?.LogProgress(op, (int)((double)binWriter.BaseStream.Position / total_size * 100)); // update progress bar
-
-                                    // cancel packing
-                                    if (cancellationToken?.IsCancellationRequested ?? false)
-                                    {
-                                        CloseAndDeleteFile(binWriter, out_pck);
-                                        return false;
-                                    }
-                                };
-                            }
+                                    CloseAndDeleteFile(binWriter, out_pck);
+                                    return false;
+                                }
+                            };
                         }
 
                         // get offset of the next file and add some padding
@@ -356,7 +365,7 @@ namespace GodotPCKExplorer
                         // PackStreamEncrypted will generate MD5, so index_writer.Position must be moved to start
                         index_writer.BaseStream.Position = 0;
 
-                        PackStreamEncrypted(binWriter, index_writer.BaseStream, EncryptionKey);
+                        PackStreamEncrypted(binWriter, index_writer.BaseStream, EncryptionKey ?? throw new NullReferenceException(nameof(EncryptionKey)));
                         index_writer.Close();
                         index_writer.Dispose();
                         index_writer = null;
@@ -401,10 +410,9 @@ namespace GodotPCKExplorer
             }
         }
 
-        long PackStreamEncrypted(BinaryWriter binWriter, Stream stream, byte[] key, byte[] md5 = null, Func<bool> onStep = null)
+        long PackStreamEncrypted(BinaryWriter binWriter, Stream stream, byte[] key, byte[]? md5 = null, Func<bool>? onStep = null)
         {
-            if (temp_encryption_buffer == null)
-                temp_encryption_buffer = new byte[PCKUtils.BUFFER_MAX_SIZE];
+            temp_encryption_buffer ??= new byte[PCKUtils.BUFFER_MAX_SIZE];
 
             if (md5 == null)
             {

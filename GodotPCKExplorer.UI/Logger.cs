@@ -1,7 +1,4 @@
-﻿using System;
-using System.Globalization;
-using System.IO;
-using System.Linq;
+﻿using System.Globalization;
 using System.Text;
 
 namespace GodotPCKExplorer.UI
@@ -43,22 +40,22 @@ namespace GodotPCKExplorer.UI
         public bool DuplicateToConsole = true;
 
         readonly string saveFile;
-        TextWriter logWriter = null;
-        DeferredAction flushFileAction = null;
-        readonly object dataLock = new object();
+        TextWriter? logWriter = null;
+        DeferredAction? flushFileAction = null;
+        readonly object dataLock = new();
 
-        DeferredAction flushFastConsole = null;
+        readonly DeferredAction flushFastConsole;
         DateTime timeFlushConsole = DateTime.UtcNow;
 
         public Logger(string saveFile)
         {
             this.saveFile = Path.Combine(Program.AppDataPath, saveFile);
+            flushFastConsole = new DeferredAction(() => FastConsole.Flush(), 500);
 
             try
             {
-                flushFastConsole = new DeferredAction(() => FastConsole.Flush(), 500);
 
-                string dir_name = Path.GetDirectoryName(this.saveFile);
+                string dir_name = Path.GetDirectoryName(this.saveFile) ?? "";
                 if (!Directory.Exists(dir_name))
                     Directory.CreateDirectory(dir_name);
 
@@ -80,8 +77,7 @@ namespace GodotPCKExplorer.UI
             flushFileAction?.Dispose();
             flushFileAction = null;
 
-            flushFastConsole?.Dispose();
-            flushFastConsole = null;
+            flushFastConsole.Dispose();
 
             if (logWriter != null)
             {

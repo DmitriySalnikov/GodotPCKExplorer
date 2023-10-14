@@ -1,21 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Windows.Forms;
-
-namespace GodotPCKExplorer.UI
+﻿namespace GodotPCKExplorer.UI
 {
     // TODO some actions with encoded PCK is not possible in UI
     public partial class MainForm : Form
     {
-        PCKReader pckReader = new PCKReader();
-        string FormBaseTitle = "";
+        readonly PCKReader pckReader = new();
+        readonly string FormBaseTitle = "";
+        readonly Font MatchCaseNormal;
+        readonly Font MatchCaseStrikeout;
+        readonly VersionCheckerGitHub versionCheckerGitHub = new("DmitriySalnikov", "GodotPCKExplorer", Program.AppName, ShowMessageBoxForVersionCheck);
+
         long TotalOpenedSize = 0;
-        Font MatchCaseNormal = null;
-        Font MatchCaseStrikeout = null;
-        VersionCheckerGitHub versionCheckerGitHub = new VersionCheckerGitHub("DmitriySalnikov", "GodotPCKExplorer", Program.AppName, ShowMessageBoxForVersionCheck);
 
         public MainForm()
         {
@@ -33,11 +27,15 @@ namespace GodotPCKExplorer.UI
 
             showConsoleToolStripMenuItem.Checked = GUIConfig.Instance.ShowConsole;
 
-            UpdateShowConsole();
-            UpdateStatuStrip();
             UpdateRecentList();
-            UpdateListOfPCKContent();
+
+            UpdateShellReigstrationButton();
+            UpdateShowConsole();
+
+            UpdateStatuStrip();
             UpdateMatchCaseFilterButton();
+
+            UpdateListOfPCKContent();
 
             dataGridView1.SelectionChanged += (o, e) => UpdateStatuStrip();
             extractToolStripMenuItem.Enabled = false;
@@ -48,53 +46,29 @@ namespace GodotPCKExplorer.UI
             copySizeInBytesToolStripMenuItem.Click += (o, e) => { if (cms_table_row.Tag != null) Clipboard.SetText(dataGridView1.Rows[(int)cms_table_row.Tag].Cells[2].Tag.ToString()); };
             copyMD5ToolStripMenuItem.Click += (o, e) => { if (cms_table_row.Tag != null) Clipboard.SetText(dataGridView1.Rows[(int)cms_table_row.Tag].Cells[1].Tag.ToString()); };
 
-            if (Utils.IsRunningOnMono())
-            {
-                // Recreate filter text for mono support
-                menuStrip1.Items.Remove(searchText);
-                searchText.Dispose();
-                searchText = null;
-
-                searchText = new ToolStripTextBoxWithPlaceholder();
-
-                searchText.Alignment = ToolStripItemAlignment.Right;
-                searchText.AutoSize = false;
-                searchText.Font = new Font("Segoe UI", 9F);
-                searchText.Name = "searchTextLinux";
-                searchText.Size = new Size(200, 23);
-                searchText.ToolTipText = "Filter text (? and * allowed)\n" + new System.ComponentModel.ComponentResourceManager(typeof(MainForm)).GetString("searchText.ToolTipText");
-                menuStrip1.Items.Insert(menuStrip1.Items.IndexOf(tsmi_match_case_filter) + 1, searchText);
-
-                searchText.Text = "Filter text (? and * allowed)";
-                // HACK to get some size of the text field.
-                // Without this, the Textbox's text field will have a width of 1 pixel.
-                var t = new Timer(components);
-                t.Interval = 1;
-                t.Tick += (s, e) =>
-                {
-                    t.Dispose();
-                    t = null;
-                    searchText.Text = "";
-                };
-                t.Start();
-
-                integrationToolStripMenuItem.Visible = false;
-            }
-
             searchText.KeyDown += new KeyEventHandler(searchText_KeyDown);
+
+            versionCheckerGitHub.VersionSkippedByUser += (s, e) =>
+            {
+                GUIConfig.Instance.SkipVersion = e.SkippedVersion.ToString();
+                GUIConfig.Instance.Save();
+            };
+
             CheckVersion(true);
         }
 
-        private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
+        private void aboutToolStripMenuItem_Click(object? sender, EventArgs e)
         {
-            using (var tmpAbout = new AboutBox1())
-            {
-                tmpAbout.StartPosition = FormStartPosition.CenterParent;
-                tmpAbout.ShowDialog(this);
-            }
+            using var tmpAbout = new AboutBox1();
+            tmpAbout.ShowDialog(this);
         }
 
-        private void openFileToolStripMenuItem_Click(object sender, EventArgs e)
+        private void checkForUpdates_tstb_Click(object sender, EventArgs e)
+        {
+            CheckVersion(false, false);
+        }
+
+        private void openFileToolStripMenuItem_Click(object? sender, EventArgs e)
         {
             var res = ofd_open_pack.ShowDialog(this);
 
@@ -104,29 +78,30 @@ namespace GodotPCKExplorer.UI
             }
         }
 
-        internal void CheckVersion(bool isSilent = true)
+        internal void CheckVersion(bool isSilent = true, bool useSkipVersion = true)
         {
-            versionCheckerGitHub.VersionSkippedByUser += (s, e) =>
+            if (useSkipVersion)
             {
-                GUIConfig.Instance.SkipVersion = e.SkippedVersion.ToString();
-                GUIConfig.Instance.Save();
-            };
-
-            // Get SkipVersion for updater
-            try
-            {
-                versionCheckerGitHub.SkipVersion = new Version(GUIConfig.Instance.SkipVersion);
+                // Get SkipVersion for updater
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(GUIConfig.Instance.SkipVersion))
+                        versionCheckerGitHub.SkipVersion = new Version(GUIConfig.Instance.SkipVersion);
+                }
+                catch (Exception ex)
+                {
+                    Program.Log(ex);
+                }
             }
-            catch (Exception ex)
+            else
             {
-                Program.Log("The SkipVersion string for the updater could not be parsed.");
-                Program.Log(ex.Message);
+                versionCheckerGitHub.SkipVersion = default;
             }
 
             versionCheckerGitHub.CheckForUpdates(isSilent);
         }
 
-        static VersionCheckerGitHub.MSGDialogResult ShowMessageBoxForVersionCheck(VersionCheckerGitHub.MSGType type, Dictionary<string, string> customData, Exception ex)
+        static VersionCheckerGitHub.MSGDialogResult ShowMessageBoxForVersionCheck(VersionCheckerGitHub.MSGType type, Dictionary<string, string> customData, Exception? ex)
         {
             string text = "";
             string caption = "";
@@ -146,15 +121,23 @@ namespace GodotPCKExplorer.UI
                     msg_type = MessageType.Info;
                     break;
                 case VersionCheckerGitHub.MSGType.FailedToRequestInfo:
-                    text = $"Failed to request info about the new version.\n{ex.Message}";
+                    text = $"Failed to request info about the new version.\n{ex?.Message}";
+                    caption = $"Error";
                     msg_type = MessageType.Error;
                     break;
                 case VersionCheckerGitHub.MSGType.FailedToGetInfo:
-                    text = $"Failed to get info about the new version.\n{ex.Message}";
+                    text = $"Failed to get info about the new version.\nCode: {customData["respose"]}";
+                    caption = $"Error";
                     msg_type = MessageType.Error;
                     break;
                 case VersionCheckerGitHub.MSGType.FailedToProcessData:
-                    text = $"Failed to check for update.\n{ex.Message}";
+                    text = $"Failed to check for update.\n{ex?.Message}";
+                    caption = $"Error";
+                    msg_type = MessageType.Error;
+                    break;
+                case VersionCheckerGitHub.MSGType.FailedAlreadyRequesting:
+                    text = $"Failed to request data. Already requesting.";
+                    caption = $"Error";
                     msg_type = MessageType.Error;
                     break;
             }
@@ -162,7 +145,7 @@ namespace GodotPCKExplorer.UI
             return (VersionCheckerGitHub.MSGDialogResult)Program.ShowMessage(text, caption, msg_type, buttons, DialogResult.Cancel);
         }
 
-        void UpdateShowConsole()
+        static void UpdateShowConsole()
         {
             if (GUIConfig.Instance.ShowConsole)
             {
@@ -171,6 +154,20 @@ namespace GodotPCKExplorer.UI
             else
             {
                 Program.HideConsole();
+            }
+        }
+
+        void UpdateShellReigstrationButton()
+        {
+            if (ShellIntegration.IsRegistered())
+            {
+                registerProgram_ToolStripMenuItem.Text = "Unregister the program in Explorer";
+                registerProgram_ToolStripMenuItem.Checked = true;
+            }
+            else
+            {
+                registerProgram_ToolStripMenuItem.Text = "Register the program to open PCK in Explorer";
+                registerProgram_ToolStripMenuItem.Checked = false;
             }
         }
 
@@ -215,12 +212,12 @@ namespace GodotPCKExplorer.UI
             return enc_text;
         }
 
-        public void OpenFile(string path, string encKey = null)
+        public void OpenFile(string path, string? encKey = null)
         {
             CloseFile();
             bool enc_dialog_canceled = false;
 
-            Func<string> get_enc_key = () =>
+            string get_enc_key()
             {
                 if (!string.IsNullOrWhiteSpace(encKey))
                 {
@@ -230,25 +227,22 @@ namespace GodotPCKExplorer.UI
                 {
                     var item = GUIConfig.Instance.RecentOpenedFiles.FirstOrDefault((i) => i.Path == path);
 
-                    using (var d = new OpenWithPCKEncryption(item?.EncryptionKey ?? ""))
+                    using var d = new OpenWithPCKEncryption(item?.EncryptionKey ?? "");
+                    var res = d.ShowDialog(this);
+
+                    if (res == DialogResult.Cancel)
                     {
-                        d.StartPosition = FormStartPosition.CenterParent;
-                        var res = d.ShowDialog(this);
-
-                        if (res == DialogResult.Cancel)
-                        {
-                            enc_dialog_canceled = true;
-                        }
-
-                        if (item != null && !string.IsNullOrWhiteSpace(d.EncryptionKey))
-                        {
-                            item.EncryptionKey = d.EncryptionKey;
-                            GUIConfig.Instance.Save();
-                        }
-                        return d.EncryptionKey;
+                        enc_dialog_canceled = true;
                     }
+
+                    if (item != null && !string.IsNullOrWhiteSpace(d.EncryptionKey))
+                    {
+                        item.EncryptionKey = d.EncryptionKey;
+                        GUIConfig.Instance.Save();
+                    }
+                    return d.EncryptionKey;
                 }
-            };
+            }
 
             path = Path.GetFullPath(path);
             if (pckReader.OpenFile(path, get_encryption_key: get_enc_key))
@@ -378,17 +372,17 @@ namespace GodotPCKExplorer.UI
                 tsmi_match_case_filter.Font = MatchCaseStrikeout;
         }
 
-        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        private void exitToolStripMenuItem_Click(object? sender, EventArgs e)
         {
             Close();
         }
 
-        private void extractFileToolStripMenuItem_Click(object sender, EventArgs e)
+        private void extractFileToolStripMenuItem_Click(object? sender, EventArgs e)
         {
             var res = fbd_extract_folder.ShowDialog(this);
             if (res == DialogResult.OK)
             {
-                List<string> rows = new List<string>();
+                var rows = new List<string>();
                 foreach (DataGridViewRow i in dataGridView1.SelectedRows)
                     rows.Add((string)i.Cells[0].Value);
 
@@ -397,7 +391,7 @@ namespace GodotPCKExplorer.UI
             }
         }
 
-        private void extractAllToolStripMenuItem_Click(object sender, EventArgs e)
+        private void extractAllToolStripMenuItem_Click(object? sender, EventArgs e)
         {
             var res = fbd_extract_folder.ShowDialog(this);
             if (res == DialogResult.OK)
@@ -407,21 +401,19 @@ namespace GodotPCKExplorer.UI
             }
         }
 
-        private void packFolderToolStripMenuItem_Click(object sender, EventArgs e)
+        private void packFolderToolStripMenuItem_Click(object? sender, EventArgs e)
         {
-            using (var dlg = new CreatePCKFile())
-            {
-                dlg.StartPosition = FormStartPosition.CenterParent;
-                dlg.ShowDialog(this);
-            }
+            using var dlg = new CreatePCKFile();
+            dlg.StartPosition = FormStartPosition.CenterParent;
+            dlg.ShowDialog(this);
         }
 
-        private void closeFileToolStripMenuItem_Click(object sender, EventArgs e)
+        private void closeFileToolStripMenuItem_Click(object? sender, EventArgs e)
         {
             CloseFile();
         }
 
-        private void dataGridView1_SortCompare(object sender, DataGridViewSortCompareEventArgs e)
+        private void dataGridView1_SortCompare(object? sender, DataGridViewSortCompareEventArgs e)
         {
             if (e.Column.Index != 2)
             {
@@ -433,36 +425,39 @@ namespace GodotPCKExplorer.UI
             e.Handled = true;
         }
 
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        private void Form1_FormClosing(object? sender, FormClosingEventArgs e)
         {
             CloseFile();
         }
 
-        private void registerProgramToOpenPCKInExplorerToolStripMenuItem_Click(object sender, EventArgs e)
+        private void registerProgramToOpenPCKInExplorerToolStripMenuItem_Click(object? sender, EventArgs e)
         {
-            ShellIntegration.Register();
+            if (ShellIntegration.IsRegistered())
+            {
+                ShellIntegration.Unregister();
+            }
+            else
+            {
+                ShellIntegration.Register();
+            }
+            UpdateShellReigstrationButton();
         }
 
-        private void unregisterProgramToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            ShellIntegration.Unregister();
-        }
-
-        private void showConsoleToolStripMenuItem_Click(object sender, EventArgs e)
+        private void showConsoleToolStripMenuItem_Click(object? sender, EventArgs e)
         {
             GUIConfig.Instance.ShowConsole = showConsoleToolStripMenuItem.Checked;
             GUIConfig.Instance.Save();
             UpdateShowConsole();
         }
 
-        private void Form1_DragEnter(object sender, DragEventArgs e)
+        private void Form1_DragEnter(object? sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            if (e.Data != null && e.Data.GetDataPresent(DataFormats.FileDrop))
             {
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 if (files.Length == 1)
                 {
-                    var pck = new PCKReader();
+                    using var pck = new PCKReader();
 
                     if (File.Exists(files[0]))
                     {
@@ -495,9 +490,11 @@ namespace GodotPCKExplorer.UI
             e.Effect = DragDropEffects.None;
         }
 
-        private void Form1_DragDrop(object sender, DragEventArgs e)
+        static readonly DragDropEffects[] allowedEffects = new DragDropEffects[] { DragDropEffects.Copy, DragDropEffects.Link };
+        private void Form1_DragDrop(object? sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop) && new DragDropEffects[] { DragDropEffects.Copy, DragDropEffects.Link }.Contains(e.Effect))
+
+            if (e.Data != null && e.Data.GetDataPresent(DataFormats.FileDrop) && allowedEffects.Contains(e.Effect))
             {
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 if (files.Length == 1)
@@ -507,20 +504,20 @@ namespace GodotPCKExplorer.UI
             }
         }
 
-        private void overwriteExported_Click(object sender, EventArgs e)
+        private void overwriteExported_Click(object? sender, EventArgs e)
         {
             GUIConfig.Instance.OverwriteExtracted = overwriteExported.Checked;
             GUIConfig.Instance.Save();
         }
 
-        private void checkMD5OnExportToolStripMenuItem_Click(object sender, EventArgs e)
+        private void checkMD5OnExportToolStripMenuItem_Click(object? sender, EventArgs e)
         {
 
             GUIConfig.Instance.CheckMD5Extracted = checkMD5OnExportToolStripMenuItem.Checked;
             GUIConfig.Instance.Save();
         }
 
-        private void ripPackFromFileToolStripMenuItem_Click(object sender, EventArgs e)
+        private void ripPackFromFileToolStripMenuItem_Click(object? sender, EventArgs e)
         {
             if (ofd_rip_select_pck.ShowDialog(this) == DialogResult.OK)
             {
@@ -545,11 +542,12 @@ namespace GodotPCKExplorer.UI
             }
         }
 
-        private void splitExeToolStripMenuItem_Click(object sender, EventArgs e)
+        private void splitExeToolStripMenuItem_Click(object? sender, EventArgs e)
         {
             if (ofd_split_exe_open.ShowDialog(this) == DialogResult.OK)
             {
                 using (var pck = new PCKReader())
+                {
                     if (!pck.OpenFile(ofd_split_exe_open.FileName, log_names_progress: false))
                     {
                         return;
@@ -559,6 +557,7 @@ namespace GodotPCKExplorer.UI
                         Program.ShowMessage("The selected file must contain an embedded '.pck' file", "Error", MessageType.Error);
                         return;
                     }
+                }
 
                 sfd_split_new_file.Filter = $"Original file extension|*{Path.GetExtension(ofd_split_exe_open.FileName)}|All Files|*.*";
                 if (sfd_split_new_file.ShowDialog(this) == DialogResult.OK)
@@ -569,15 +568,17 @@ namespace GodotPCKExplorer.UI
             }
         }
 
-        private void mergePackIntoFileToolStripMenuItem_Click(object sender, EventArgs e)
+        private void mergePackIntoFileToolStripMenuItem_Click(object? sender, EventArgs e)
         {
             if (ofd_merge_pck.ShowDialog(this) == DialogResult.OK)
             {
                 using (var pck = new PCKReader())
+                {
                     if (!pck.OpenFile(ofd_merge_pck.FileName, log_names_progress: false))
                     {
                         return;
                     }
+                }
 
                 if (ofd_merge_target.ShowDialog(this) == DialogResult.OK)
                 {
@@ -587,7 +588,7 @@ namespace GodotPCKExplorer.UI
             }
         }
 
-        private void removePackFromFileToolStripMenuItem_Click(object sender, EventArgs e)
+        private void removePackFromFileToolStripMenuItem_Click(object? sender, EventArgs e)
         {
             if (ofd_remove_pck_from_exe.ShowDialog(this) == DialogResult.OK)
             {
@@ -596,7 +597,7 @@ namespace GodotPCKExplorer.UI
             }
         }
 
-        private void splitExeInPlaceToolStripMenuItem_Click(object sender, EventArgs e)
+        private void splitExeInPlaceToolStripMenuItem_Click(object? sender, EventArgs e)
         {
             if (ofd_split_in_place.ShowDialog(this) == DialogResult.OK)
             {
@@ -605,7 +606,7 @@ namespace GodotPCKExplorer.UI
             }
         }
 
-        private void searchText_KeyDown(object sender, KeyEventArgs e)
+        private void searchText_KeyDown(object? sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
@@ -614,12 +615,12 @@ namespace GodotPCKExplorer.UI
             }
         }
 
-        private void toolStripMenuItem1_Click(object sender, EventArgs e)
+        private void toolStripMenuItem1_Click(object? sender, EventArgs e)
         {
             UpdateListOfPCKContent();
         }
 
-        private void dataGridView1_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
+        private void dataGridView1_CellMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right)
             {
@@ -633,7 +634,7 @@ namespace GodotPCKExplorer.UI
             }
         }
 
-        private void changePackVersionToolStripMenuItem_Click(object sender, EventArgs e)
+        private void changePackVersionToolStripMenuItem_Click(object? sender, EventArgs e)
         {
             if (ofd_change_version.ShowDialog(this) == DialogResult.OK)
             {
@@ -643,7 +644,7 @@ namespace GodotPCKExplorer.UI
             }
         }
 
-        private void tsmi_match_case_filter_Click(object sender, EventArgs e)
+        private void tsmi_match_case_filter_Click(object? sender, EventArgs e)
         {
             GUIConfig.Instance.MatchCaseFilterMainForm = !GUIConfig.Instance.MatchCaseFilterMainForm;
             GUIConfig.Instance.Save();

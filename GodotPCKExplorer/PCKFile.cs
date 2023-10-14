@@ -7,7 +7,7 @@ namespace GodotPCKExplorer
 {
     public class PCKFile
     {
-        private BinaryReader reader;
+        private readonly BinaryReader reader;
         /// <summary>
         /// The name of the file in the package hierarchy.
         /// </summary>
@@ -50,14 +50,14 @@ namespace GodotPCKExplorer
         }
 
         public delegate void VoidInt(int progress);
-        public event VoidInt OnProgress;
+        public event VoidInt? OnProgress;
 
         public bool IsEncrypted
         {
             get => (Flags & PCKUtils.PCK_FILE_ENCRYPTED) != 0;
         }
 
-        public bool ExtractFile(string basePath, bool overwriteExisting = true, byte[] encKey = null, bool check_md5 = true, CancellationToken? cancellationToken = null)
+        public bool ExtractFile(string basePath, bool overwriteExisting = true, byte[]? encKey = null, bool check_md5 = true, CancellationToken? cancellationToken = null)
         {
             string path = basePath + "/" + FilePath.Replace("res://", "");
             string dir = Path.GetDirectoryName(path);
@@ -93,6 +93,13 @@ namespace GodotPCKExplorer
                     long to_write = Size;
                     if (IsEncrypted)
                     {
+                        if (encKey == null)
+                        {
+                            // TODO add test
+                            PCKActions.progress?.ShowMessage($"Failed to extract the packed file.\nThe PCK file is encrypted, but the decryption key was not specified.", "Error", MessageType.Error);
+                            return false;
+                        }
+
                         using (var r = new PCKEncryptedReader(reader, encKey))
                         {
                             foreach (var chunk in r.ReadEncryptedBlocks())
