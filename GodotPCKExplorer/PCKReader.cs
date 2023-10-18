@@ -8,14 +8,19 @@ using System.Threading;
 
 namespace GodotPCKExplorer
 {
+    public struct PCKReaderEncryptionKeyResult
+    {
+        public string Key;
+        public bool IsCancelled;
+    }
+
     public class PCKReader : IDisposable
     {
         BinaryReader? binReader = null;
         public Dictionary<string, PCKFile> Files = new Dictionary<string, PCKFile>();
-        public int PCK_FileCount = -1;
         public string PackPath = "";
-        public byte[]? EncryptionKey = null;
 
+        public int PCK_FileCount = -1;
         public int PCK_VersionPack = -1;
         public int PCK_VersionMajor = -1;
         public int PCK_VersionMinor = -1;
@@ -27,7 +32,7 @@ namespace GodotPCKExplorer
         public long PCK_EndPosition = 0;
         public bool PCK_Embedded = false;
 
-        Func<string?>? GetEncryptionKeyFunc = null;
+        public string? ReceivedEncryptionKey { get; protected set; } = null;
 
         public PCKVersion PCK_Version { get { return new PCKVersion(PCK_VersionPack, PCK_VersionMajor, PCK_VersionMinor, PCK_VersionRevision); } }
         public bool IsOpened { get { return binReader != null; } }
@@ -55,16 +60,18 @@ namespace GodotPCKExplorer
             Close();
         }
 
+        /// <summary>
+        /// Close the PCK file and reset the cached values
+        /// </summary>
         public void Close()
         {
             binReader?.Close();
             binReader = null;
 
             Files.Clear();
-            PCK_FileCount = -1;
             PackPath = "";
-            EncryptionKey = null;
 
+            PCK_FileCount = -1;
             PCK_VersionPack = -1;
             PCK_VersionMajor = -1;
             PCK_VersionMinor = -1;
@@ -76,33 +83,82 @@ namespace GodotPCKExplorer
             PCK_EndPosition = 0;
             PCK_Embedded = false;
 
-            GetEncryptionKeyFunc = null;
+            ReceivedEncryptionKey = null;
         }
 
-        void TryGetEncryptionKey(string operation)
+        byte[]? TryGetEncryptionKey(string operation, Func<PCKReaderEncryptionKeyResult>? getEncryptionKeyFunc = null, bool disableExceptions = false)
         {
             PCKActions.progress?.LogProgress(operation, "The package contains encrypted data. You need to specify the encryption key!");
+            byte[]? key = null;
 
-            if (GetEncryptionKeyFunc != null)
-                EncryptionKey = PCKUtils.HexStringToByteArray(GetEncryptionKeyFunc());
+            if (getEncryptionKeyFunc != null)
+            {
+                var res = getEncryptionKeyFunc();
+                if (!res.IsCancelled)
+                {
+                    key = PCKUtils.HexStringToByteArray(res.Key);
+                }
+                else
+                {
+                    var errStr = "The encryption key retrieval was canceled.";
+                    if (disableExceptions)
+                    {
+                        PCKActions.progress?.LogProgress(operation, errStr);
+                        return null;
+                    }
+                    else
+                        throw new OperationCanceledException(errStr);
+                }
+            }
 
-            if (EncryptionKey == null)
-                throw new ArgumentNullException("Encryption key");
+            if (key == null)
+            {
+                var errStr = "The Encryption Key is null.";
+                if (disableExceptions)
+                {
+                    PCKActions.progress?.LogProgress(operation, errStr);
+                    return null;
+                }
+                else
+                    throw new ArgumentNullException(errStr);
+            }
 
-            if (EncryptionKey.Length != 256 / 8)
-                throw new ArgumentOutOfRangeException("Encryption key");
+            if (key.Length != 256 / 8)
+            {
+                var errStr = "The Encryption Key has the wrong format";
+                if (disableExceptions)
+                {
+                    PCKActions.progress?.LogProgress(operation, errStr);
+                    return null;
+                }
+                else
+                    throw new ArgumentOutOfRangeException(errStr);
+            }
 
-            PCKActions.progress?.LogProgress(operation, $"Got encryption key: {PCKUtils.ByteArrayToHexString(EncryptionKey)}");
+            ReceivedEncryptionKey = PCKUtils.ByteArrayToHexString(key);
+            PCKActions.progress?.LogProgress(operation, $"Got encryption key: {ReceivedEncryptionKey}");
+            return key;
         }
 
-        public bool OpenFile(string p_path, bool show_not_pck_error = true, Func<string?>? get_encryption_key = null, bool log_names_progress = true, bool read_only_header_godot4 = false, CancellationToken? cancellationToken = null)
+        /// <summary>
+        /// Open a PCK file
+        /// </summary>
+        /// <param name="path">File path</param>
+        /// <param name="show_NotPCKError">Show or hide errors that the selected file is not a PCK</param>
+        /// <param name="readOnlyHeaderGodot4">In the PCK file for Godot 4, it is possible to read only index (list of contents).</param>
+        /// <param name="logFileNamesProgress">Output a list of all the contents of the PCK file.</param>
+        /// <param name="disableExceptions">Disable throwing exceptions, useful mainly for debugging.</param>
+        /// <param name="getEncryptionKey">Function for obtaining the encryption key. It will be called only if the file has an encrypted index (list of contents).</param>
+        /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
+        /// <returns></returns>
+        public bool OpenFile(string path, bool show_NotPCKError = true, bool readOnlyHeaderGodot4 = false, bool logFileNamesProgress = true, bool disableExceptions = false, Func<PCKReaderEncryptionKeyResult>? getEncryptionKey = null, CancellationToken? cancellationToken = null)
         {
             BinaryReader reader;
 
             try
             {
-                p_path = Path.GetFullPath(p_path);
-                reader = new BinaryReader(File.OpenRead(p_path));
+                path = Path.GetFullPath(path);
+                reader = new BinaryReader(File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read));
             }
             catch (Exception ex)
             {
@@ -110,16 +166,25 @@ namespace GodotPCKExplorer
                 return false;
             }
 
-            return OpenFile(reader, show_not_pck_error, get_encryption_key, log_names_progress, read_only_header_godot4, cancellationToken);
+            return OpenFile(reader, show_NotPCKError, readOnlyHeaderGodot4, logFileNamesProgress, disableExceptions, getEncryptionKey, cancellationToken);
         }
 
-        public bool OpenFile(BinaryReader fileReader, bool show_not_pck_error = true, Func<string?>? get_encryption_key = null, bool log_names_progress = true, bool read_only_header_godot4 = false, CancellationToken? cancellationToken = null, bool disableExceptions = false)
+        /// <summary>
+        /// Open a PCK file
+        /// </summary>
+        /// <param name="fileReader">Any Binary Stream that contains a PCK file. The reading will occur from the current position of the stream.</param>
+        /// <param name="show_NotPCKError">Show or hide errors that the selected file is not a PCK</param>
+        /// <param name="readOnlyHeaderGodot4">In the PCK file for Godot 4, it is possible to read only index (list of contents).</param>
+        /// <param name="logFileNamesProgress">Output a list of all the contents of the PCK file.</param>
+        /// <param name="disableExceptions">Disable throwing exceptions, useful mainly for debugging.</param>
+        /// <param name="getEncryptionKey">Function for obtaining the encryption key. It will be called only if the file has an encrypted index (list of contents).</param>
+        /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
+        /// <returns></returns>
+        public bool OpenFile(BinaryReader fileReader, bool show_NotPCKError = true, bool readOnlyHeaderGodot4 = false, bool logFileNamesProgress = true, bool disableExceptions = false, Func<PCKReaderEncryptionKeyResult>? getEncryptionKey = null, CancellationToken? cancellationToken = null)
         {
             var op = "Open PCK";
 
             Close();
-
-            GetEncryptionKeyFunc = get_encryption_key;
 
             string file_path = "Data stream";
 
@@ -136,7 +201,6 @@ namespace GodotPCKExplorer
 
             try
             {
-
                 PCKActions.progress?.LogProgress(op, $"Opening: {file_path}");
                 PCKActions.progress?.LogProgress(op, PCKUtils.UnknownProgressStatus);
 
@@ -150,7 +214,7 @@ namespace GodotPCKExplorer
                     if (magic != PCKUtils.PCK_MAGIC)
                     {
                         fileReader.Close();
-                        if (show_not_pck_error)
+                        if (show_NotPCKError)
                             PCKActions.progress?.ShowMessage("Not a Godot PCK file!", "Error", MessageType.Error);
                         return false;
                     }
@@ -163,7 +227,7 @@ namespace GodotPCKExplorer
                     if (magic != PCKUtils.PCK_MAGIC)
                     {
                         fileReader.Close();
-                        if (show_not_pck_error)
+                        if (show_NotPCKError)
                             PCKActions.progress?.ShowMessage("Not a Godot PCK file!", "Error", MessageType.Error);
 
                         return false;
@@ -205,7 +269,7 @@ namespace GodotPCKExplorer
                 PCK_FileCount = fileReader.ReadInt32();
                 PCKActions.progress?.LogProgress(op, $"File count: {PCK_FileCount}");
 
-                if (read_only_header_godot4 && PCK_VersionPack == PCKUtils.PCK_VERSION_GODOT_4)
+                if (readOnlyHeaderGodot4 && PCK_VersionPack == PCKUtils.PCK_VERSION_GODOT_4)
                 {
                     PCKActions.progress?.LogProgress(op, 100);
                     PCKActions.progress?.LogProgress(op, "Completed without reading the file index!");
@@ -214,12 +278,19 @@ namespace GodotPCKExplorer
                     return true;
                 }
 
+                byte[]? encryption_key = null;
                 if (PCK_VersionPack == PCKUtils.PCK_VERSION_GODOT_4)
                 {
-                    if (IsEncrypted && (EncryptionKey == null || EncryptionKey.Length != 32))
+                    if (IsEncrypted)
                     {
-                        // Throw Exception on error
-                        TryGetEncryptionKey(op);
+                        // Throw Exception on error or return null
+                        encryption_key = TryGetEncryptionKey(op, getEncryptionKey, disableExceptions);
+
+                        if (encryption_key == null)
+                        {
+                            PCKActions.progress?.LogProgress(op, "No Encryption Key received. No further work with PCK is possible.");
+                            return false;
+                        }
                     }
                 }
 
@@ -229,16 +300,19 @@ namespace GodotPCKExplorer
                 {
                     // Index should be read as a single buffer here
                     var mem = new MemoryStream();
-                    using (var reader = new PCKEncryptedReader(fileReader, EncryptionKey ?? throw new NullReferenceException(nameof(EncryptionKey))))
+                    using (var reader = new PCKEncryptedReader(fileReader, encryption_key ?? throw new NullReferenceException(nameof(encryption_key))))
                     {
                         foreach (var chunk in reader.ReadEncryptedBlocks())
                         {
-                            mem.Write(chunk, 0, chunk.Length);
+                            mem.Write(chunk.Span);
 
                             if (cancellationToken?.IsCancellationRequested ?? false)
                             {
                                 if (disableExceptions)
+                                {
+                                    PCKActions.progress?.LogProgress(op, "Operation Canceled.");
                                     return false;
+                                }
                                 else
                                     throw new OperationCanceledException();
                             }
@@ -255,7 +329,10 @@ namespace GodotPCKExplorer
                         if (!reader.MD5.SequenceEqual(dec_md5))
                         {
                             if (disableExceptions)
+                            {
+                                PCKActions.progress?.LogProgress(op, "Operation Canceled. The decrypted index data has an incorrect MD5 hash sum.");
                                 return false;
+                            }
                             else
                                 throw new CryptographicException("The decrypted index data has an incorrect MD5 hash sum.");
                         }
@@ -279,7 +356,7 @@ namespace GodotPCKExplorer
                         flags = tmp_reader.ReadInt32();
                     }
 
-                    if (log_names_progress)
+                    if (logFileNamesProgress)
                     {
                         PCKActions.progress?.LogProgress(op, $"{path}\nSize: {size} Flags: {flags}");
                         PCKActions.progress?.LogProgress(op, (int)(((double)i / PCK_FileCount) * 100));
@@ -289,7 +366,10 @@ namespace GodotPCKExplorer
                     if (cancellationToken?.IsCancellationRequested ?? false)
                     {
                         if (disableExceptions)
+                        {
+                            PCKActions.progress?.LogProgress(op, "Operation Canceled");
                             return false;
+                        }
                         else
                             throw new OperationCanceledException();
                     }
@@ -321,12 +401,31 @@ namespace GodotPCKExplorer
             }
         }
 
-        public bool ExtractAllFiles(string folder, bool overwriteExisting = true, bool check_md5 = true, CancellationToken? cancellationToken = null)
+        /// <summary>
+        /// Extract files from an open PCK
+        /// </summary>
+        /// <param name="folder">Extraction Folder</param>
+        /// <param name="overwriteExisting">Overwrite existing files</param>
+        /// <param name="checkMD5">Whether to check the MD5 of exported files</param>
+        /// <param name="getEncryptionKey">If the Encryption Key has not been received after opening the PCK, this function will be called. This function will also be called if the previous attempt to decrypt the file failed.</param>
+        /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
+        /// <returns><c>true</c> if successful</returns>
+        public bool ExtractAllFiles(string folder, bool overwriteExisting = true, bool checkMD5 = true, Func<PCKReaderEncryptionKeyResult>? getEncryptionKey = null, CancellationToken? cancellationToken = null)
         {
-            return ExtractFiles(Files.Keys.ToList(), folder, overwriteExisting, check_md5, cancellationToken);
+            return ExtractFiles(Files.Keys.ToList(), folder, overwriteExisting, checkMD5, getEncryptionKey, cancellationToken);
         }
 
-        public bool ExtractFiles(IEnumerable<string> names, string folder, bool overwriteExisting = true, bool check_md5 = true, CancellationToken? cancellationToken = null)
+        /// <summary>
+        /// Extract files from an open PCK
+        /// </summary>
+        /// <param name="names">File names inside PCK</param>
+        /// <param name="folder">Extraction Folder</param>
+        /// <param name="overwriteExisting">Overwrite existing files</param>
+        /// <param name="checkMD5">Whether to check the MD5 of exported files</param>
+        /// <param name="getEncryptionKey">If the Encryption Key has not been received after opening the PCK, this function will be called. This function will also be called if the previous attempt to decrypt the file failed.</param>
+        /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
+        /// <returns><c>true</c> if successful</returns>
+        public bool ExtractFiles(IEnumerable<string> names, string folder, bool overwriteExisting = true, bool checkMD5 = true, Func<PCKReaderEncryptionKeyResult>? getEncryptionKey = null, CancellationToken? cancellationToken = null)
         {
             var op = "Extract files";
 
@@ -344,6 +443,7 @@ namespace GodotPCKExplorer
                 PCKActions.progress?.LogProgress(op, $"Output folder: {folder}");
 
                 string basePath = folder;
+                byte[]? encryption_key = null;
 
                 int count = 0;
                 double one_file_in_progress_line = 1.0 / files_count;
@@ -372,11 +472,35 @@ namespace GodotPCKExplorer
                         }
                         Files[path].OnProgress += upd;
 
-                        if (Files[path].IsEncrypted && (EncryptionKey == null || EncryptionKey.Length != 32))
-                            TryGetEncryptionKey(op);
-
-                        if (!Files[path].ExtractFile(basePath, overwriteExisting, EncryptionKey, check_md5, cancellationToken))
+                        if (Files[path].IsEncrypted)
                         {
+                            if (encryption_key == null)
+                            {
+                                if (ReceivedEncryptionKey == null)
+                                {
+                                    // Throw Exception on error or return null
+                                    encryption_key = TryGetEncryptionKey(op, getEncryptionKey);
+
+                                    if (encryption_key == null)
+                                    {
+                                        ReceivedEncryptionKey = null;
+                                        PCKActions.progress?.LogProgress(op, "No Encryption Key received. No further work with PCK is possible.");
+                                        return false;
+                                    }
+
+                                    ReceivedEncryptionKey = PCKUtils.ByteArrayToHexString(encryption_key);
+                                }
+                                else
+                                {
+                                    PCKActions.progress?.LogProgress(op, $"A cached Encryption Key is used: {ReceivedEncryptionKey}.");
+                                    encryption_key = PCKUtils.HexStringToByteArray(ReceivedEncryptionKey);
+                                }
+                            }
+                        }
+
+                        if (!Files[path].ExtractFile(basePath, overwriteExisting, encryption_key, checkMD5, cancellationToken))
+                        {
+                            ReceivedEncryptionKey = null;
                             Files[path].OnProgress -= upd;
                             return false;
                         }
@@ -405,6 +529,12 @@ namespace GodotPCKExplorer
             }
         }
 
+        /// <summary>
+        /// Create a copy of the currently opened PCK file as a separate file.
+        /// </summary>
+        /// <param name="outPath">Output file name</param>
+        /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
+        /// <returns><c>true</c> if successful</returns>
         public bool RipPCKFileFromExe(string outPath, CancellationToken? cancellationToken = null)
         {
             if (!PCK_Embedded)
@@ -507,6 +637,12 @@ namespace GodotPCKExplorer
             }
         }
 
+        /// <summary>
+        /// Merge the currently open PCK file into any other file.
+        /// </summary>
+        /// <param name="exePath">The path to any file. Usually <c>.exe</c> or unix binary file.</param>
+        /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
+        /// <returns><c>true</c> if successful</returns>
         public bool MergePCKFileIntoExe(string exePath, CancellationToken? cancellationToken = null)
         {
             if (binReader == null)
@@ -523,7 +659,7 @@ namespace GodotPCKExplorer
 
                 using (var p = new PCKReader())
                 {
-                    if (p.OpenFile(exePath, false, log_names_progress: false))
+                    if (p.OpenFile(exePath, false, logFileNamesProgress: false))
                     {
                         PCKActions.progress?.ShowMessage("File already contains '.pck' inside.", "Error", MessageType.Error);
                         return false;

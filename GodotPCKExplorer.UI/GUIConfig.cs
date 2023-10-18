@@ -1,18 +1,18 @@
 ﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-using System.Reflection;
 
 namespace GodotPCKExplorer.UI
 {
     class RecentFiles
     {
         public string Path;
+        public bool IsEncrypted;
         public string EncryptionKey;
 
-        public RecentFiles(string path, string encKey)
+        public RecentFiles(string path, bool isEncrypted, string encryptionKey)
         {
             Path = path;
-            EncryptionKey = encKey;
+            IsEncrypted = isEncrypted;
+            EncryptionKey = encryptionKey;
         }
     }
 
@@ -70,13 +70,7 @@ namespace GodotPCKExplorer.UI
         {
             try
             {
-                File.WriteAllText(SaveFile, JsonConvert.SerializeObject(
-                    this,
-                    Formatting.Indented,
-                    new JsonSerializerSettings()
-                    {
-                        ContractResolver = ShouldSerializeContractResolver.Instance
-                    }));
+                File.WriteAllText(SaveFile, JsonConvert.SerializeObject(this, Formatting.Indented));
             }
             catch (Exception ex)
             {
@@ -101,6 +95,7 @@ namespace GodotPCKExplorer.UI
 
         #endregion
 
+#if false
         // https://stackoverflow.com/questions/25749509/how-can-i-tell-json-net-to-ignore-properties-in-a-3rd-party-object
         public class ShouldSerializeContractResolver : DefaultContractResolver
         {
@@ -119,5 +114,6 @@ namespace GodotPCKExplorer.UI
                 return property;
             }
         }
+#endif
     }
 }

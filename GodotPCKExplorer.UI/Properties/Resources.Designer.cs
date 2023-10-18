@@ -99,9 +99,19 @@ namespace GodotPCKExplorer.UI.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap pckAbout {
+        internal static System.Drawing.Bitmap pck_about_window {
             get {
-                object obj = ResourceManager.GetObject("pckAbout", resourceCulture);
+                object obj = ResourceManager.GetObject("pck_about_window", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap pck_icon {
+            get {
+                object obj = ResourceManager.GetObject("pck_icon", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

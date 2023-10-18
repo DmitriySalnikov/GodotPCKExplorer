@@ -4,10 +4,10 @@
 		<TargetFramework>netstandard2.1</TargetFramework>
 		<Configurations>Debug;Release;Dev</Configurations>
 		<Platforms>AnyCPU;x64</Platforms>
-		<!--<Nullable>enable</Nullable>-->
-	</PropertyGroup>
-
-	<PropertyGroup>
+		<NoWarn>$(NoWarn);IDE1006</NoWarn>
+		<Nullable>enable</Nullable>
+		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+		
 		<DefaultItemExcludes>
 			$(DefaultItemExcludes);
 			mbedTLS\**\*.exp;
@@ -15,7 +15,8 @@
 			mbedTLS\**\*.pdb;
 			**\.gitignore
 		</DefaultItemExcludes>
-		<Nullable>enable</Nullable>
+		
+		<PlatformTarget>AnyCPU</PlatformTarget>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|AnyCPU'">

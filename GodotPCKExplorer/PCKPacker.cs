@@ -8,46 +8,69 @@ using System.Threading;
 
 namespace GodotPCKExplorer
 {
-    public class PCKPacker
+    public class PCKPackerFile
     {
-        public class FileToPack
+        public string Path;
+        public long Size = 0;
+        public long IndexOffsetPosition = 0;
+
+        public byte[]? MD5 = null;
+        public bool IsEncrypted = false;
+
+        public PCKPackerFile(string path)
         {
-            public string Path;
-            public string OriginalPath;
-            public long Size;
-            public long OffsetPosition;
-
-            public byte[]? md5 = null;
-            public bool is_encrypted = false;
-
-            public FileToPack(string o_path, string path, long size)
-            {
-                OriginalPath = o_path;
-                Path = path;
-                Size = size;
-                OffsetPosition = 0;
-            }
+            Path = path;
+            IndexOffsetPosition = 0;
         }
 
+        public virtual void CalculateMD5()
+        {
+
+        }
+
+        public virtual IEnumerable<ReadOnlyMemory<byte>> ReadMemoryBlocks()
+        {
+            yield break;
+        }
+    }
+
+    public class PCKPackerRegularFile : PCKPackerFile
+    {
+        public string OriginalPath;
+
+        public PCKPackerRegularFile(string o_path, string path) : base(path)
+        {
+            OriginalPath = o_path;
+            Path = path;
+            Size = new FileInfo(o_path).Length;
+        }
+
+        public override void CalculateMD5()
+        {
+            MD5 = PCKUtils.GetFileMD5(OriginalPath);
+        }
+
+        public override IEnumerable<ReadOnlyMemory<byte>> ReadMemoryBlocks()
+        {
+            using var stream = File.Open(OriginalPath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+            foreach (var block in PCKUtils.ReadStreamAsMemoryBlocks(stream))
+            {
+                yield return block;
+            }
+        }
+    }
+
+    public static class PCKPacker
+    {
         // 16 bytes for MD5
         // 8 bytes for size of data
         // 16 bytes for IV
-        const int ENCRYPTED_HEADER_SIZE = 16 + 8 + 16;
-        public byte[]? EncryptionKey = null;
-        public bool EncryptIndex = false;
-        public bool EncryptFiles = false;
+        const int ENCRYPTED_HEADER_SIZE = 16 + 8 + mbedTLS.CHUNK_SIZE;
 
         [ThreadStatic]
-        static byte[]? temp_encryption_buffer;
+        static byte[]? temp_encryption_output_buffer;
 
-        public PCKPacker(byte[]? encKey = null, bool encrypt_index = false, bool encrypt_files = false)
-        {
-            EncryptionKey = encKey;
-            EncryptIndex = encrypt_index;
-            EncryptFiles = encrypt_files;
-        }
-
-        void CloseAndDeleteFile(BinaryWriter? writer, string out_pck)
+        static void CloseAndDeleteFile(BinaryWriter? writer, string out_pck)
         {
             writer?.Close();
 
@@ -61,12 +84,29 @@ namespace GodotPCKExplorer
             }
         }
 
-        public bool PackFiles(string out_pck, IEnumerable<FileToPack> files, uint alignment, PCKVersion godotVersion, bool embed, CancellationToken? cancellationToken = null)
+        /// <summary>
+        /// Create a new PCK file from existing files.
+        /// </summary>
+        /// <param name="outPck">Output file. It can be a new or an existing file.</param>
+        /// <param name="embed">If enabled and an existing <see cref="outPck"/> is specified, then the PCK will be embedded into this file.</param>
+        /// <param name="files">Enumeration of <see cref="PCKPackerRegularFile"/> files to be packed.</param>
+        /// <param name="alignment">The address of each file will be aligned to this value.</param>
+        /// <param name="godotVersion">PCK file version.</param>
+        /// <param name="encKey">Specify the encryption key if you want the file to be encrypted. To specify a <see cref="string"/>, look at <seealso cref="PCKUtils.HexStringToByteArray(string?)"/></param>
+        /// <param name="encrypt_index">Whether to encrypt the index (list of contents).</param>
+        /// <param name="encrypt_files">Whether to encrypt the contents of files.</param>
+        /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
+        /// <returns><c>true</c> if successful</returns>
+        public static bool PackFiles(string outPck, bool embed, IEnumerable<PCKPackerFile> files, uint alignment, PCKVersion godotVersion, byte[]? encKey = null, bool encrypt_index = false, bool encrypt_files = false, CancellationToken? cancellationToken = null)
         {
+            byte[]? EncryptionKey = encKey;
+            bool EncryptIndex = encrypt_index;
+            bool EncryptFiles = encrypt_files;
+
             const string baseOp = "Pack files";
             var op = baseOp;
 
-            if (!godotVersion.IsValid)
+            if (!godotVersion.IsValid())
             {
                 PCKActions.progress?.ShowMessage("Incorrect version is specified!", "Error", MessageType.Error);
                 return false;
@@ -74,7 +114,7 @@ namespace GodotPCKExplorer
 
             if (embed)
             {
-                if (!File.Exists(out_pck))
+                if (!File.Exists(outPck))
                 {
                     PCKActions.progress?.ShowMessage("Attempt to embed a package in a non-existent file", "Error", MessageType.Error);
                     return false;
@@ -82,7 +122,7 @@ namespace GodotPCKExplorer
                 else
                 {
                     var pck = new PCKReader();
-                    if (pck.OpenFile(out_pck, false))
+                    if (pck.OpenFile(outPck, false))
                     {
                         pck.Close();
                         PCKActions.progress?.ShowMessage("Attempt to embed a package in a file with an already embedded package or in a regular '.pck' file", "Error", MessageType.Error);
@@ -95,12 +135,10 @@ namespace GodotPCKExplorer
             {
                 if (EncryptIndex || EncryptFiles)
                 {
-                    // TODO add test
                     PCKActions.progress?.ShowMessage("The encryption key is not specified, although the encryption mode is activated.", "Error", MessageType.Error);
                     return false;
                 }
             }
-
 
             try
             {
@@ -119,8 +157,8 @@ namespace GodotPCKExplorer
                 {
                     try
                     {
-                        if (File.Exists(out_pck))
-                            File.Delete(out_pck);
+                        if (File.Exists(outPck))
+                            File.Delete(outPck);
                     }
                     catch (Exception ex)
                     {
@@ -132,11 +170,11 @@ namespace GodotPCKExplorer
                 BinaryWriter? binWriter = null;
                 try
                 {
-                    binWriter = new BinaryWriter(File.Open(out_pck, FileMode.OpenOrCreate, FileAccess.ReadWrite));
+                    binWriter = new BinaryWriter(File.Open(outPck, FileMode.OpenOrCreate, FileAccess.ReadWrite));
                 }
                 catch (Exception ex)
                 {
-                    CloseAndDeleteFile(binWriter, out_pck);
+                    CloseAndDeleteFile(binWriter, outPck);
                     PCKActions.progress?.ShowMessage(ex, MessageType.Error);
                     return false;
                 }
@@ -155,7 +193,7 @@ namespace GodotPCKExplorer
                     }
                     catch (Exception ex)
                     {
-                        CloseAndDeleteFile(binWriter, out_pck);
+                        CloseAndDeleteFile(binWriter, outPck);
                         PCKActions.progress?.ShowMessage(ex, MessageType.Error);
                         return false;
                     }
@@ -205,7 +243,7 @@ namespace GodotPCKExplorer
                             // cancel packing
                             if (cancellationToken?.IsCancellationRequested ?? false)
                             {
-                                CloseAndDeleteFile(binWriter, out_pck);
+                                CloseAndDeleteFile(binWriter, outPck);
                                 return false;
                             }
 
@@ -225,7 +263,7 @@ namespace GodotPCKExplorer
                             if (godotVersion.PackVersion == PCKUtils.PCK_VERSION_GODOT_4)
                                 PCKUtils.AddPadding(index_writer, str_len - str.Count);
 
-                            file.OffsetPosition = index_writer.BaseStream.Position;
+                            file.IndexOffsetPosition = index_writer.BaseStream.Position;
                             index_writer.Write((long)0); // offset for later use
                             index_writer.Write((long)file.Size); // size
 
@@ -238,13 +276,14 @@ namespace GodotPCKExplorer
                             }
                             else
                             {
-                                file.md5 = PCKUtils.GetFileMD5(file.OriginalPath);
-                                index_writer.Write(file.md5);
+                                file.CalculateMD5();
+                                index_writer.Write(file.MD5);
 
-                                file.is_encrypted = EncryptFiles;
-                                index_writer.Write((int)(file.is_encrypted ? 1 : 0));
+                                // TODO allow to encrypt a specific files?
+                                file.IsEncrypted = EncryptFiles;
+                                index_writer.Write((int)(file.IsEncrypted ? 1 : 0));
 
-                                PCKActions.progress?.LogProgress(op, $"Calculated MD5: {file.OriginalPath}\n{PCKUtils.ByteArrayToHexString(file.md5, " ")}");
+                                PCKActions.progress?.LogProgress(op, $"Calculated MD5: {file.Path}\n{PCKUtils.ByteArrayToHexString(file.MD5, " ")}");
                             }
 
                             PCKActions.progress?.LogProgress(op, (int)(((double)file_idx / files.Count()) * 100));
@@ -253,7 +292,7 @@ namespace GodotPCKExplorer
                         if (EncryptIndex)
                         {
                             // Later it will be encrypted and the data size will be aligned to 16 + encrypted header
-                            PCKUtils.AddPadding(binWriter, PCKUtils.AlignAddress(index_writer.BaseStream.Length, 16) + ENCRYPTED_HEADER_SIZE);
+                            PCKUtils.AddPadding(binWriter, PCKUtils.AlignAddress(index_writer.BaseStream.Length, mbedTLS.CHUNK_SIZE) + ENCRYPTED_HEADER_SIZE);
                         }
                     }
 
@@ -286,15 +325,15 @@ namespace GodotPCKExplorer
                         // cancel packing
                         if (cancellationToken?.IsCancellationRequested ?? false)
                         {
-                            CloseAndDeleteFile(binWriter, out_pck);
+                            CloseAndDeleteFile(binWriter, outPck);
                             return false;
                         }
-                        PCKActions.progress?.LogProgress(op, file.OriginalPath);
+                        PCKActions.progress?.LogProgress(op, file.Path);
 
                         // go back to store the file's offset
                         {
                             long pos = index_writer.BaseStream.Position;
-                            index_writer.BaseStream.Seek(file.OffsetPosition, SeekOrigin.Begin);
+                            index_writer.BaseStream.Seek(file.IndexOffsetPosition, SeekOrigin.Begin);
 
                             if (godotVersion.PackVersion < PCKUtils.PCK_VERSION_GODOT_4)
                             {
@@ -309,43 +348,37 @@ namespace GodotPCKExplorer
                         }
 
                         long actual_file_size = file.Size;
-                        if (file.is_encrypted)
+                        if (file.IsEncrypted)
                         {
-                            using var stream = File.Open(file.OriginalPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-
-                            actual_file_size = PackStreamEncrypted(binWriter, stream, EncryptionKey ?? throw new NullReferenceException(nameof(EncryptionKey)), file.md5, () =>
+                            var result_size = PackStreamEncrypted(binWriter, file.Size, file.ReadMemoryBlocks(), EncryptionKey ?? throw new NullReferenceException(nameof(EncryptionKey)), file.MD5 ?? throw new NullReferenceException(nameof(file.MD5)), () =>
                             {
                                 PCKActions.progress?.LogProgress(op, (int)((double)binWriter.BaseStream.Position / total_size * 100)); // update progress bar
                                 return !(cancellationToken?.IsCancellationRequested ?? false);
                             });
 
                             // canceled
-                            if (actual_file_size == -1)
+                            if (result_size == -1 || Math.Abs(result_size - actual_file_size) > ENCRYPTED_HEADER_SIZE + mbedTLS.CHUNK_SIZE)
                             {
-                                CloseAndDeleteFile(binWriter, out_pck);
+                                CloseAndDeleteFile(binWriter, outPck);
                                 return false;
                             }
+
+                            actual_file_size = result_size;
                         }
                         else
                         {
-                            using BinaryReader src = new BinaryReader(File.OpenRead(file.OriginalPath));
-
-                            long to_write = file.Size;
-                            while (to_write > 0)
+                            foreach (var block in file.ReadMemoryBlocks())
                             {
-                                var read = src.ReadBytes(PCKUtils.BUFFER_MAX_SIZE);
-                                binWriter.Write(read);
-                                to_write -= read.Length;
-
+                                binWriter.Write(block.Span);
                                 PCKActions.progress?.LogProgress(op, (int)((double)binWriter.BaseStream.Position / total_size * 100)); // update progress bar
 
                                 // cancel packing
                                 if (cancellationToken?.IsCancellationRequested ?? false)
                                 {
-                                    CloseAndDeleteFile(binWriter, out_pck);
+                                    CloseAndDeleteFile(binWriter, outPck);
                                     return false;
                                 }
-                            };
+                            }
                         }
 
                         // get offset of the next file and add some padding
@@ -355,6 +388,8 @@ namespace GodotPCKExplorer
                         count += 1;
                     };
 
+                    // TODO add PCK validation
+
                     // If the index is encrypted, then it must be written after all other operations in order to properly handle file offsets
                     if (EncryptIndex)
                     {
@@ -362,10 +397,7 @@ namespace GodotPCKExplorer
                         long pos = binWriter.BaseStream.Position;
                         binWriter.BaseStream.Seek(index_begin_pos, SeekOrigin.Begin);
 
-                        // PackStreamEncrypted will generate MD5, so index_writer.Position must be moved to start
-                        index_writer.BaseStream.Position = 0;
-
-                        PackStreamEncrypted(binWriter, index_writer.BaseStream, EncryptionKey ?? throw new NullReferenceException(nameof(EncryptionKey)));
+                        PackStreamEncrypted(binWriter, index_writer.BaseStream.Length, PCKUtils.ReadStreamAsMemoryBlocks(index_writer.BaseStream), EncryptionKey ?? throw new NullReferenceException(nameof(EncryptionKey)), PCKUtils.GetStreamMD5(index_writer.BaseStream));
                         index_writer.Close();
                         index_writer.Dispose();
                         index_writer = null;
@@ -391,7 +423,7 @@ namespace GodotPCKExplorer
                 catch (Exception ex)
                 {
                     PCKActions.progress?.ShowMessage(ex, MessageType.Error);
-                    CloseAndDeleteFile(binWriter, out_pck);
+                    CloseAndDeleteFile(binWriter, outPck);
                     return false;
                 }
 
@@ -410,57 +442,38 @@ namespace GodotPCKExplorer
             }
         }
 
-        long PackStreamEncrypted(BinaryWriter binWriter, Stream stream, byte[] key, byte[]? md5 = null, Func<bool>? onStep = null)
+        static long PackStreamEncrypted(BinaryWriter binWriter, long dataSize, IEnumerable<ReadOnlyMemory<byte>> dataBlocks, byte[] key, byte[] md5, Func<bool>? onStep = null)
         {
-            temp_encryption_buffer ??= new byte[PCKUtils.BUFFER_MAX_SIZE];
+            if (PCKUtils.BUFFER_MAX_SIZE % mbedTLS.CHUNK_SIZE != 0)
+                throw new ArgumentException($"{nameof(PCKUtils.BUFFER_MAX_SIZE)} must be a multiple of {mbedTLS.CHUNK_SIZE}.");
 
-            if (md5 == null)
-            {
-                long stream_position = stream.Position;
-                using (var md5_crypt = MD5.Create())
-                    md5 = md5_crypt.ComputeHash(stream);
-                stream.Position = stream_position;
-            }
+            temp_encryption_output_buffer ??= new byte[PCKUtils.BUFFER_MAX_SIZE];
+            var output_buffer = new Memory<byte>(temp_encryption_output_buffer, 0, PCKUtils.BUFFER_MAX_SIZE);
 
             binWriter.Write(md5);
-            binWriter.Write((long)stream.Length);
+            binWriter.Write((long)dataSize); // original size
 
-            var iv = new byte[16];
+            var iv = new byte[mbedTLS.CHUNK_SIZE];
             Random rnd = new Random();
             rnd.NextBytes(iv);
 
             binWriter.Write(iv);
             long total_size = 0;
 
-            using (var mtls = new mbedTLS())
+            using var mtls = new mbedTLS();
+
+            mtls.set_key(key);
+
+            foreach (var block in dataBlocks)
             {
-                mtls.set_key(key);
+                mtls.encrypt_cfb(iv, block, output_buffer, out long out_size);
+                binWriter.Write(output_buffer[..(int)out_size].Span);
+                total_size += out_size;
 
-                while (stream.Position != stream.Length)
+                if (onStep != null)
                 {
-                    if ((stream.Length - stream.Position) >= temp_encryption_buffer.Length)
-                    {
-                        var size = stream.Read(temp_encryption_buffer, 0, temp_encryption_buffer.Length);
-                        mtls.encrypt_cfb(iv, temp_encryption_buffer, out byte[] output);
-                        binWriter.Write(output);
-                        total_size += output.Length;
-                    }
-                    else
-                    {
-                        byte[] data = new byte[stream.Length - stream.Position];
-                        var size = stream.Read(data, 0, data.Length);
-                        mtls.encrypt_cfb(iv, data, out byte[] output);
-                        binWriter.Write(output);
-                        total_size += output.Length;
-                    }
-
-                    if (onStep != null)
-                    {
-                        if (!onStep.Invoke())
-                        {
-                            return -1;
-                        }
-                    }
+                    if (!onStep.Invoke())
+                        return -1;
                 }
             }
 

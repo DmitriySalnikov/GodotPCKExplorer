@@ -27,18 +27,18 @@ extern "C" {
 
 	LIBRARY_API bool set_key(void* ctx, const uint8_t* p_key) {
 		int ret = mbedtls_aes_setkey_enc((mbedtls_aes_context*)ctx, p_key, 256);
-		return ret ? 0 : 1;
+		return ret == 0;
 	}
 
-	LIBRARY_API int encrypt_cfb(void* ctx, uint64_t p_length, uint8_t* p_iv, const uint8_t* p_src, uint8_t* r_dst) {
+	LIBRARY_API bool encrypt_cfb(void* ctx, uint64_t p_src_length, uint8_t* p_iv, const uint8_t* p_src, uint8_t* r_dst) {
 		size_t iv_off = 0; // Ignore and assume 16-byte alignment.
-		int ret = mbedtls_aes_crypt_cfb128((mbedtls_aes_context*)ctx, MBEDTLS_AES_ENCRYPT, (size_t)p_length, &iv_off, p_iv, p_src, r_dst);
-		return ret ? 0 : 1;
+		int ret = mbedtls_aes_crypt_cfb128((mbedtls_aes_context*)ctx, MBEDTLS_AES_ENCRYPT, (size_t)p_src_length, &iv_off, p_iv, p_src, r_dst);
+		return ret == 0;
 	}
 
-	LIBRARY_API int decrypt_cfb(void* ctx, uint64_t p_length, uint8_t* p_iv, const uint8_t* p_src, uint8_t* r_dst) {
+	LIBRARY_API bool decrypt_cfb(void* ctx, uint64_t p_src_length, uint8_t* p_iv, const uint8_t* p_src, uint8_t* r_dst) {
 		size_t iv_off = 0; // Ignore and assume 16-byte alignment.
-		int ret = mbedtls_aes_crypt_cfb128((mbedtls_aes_context*)ctx, MBEDTLS_AES_DECRYPT, (size_t)p_length, &iv_off, p_iv, p_src, r_dst);
-		return ret ? 0 : 1;
+		int ret = mbedtls_aes_crypt_cfb128((mbedtls_aes_context*)ctx, MBEDTLS_AES_DECRYPT, (size_t)p_src_length, &iv_off, p_iv, p_src, r_dst);
+		return ret == 0;
 	}
 }

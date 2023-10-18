@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -8,124 +7,6 @@ using System.Threading;
 
 namespace GodotPCKExplorer
 {
-    public enum PCKMessageBoxIcon : byte
-    {
-        None = 0,
-        Hand = 0x10,
-        Question = 0x20,
-        Exclamation = 48,
-        Asterisk = 0x40,
-        Stop = 0x10,
-        Error = 0x10,
-        Warning = 48,
-        Information = 0x40
-    }
-
-    public enum PCKMessageBoxButtons : byte
-    {
-        OK,
-        OKCancel,
-        AbortRetryIgnore,
-        YesNoCancel,
-        YesNo,
-        RetryCancel
-    }
-
-    public enum PCKDialogResult : byte
-    {
-        None,
-        OK,
-        Cancel,
-        Abort,
-        Retry,
-        Ignore,
-        Yes,
-        No
-    }
-
-    public interface IProgressReporter
-    {
-        /// <summary>
-        /// Output percent or some number if prefix is not null
-        /// </summary>
-        /// <param name="operation">current operation name</param>
-        /// <param name="number">number to print</param>
-        /// <param name="customPrefix">number prefix. If null, output percentages from 0 to 100. Otherwise - any number with a prefix.</param>
-        void LogProgress(string operation, int number, string? customPrefix = null);
-
-        void LogProgress(string operation, string str);
-
-        void Log(string txt);
-
-        void Log(Exception ex);
-
-        PCKDialogResult ShowMessage(string text, string title, MessageType messageType = MessageType.None, PCKMessageBoxButtons boxButtons = PCKMessageBoxButtons.OK);
-
-        PCKDialogResult ShowMessage(Exception ex, MessageType messageType = MessageType.None, PCKMessageBoxButtons boxButtons = PCKMessageBoxButtons.OK);
-    }
-
-    public class ProgressReporter : IProgressReporter
-    {
-        int prev_progress = 0;
-        DateTime prev_time = DateTime.UtcNow;
-
-        public void LogProgress(string operation, int number, string? customPrefix = null)
-        {
-            if (((DateTime.UtcNow - prev_time).TotalSeconds > 1) || (prev_progress != number && Math.Abs(number - prev_progress) >= 5))
-            {
-                if (customPrefix != null)
-                    Log($"[Progress] {operation}: {customPrefix}{number}");
-                else
-                    Log($"[Progress] {operation}: {Math.Max(Math.Min(number, 100), 0)}%");
-
-                prev_progress = number;
-                prev_time = DateTime.UtcNow;
-            }
-        }
-
-        public void LogProgress(string operation, string str)
-        {
-            Log($"[Progress] {operation}: {str}");
-        }
-
-        public void Log(string txt)
-        {
-            var isFirst = true;
-            txt = string.Join("\n",
-                txt.Split('\n').
-                Select((t) =>
-                {
-                    var res = $"[{DateTime.Now.ToString(CultureInfo.InvariantCulture)}]{(isFirst ? "\t" : "-\t")}{t}";
-                    isFirst = false;
-                    return res;
-                }));
-
-            Console.WriteLine(txt);
-        }
-
-        public void Log(Exception ex)
-        {
-            Log($"Exception:\n{ex.Message}\nStackTrace:\n{ex.StackTrace}");
-        }
-
-        public PCKDialogResult ShowMessage(string text, string title, MessageType messageType = MessageType.None, PCKMessageBoxButtons boxButtons = PCKMessageBoxButtons.OK)
-        {
-            Log($"[{messageType}] \"{title}\": {text}");
-
-#if DEV_ENABLED
-            System.Diagnostics.Debugger.Break();
-#endif
-            return PCKDialogResult.OK;
-        }
-
-        public PCKDialogResult ShowMessage(Exception ex, MessageType messageType = MessageType.None, PCKMessageBoxButtons boxButtons = PCKMessageBoxButtons.OK)
-        {
-            var res = ShowMessage(ex.Message, ex.GetType().Name, messageType, boxButtons);
-            Log(ex);
-            return res;
-        }
-    }
-
     public static class PCKActions
     {
         [DllImport("kernel32.dll")]
@@ -133,25 +14,27 @@ namespace GodotPCKExplorer
         [DllImport("kernel32.dll")]
         private static extern bool FreeLibrary(IntPtr dllToUnload);
 
+        /// <summary>
+        /// Indicates whether the encryption library is loaded.
+        /// </summary>
         public static bool IsMbedTLSLibLoaded
         {
             get => mbedTLSLibPtr != IntPtr.Zero;
         }
         static IntPtr mbedTLSLibPtr = IntPtr.Zero;
 
-        internal static IProgressReporter progress;
+        internal static IPCKProgressReporter progress;
 
         static PCKActions()
         {
-            progress = new ProgressReporter();
+            progress = new BasicPCKProgressReporter();
         }
 
-        public static bool HelpRun()
-        {
-            return true;
-        }
-
-        public static void Init(IProgressReporter? progressReporter = null)
+        /// <summary>
+        /// Initialize the library to work with PCK.
+        /// </summary>
+        /// <param name="progressReporter">Custom class for processing logs.</param>
+        public static void Init(IPCKProgressReporter? progressReporter = null)
         {
             if (progressReporter != null)
             {
@@ -178,6 +61,9 @@ namespace GodotPCKExplorer
             }
         }
 
+        /// <summary>
+        /// Clear the runtime before closing.
+        /// </summary>
         public static void Cleanup()
         {
             if (IsMbedTLSLibLoaded)
@@ -187,7 +73,15 @@ namespace GodotPCKExplorer
             }
         }
 
-        public static bool InfoPCKRun(string filePath, bool list_files = false, string? encKey = null, CancellationToken? cancellationToken = null)
+        /// <summary>
+        /// Show a message about the PCK and output the information to the logs.
+        /// </summary>
+        /// <param name="filePath">Path to the PCK file.</param>
+        /// <param name="listFiles">Output a list of contents.</param>
+        /// <param name="encKey">The encryption key, if the PCK is encrypted.</param>
+        /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
+        /// <returns><c>true</c> if successful</returns>
+        public static bool PrintInfo(string filePath, bool listFiles = false, string? encKey = null, CancellationToken? cancellationToken = null)
         {
             PCKActions.progress?.Log("PCK Info started");
             PCKActions.progress?.Log($"Input file: {filePath}");
@@ -195,26 +89,12 @@ namespace GodotPCKExplorer
             if (File.Exists(filePath))
             {
                 using var pckReader = new PCKReader();
-                if (pckReader.OpenFile(filePath, get_encryption_key: () => encKey, read_only_header_godot4: !list_files, cancellationToken: cancellationToken))
+                if (pckReader.OpenFile(
+                    path: filePath,
+                    logFileNamesProgress: listFiles,
+                    getEncryptionKey: () => new PCKReaderEncryptionKeyResult() { Key = encKey ?? "" },
+                    cancellationToken: cancellationToken))
                 {
-                    var enc_text = "";
-                    if (pckReader.IsEncrypted)
-                    {
-                        if (pckReader.IsEncryptedIndex != pckReader.IsEncryptedFiles)
-                        {
-                            if (pckReader.IsEncryptedIndex)
-                                enc_text = "Encrypted Index";
-                            else
-                                enc_text = "Encrypted Files";
-                        }
-                        else
-                        {
-                            enc_text = "Encrypted";
-                        }
-                    }
-                    if (enc_text != "")
-                        enc_text = " " + enc_text;
-
                     PCKActions.progress?.ShowMessage(
                         $"Pack version {pckReader.PCK_VersionPack}. Godot version {pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}\n" +
                         $"Version string for this program: {pckReader.PCK_VersionPack}.{pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}\n" +
@@ -236,7 +116,13 @@ namespace GodotPCKExplorer
             return false;
         }
 
-        public static bool ChangePCKVersion(string filePath, string strVersion)
+        /// <summary>
+        /// Change the PCK file version if it is not encrypted.
+        /// </summary>
+        /// <param name="filePath">Path to the PCK file.</param>
+        /// <param name="strVersion">A new version of the file. Format: [pack version].[godot major].[godot minor].[godot patch] e.g. <c>2.4.1.1</c></param>
+        /// <returns><c>true</c> if successful</returns>
+        public static bool ChangeVersion(string filePath, string strVersion)
         {
             PCKActions.progress?.Log($"Change PCK Version started for");
             PCKActions.progress?.Log($"Input file: {filePath}");
@@ -244,7 +130,7 @@ namespace GodotPCKExplorer
             if (File.Exists(filePath))
             {
                 var newVersion = new PCKVersion(strVersion);
-                if (!newVersion.IsValid)
+                if (!newVersion.IsValid())
                 {
                     PCKActions.progress?.ShowMessage("The version is specified incorrectly.", "Error", MessageType.Error);
                     return false;
@@ -253,7 +139,7 @@ namespace GodotPCKExplorer
                 long pckStartPosition = 0;
                 using (var pck = new PCKReader())
                 {
-                    if (pck.OpenFile(filePath, log_names_progress: false))
+                    if (pck.OpenFile(filePath, logFileNamesProgress: false))
                         pckStartPosition = pck.PCK_StartPosition;
                     else
                         return false;
@@ -292,7 +178,18 @@ namespace GodotPCKExplorer
             return false;
         }
 
-        public static bool ExtractPCKRun(string filePath, string dirPath, bool overwriteExisting = true, IEnumerable<string>? files = null, bool check_md5 = true, string? encKey = null, CancellationToken? cancellationToken = null)
+        /// <summary>
+        /// Extract files from PCK file.
+        /// </summary>
+        /// <param name="filePath">Path to the PCK file.</param>
+        /// <param name="dirPath">The directory where the files will be extracted.</param>
+        /// <param name="overwriteExisting">Whether to overwrite existing files.</param>
+        /// <param name="files">List of files to extract. Format: res://[path to file]</param>
+        /// <param name="check_md5">Whether to check MD5 after extraction.</param>
+        /// <param name="encKey">The encryption key, if the PCK is encrypted.</param>
+        /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
+        /// <returns><c>true</c> if successful</returns>
+        public static bool Extract(string filePath, string dirPath, bool overwriteExisting = true, IEnumerable<string>? files = null, bool check_md5 = true, string? encKey = null, CancellationToken? cancellationToken = null)
         {
             PCKActions.progress?.Log("Extract PCK started");
             PCKActions.progress?.Log($"Input file: {filePath}");
@@ -301,13 +198,28 @@ namespace GodotPCKExplorer
             if (File.Exists(filePath))
             {
                 using var pckReader = new PCKReader();
+                PCKReaderEncryptionKeyResult getEncKey()
+                {
+                    return new PCKReaderEncryptionKeyResult() { Key = encKey ?? "" };
+                };
 
-                if (pckReader.OpenFile(filePath, get_encryption_key: () => encKey))
+                if (pckReader.OpenFile(filePath, getEncryptionKey: getEncKey))
                 {
                     if (files != null)
-                        return pckReader.ExtractFiles(files, dirPath, overwriteExisting, check_md5, cancellationToken);
+                        return pckReader.ExtractFiles(
+                            names: files,
+                            folder: dirPath,
+                            overwriteExisting: overwriteExisting,
+                            checkMD5: check_md5,
+                            getEncryptionKey: getEncKey,
+                            cancellationToken: cancellationToken);
                     else
-                        return pckReader.ExtractAllFiles(dirPath, overwriteExisting, check_md5, cancellationToken);
+                        return pckReader.ExtractAllFiles(
+                            folder: dirPath,
+                            overwriteExisting: overwriteExisting,
+                            checkMD5: check_md5,
+                            getEncryptionKey: getEncKey,
+                            cancellationToken: cancellationToken);
                 }
                 else
                 {
@@ -321,11 +233,24 @@ namespace GodotPCKExplorer
             return false;
         }
 
-        public static bool PackPCKRun(string dirPath, string filePath, string strVer, uint alignment = 16, bool embed = false, string? encKey = null, bool encIndex = false, bool encFiles = false, CancellationToken? cancellationToken = null)
+        /// <summary>
+        /// Pack the files into a new PCK file.
+        /// </summary>
+        /// <param name="dirPath">The directory from which the files will be recursively packed.</param>
+        /// <param name="filePath">The path to the new PCK file.</param>
+        /// <param name="strVer">A version of the file. Format: [pack version].[godot major].[godot minor].[godot patch] e.g. <c>2.4.1.1</c></param>
+        /// <param name="alignment">The address of each file will be aligned to this value.</param>
+        /// <param name="embed">If enabled and an existing <see cref="filePath"/> is specified, then the PCK will be embedded into this file.</param>
+        /// <param name="encKey">The encryption key if you want to encrypt a new PCK file.</param>
+        /// <param name="encIndex">Whether to encrypt the index (list of contents).</param>
+        /// <param name="encFiles">Whether to encrypt the contents of files.</param>
+        /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
+        /// <returns><c>true</c> if successful</returns>
+        public static bool Pack(string dirPath, string filePath, string strVer, uint alignment = 16, bool embed = false, string? encKey = null, bool encIndex = false, bool encFiles = false, CancellationToken? cancellationToken = null)
         {
             if (Directory.Exists(dirPath))
             {
-                return PackPCKRun(PCKUtils.ScanFoldersForFiles(dirPath), filePath, strVer, alignment, embed, encKey, encIndex, encFiles, cancellationToken);
+                return Pack(PCKUtils.GetListOfFilesToPack(dirPath), filePath, strVer, alignment, embed, encKey, encIndex, encFiles, cancellationToken);
             }
             else
             {
@@ -334,7 +259,20 @@ namespace GodotPCKExplorer
             return false;
         }
 
-        public static bool PackPCKRun(IEnumerable<PCKPacker.FileToPack> files, string filePath, string strVer, uint alignment = 16, bool embed = false, string? encKey = null, bool encIndex = false, bool encFiles = false, CancellationToken? cancellationToken = null)
+        /// <summary>
+        /// Pack the files into a new PCK file.
+        /// </summary>
+        /// <param name="files">A list of files to be packed.</param>
+        /// <param name="filePath">The path to the new PCK file.</param>
+        /// <param name="strVer">A version of the file. Format: [pack version].[godot major].[godot minor].[godot patch] e.g. <c>2.4.1.1</c></param>
+        /// <param name="alignment">The address of each file will be aligned to this value.</param>
+        /// <param name="embed">If enabled and an existing <see cref="filePath"/> is specified, then the PCK will be embedded into this file.</param>
+        /// <param name="encKey">The encryption key if you want to encrypt a new PCK file.</param>
+        /// <param name="encIndex">Whether to encrypt the index (list of contents).</param>
+        /// <param name="encFiles">Whether to encrypt the contents of files.</param>
+        /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
+        /// <returns><c>true</c> if successful</returns>
+        public static bool Pack(IEnumerable<PCKPackerFile> files, string filePath, string strVer, uint alignment = 16, bool embed = false, string? encKey = null, bool encIndex = false, bool encFiles = false, CancellationToken? cancellationToken = null)
         {
             if (!files.Any())
             {
@@ -345,10 +283,9 @@ namespace GodotPCKExplorer
             PCKActions.progress?.Log("Pack PCK started");
             PCKActions.progress?.Log($"Output file: {filePath}");
 
-            var pckPacker = new PCKPacker(PCKUtils.HexStringToByteArray(encKey), encIndex, encFiles);
             var ver = new PCKVersion(strVer);
 
-            if (!ver.IsValid)
+            if (!ver.IsValid())
             {
                 PCKActions.progress?.ShowMessage($"The version '{ver}' is specified incorrectly. Negative values are not allowed.", "Error", MessageType.Error);
                 return false;
@@ -372,7 +309,7 @@ namespace GodotPCKExplorer
                 }
             }
 
-            if (pckPacker.PackFiles(filePath, files, alignment, ver, embed, cancellationToken))
+            if (PCKPacker.PackFiles(filePath, embed, files, alignment, ver, PCKUtils.HexStringToByteArray(encKey), encIndex, encFiles, cancellationToken))
             {
                 return true;
             }
@@ -397,7 +334,16 @@ namespace GodotPCKExplorer
             return false;
         }
 
-        public static bool RipPCKRun(string exeFile, string? outFile = null, bool removeBackup = false, bool show_message = true, CancellationToken? cancellationToken = null)
+        /// <summary>
+        /// Make a copy of the PCK file as a separate file.
+        /// </summary>
+        /// <param name="exeFile">EXE or any other file that contains PCK inside.</param>
+        /// <param name="outFile">The path to the new PCK file.</param>
+        /// <param name="removeBackup">Whether to delete the backup if the operation completes successfully.</param>
+        /// <param name="showMessage">Whether to show messages when operations are completed successfully.</param>
+        /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
+        /// <returns><c>true</c> if successful</returns>
+        public static bool Rip(string exeFile, string? outFile = null, bool removeBackup = false, bool showMessage = true, CancellationToken? cancellationToken = null)
         {
             PCKActions.progress?.Log("Rip PCK started");
             PCKActions.progress?.Log($"Input file: {exeFile}");
@@ -410,7 +356,7 @@ namespace GodotPCKExplorer
 
                 using (var pckReader = new PCKReader())
                 {
-                    res = pckReader.OpenFile(exeFile, false, log_names_progress: false, read_only_header_godot4: true, cancellationToken: cancellationToken);
+                    res = pckReader.OpenFile(exeFile, false, readOnlyHeaderGodot4: true, logFileNamesProgress: false, cancellationToken: cancellationToken);
                     if (!res)
                     {
                         PCKActions.progress?.ShowMessage($"The file does not contain '.pck' inside", "Error", MessageType.Error);
@@ -432,15 +378,17 @@ namespace GodotPCKExplorer
 
                     // rip pck
                     if (outFile != null)
+                    {
                         if (pckReader.RipPCKFileFromExe(outFile))
                         {
-                            if (show_message)
+                            if (showMessage)
                                 PCKActions.progress?.ShowMessage($"Extracting the '.pck' file from another file is complete.", "Progress", MessageType.Info);
                         }
                         else
                         {
                             return false;
                         }
+                    }
                 }
 
                 if (res && outFile == null)
@@ -498,7 +446,7 @@ namespace GodotPCKExplorer
                         PCKActions.progress?.ShowMessage(ex, MessageType.Error);
                         return false;
                     }
-                    if (show_message)
+                    if (showMessage)
                         PCKActions.progress?.ShowMessage($"Removing '.pck' from another file is completed. The original file is renamed to \"{oldExeFile}\"", "Progress", MessageType.Info);
 
                     // remove backup
@@ -522,7 +470,15 @@ namespace GodotPCKExplorer
             return false;
         }
 
-        public static bool MergePCKRun(string pckFile, string exeFile, bool removeBackup = false, CancellationToken? cancellationToken = null)
+        /// <summary>
+        /// Merge an existing PCK with an EXE or any other file.
+        /// </summary>
+        /// <param name="pckFile">Path to the PCK file.</param>
+        /// <param name="exeFile">EXE or any other file without PCK inside.</param>
+        /// <param name="removeBackup">Whether to delete the backup if the operation completes successfully.</param>
+        /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
+        /// <returns><c>true</c> if successful</returns>
+        public static bool Merge(string pckFile, string exeFile, bool removeBackup = false, CancellationToken? cancellationToken = null)
         {
             PCKActions.progress?.Log("Merge PCK started");
             PCKActions.progress?.Log($"Input file: {pckFile}");
@@ -532,8 +488,7 @@ namespace GodotPCKExplorer
             {
                 using var pckReader = new PCKReader();
 
-                bool res = pckReader.OpenFile(pckFile, log_names_progress: false, read_only_header_godot4: true, cancellationToken: cancellationToken);
-
+                bool res = pckReader.OpenFile(pckFile, readOnlyHeaderGodot4: true, logFileNamesProgress: false, cancellationToken: cancellationToken);
                 if (!res)
                 {
                     pckReader.Close();
@@ -608,7 +563,15 @@ namespace GodotPCKExplorer
             return false;
         }
 
-        public static bool SplitPCKRun(string exeFile, string? newExeName = null, bool removeBackup = true, CancellationToken? cancellationToken = null)
+        /// <summary>
+        /// Split the EXE and PCK into 2 separate files.
+        /// </summary>
+        /// <param name="exeFile">EXE or any other file that contains PCK inside.</param>
+        /// <param name="newExeName">The path to the new EXE file. PCK will have the same name.</param>
+        /// <param name="removeBackup">Whether to delete the backup if the operation completes successfully.</param>
+        /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
+        /// <returns><c>true</c> if successful</returns>
+        public static bool Split(string exeFile, string? newExeName = null, bool removeBackup = true, CancellationToken? cancellationToken = null)
         {
             PCKActions.progress?.Log("Split PCK started");
             PCKActions.progress?.Log($"Input file: {exeFile}");
@@ -646,9 +609,9 @@ namespace GodotPCKExplorer
                 }
 
                 var pckName = Path.ChangeExtension(name, ".pck");
-                if (RipPCKRun(name, pckName, false, false, cancellationToken))
+                if (Rip(name, pckName, false, false, cancellationToken))
                 {
-                    if (RipPCKRun(name, null, removeBackup, false, cancellationToken))
+                    if (Rip(name, null, removeBackup, false, cancellationToken))
                     {
                         PCKActions.progress?.ShowMessage($"Split finished. Original file: \"{exeFile}\".\nNew files: \"{name}\" and \"{pckName}\"", "Progress", MessageType.Info);
                         return true;

@@ -2,7 +2,7 @@
 {
     public partial class CreatePCKFile : Form
     {
-        Dictionary<string, PCKPacker.FileToPack> files = new();
+        Dictionary<string, PCKPackerRegularFile> files = new();
         Font MatchCaseNormal;
         Font MatchCaseStrikeout;
 
@@ -33,14 +33,18 @@
 
         public void SetFolderPath(string path)
         {
-            var filesScan = new List<PCKPacker.FileToPack>();
+            var filesScan = new List<PCKPackerRegularFile>();
 
             if (Directory.Exists(path))
-                Program.DoTaskWithProgressBar((t) => filesScan = PCKUtils.ScanFoldersForFiles(Path.GetFullPath(path), cancellationToken: t),
+                Program.DoTaskWithProgressBar((t) => filesScan = PCKUtils.GetListOfFilesToPack(Path.GetFullPath(path), cancellationToken: t),
                     this);
 
             GC.Collect();
-            files = filesScan.ToDictionary((f) => f.OriginalPath);
+
+            if (filesScan != null)
+                files = filesScan.ToDictionary((f) => f.OriginalPath);
+            else
+                files = new();
 
             UpdateTableContent();
             CalculatePCKSize();
@@ -112,7 +116,7 @@
                 bool p_res = false;
                 Program.DoTaskWithProgressBar((t) =>
                 {
-                    p_res = PCKActions.PackPCKRun(
+                    p_res = PCKActions.Pack(
                         files.Values,
                         file,
                         ver.ToString(),

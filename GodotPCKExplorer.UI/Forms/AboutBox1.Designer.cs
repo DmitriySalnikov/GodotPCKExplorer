@@ -53,29 +53,30 @@
             tableLayoutPanel.Controls.Add(labelCopyright, 1, 2);
             tableLayoutPanel.Controls.Add(labelCompanyName, 1, 3);
             tableLayoutPanel.Controls.Add(textBoxDescription, 1, 4);
-            tableLayoutPanel.Controls.Add(tableLayoutPanel1, 1, 5);
+            tableLayoutPanel.Controls.Add(tableLayoutPanel1, 1, 6);
             tableLayoutPanel.Dock = DockStyle.Fill;
             tableLayoutPanel.Location = new Point(10, 10);
             tableLayoutPanel.Margin = new Padding(4, 3, 4, 3);
             tableLayoutPanel.Name = "tableLayoutPanel";
-            tableLayoutPanel.RowCount = 6;
-            tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 10F));
-            tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 10F));
-            tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 10F));
-            tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 11.32076F));
-            tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 46.09053F));
-            tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 13.16872F));
+            tableLayoutPanel.RowCount = 7;
+            tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 9.942333F));
+            tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 9.942333F));
+            tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 9.942333F));
+            tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 11.255476F));
+            tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 45.82475F));
+            tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 13.0927811F));
+            tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 26F));
             tableLayoutPanel.Size = new Size(415, 263);
             tableLayoutPanel.TabIndex = 0;
             // 
             // logoPictureBox
             // 
             logoPictureBox.Dock = DockStyle.Fill;
-            logoPictureBox.Image = UI.Properties.Resources.pckAbout;
+            logoPictureBox.Image = Properties.Resources.pck_about_window;
             logoPictureBox.Location = new Point(4, 3);
             logoPictureBox.Margin = new Padding(4, 3, 4, 3);
             logoPictureBox.Name = "logoPictureBox";
-            tableLayoutPanel.SetRowSpan(logoPictureBox, 6);
+            tableLayoutPanel.SetRowSpan(logoPictureBox, 7);
             logoPictureBox.Size = new Size(133, 257);
             logoPictureBox.SizeMode = PictureBoxSizeMode.Zoom;
             logoPictureBox.TabIndex = 12;
@@ -96,7 +97,7 @@
             // labelVersion
             // 
             labelVersion.Dock = DockStyle.Fill;
-            labelVersion.Location = new Point(148, 26);
+            labelVersion.Location = new Point(148, 23);
             labelVersion.Margin = new Padding(7, 0, 4, 0);
             labelVersion.MaximumSize = new Size(0, 20);
             labelVersion.Name = "labelVersion";
@@ -108,7 +109,7 @@
             // labelCopyright
             // 
             labelCopyright.Dock = DockStyle.Fill;
-            labelCopyright.Location = new Point(148, 52);
+            labelCopyright.Location = new Point(148, 46);
             labelCopyright.Margin = new Padding(7, 0, 4, 0);
             labelCopyright.MaximumSize = new Size(0, 20);
             labelCopyright.Name = "labelCopyright";
@@ -120,7 +121,7 @@
             // labelCompanyName
             // 
             labelCompanyName.Dock = DockStyle.Fill;
-            labelCompanyName.Location = new Point(148, 78);
+            labelCompanyName.Location = new Point(148, 69);
             labelCompanyName.Margin = new Padding(7, 0, 4, 0);
             labelCompanyName.MaximumSize = new Size(0, 20);
             labelCompanyName.Name = "labelCompanyName";
@@ -132,13 +133,13 @@
             // textBoxDescription
             // 
             textBoxDescription.Dock = DockStyle.Fill;
-            textBoxDescription.Location = new Point(148, 110);
+            textBoxDescription.Location = new Point(148, 98);
             textBoxDescription.Margin = new Padding(7, 3, 4, 3);
             textBoxDescription.Multiline = true;
             textBoxDescription.Name = "textBoxDescription";
             textBoxDescription.ReadOnly = true;
             textBoxDescription.ScrollBars = ScrollBars.Both;
-            textBoxDescription.Size = new Size(263, 114);
+            textBoxDescription.Size = new Size(263, 102);
             textBoxDescription.TabIndex = 23;
             textBoxDescription.TabStop = false;
             textBoxDescription.Text = "Description";
@@ -151,31 +152,31 @@
             tableLayoutPanel1.Controls.Add(okButton, 1, 0);
             tableLayoutPanel1.Controls.Add(linkLabel1, 0, 0);
             tableLayoutPanel1.Dock = DockStyle.Fill;
-            tableLayoutPanel1.Location = new Point(144, 230);
+            tableLayoutPanel1.Location = new Point(144, 237);
             tableLayoutPanel1.Name = "tableLayoutPanel1";
             tableLayoutPanel1.RowCount = 1;
             tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            tableLayoutPanel1.Size = new Size(268, 30);
+            tableLayoutPanel1.Size = new Size(268, 23);
             tableLayoutPanel1.TabIndex = 1;
             // 
             // okButton
             // 
-            okButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             okButton.DialogResult = DialogResult.Cancel;
-            okButton.Location = new Point(176, 3);
-            okButton.Margin = new Padding(4, 3, 4, 3);
+            okButton.Dock = DockStyle.Fill;
+            okButton.Location = new Point(180, 0);
+            okButton.Margin = new Padding(0);
             okButton.Name = "okButton";
-            okButton.Size = new Size(88, 24);
+            okButton.Size = new Size(88, 23);
             okButton.TabIndex = 24;
             okButton.Text = "&OK";
             // 
             // linkLabel1
             // 
             linkLabel1.Dock = DockStyle.Fill;
-            linkLabel1.Location = new Point(4, 0);
-            linkLabel1.Margin = new Padding(4, 0, 4, 0);
+            linkLabel1.Location = new Point(0, 0);
+            linkLabel1.Margin = new Padding(0);
             linkLabel1.Name = "linkLabel1";
-            linkLabel1.Size = new Size(164, 30);
+            linkLabel1.Size = new Size(180, 23);
             linkLabel1.TabIndex = 1;
             linkLabel1.TabStop = true;
             linkLabel1.Text = "Link to the source code";

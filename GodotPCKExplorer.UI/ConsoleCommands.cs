@@ -172,7 +172,7 @@ namespace GodotPCKExplorer.UI
                 return;
             }
 
-            PCKActions.InfoPCKRun(filePath, list_files, encKey);
+            PCKActions.PrintInfo(filePath, list_files, encKey);
         }
 
         static void ExtractPCKCommand(string[] args, bool overwriteExisting = true)
@@ -211,7 +211,7 @@ namespace GodotPCKExplorer.UI
                 return;
             }
 
-            PCKActions.ExtractPCKRun(filePath, dirPath, overwriteExisting, encKey: encKey);
+            PCKActions.Extract(filePath, dirPath, overwriteExisting, encKey: encKey);
         }
 
         static void ExtractSkipExistingPCKCommand(string[] args)
@@ -293,7 +293,7 @@ namespace GodotPCKExplorer.UI
                     break;
             }
 
-            PCKActions.PackPCKRun(dirPath, filePath, strVer, alignment, embed, encKey, encIndex, encFiles);
+            PCKActions.Pack(dirPath, filePath, strVer, alignment, embed, encKey, encIndex, encFiles);
         }
 
         static void RipPCKCommand(string[] args)
@@ -331,7 +331,7 @@ namespace GodotPCKExplorer.UI
                 return;
             }
 
-            PCKActions.RipPCKRun(exeFile, outFile);
+            PCKActions.Rip(exeFile, outFile);
         }
 
         static void MergePCKCommand(string[] args)
@@ -361,7 +361,7 @@ namespace GodotPCKExplorer.UI
                 return;
             }
 
-            PCKActions.MergePCKRun(pckFile, exeFile);
+            PCKActions.Merge(pckFile, exeFile);
         }
 
         static void SplitPCKCommand(string[] args)
@@ -399,7 +399,7 @@ namespace GodotPCKExplorer.UI
                 return;
             }
 
-            PCKActions.SplitPCKRun(exeFile, pairName);
+            PCKActions.Split(exeFile, pairName);
         }
 
         static void ChangeVersionPCKCommand(string[] args)
@@ -429,7 +429,7 @@ namespace GodotPCKExplorer.UI
                 return;
             }
 
-            PCKActions.ChangePCKVersion(pckFile, strVer);
+            PCKActions.ChangeVersion(pckFile, strVer);
         }
     }
 }

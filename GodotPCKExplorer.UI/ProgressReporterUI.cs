@@ -1,9 +1,6 @@
-﻿using System;
-using System.Windows.Forms;
-
-namespace GodotPCKExplorer.UI
+﻿namespace GodotPCKExplorer.UI
 {
-    class ProgressReporterUI : IProgressReporter
+    class ProgressReporterUI : IPCKProgressReporter
     {
         public void Log(string txt)
         {
