@@ -86,7 +86,6 @@ internal class VersionCheckerGitHub : IDisposable
         }
 
         updateClient = new HttpClient();
-        //updateClient.DownloadStringCompleted += UpdateClient_DownloadStringCompleted;
         updateClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
         updateClient.DefaultRequestHeaders.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue(appName, Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "N/A"));
 
@@ -95,7 +94,6 @@ internal class VersionCheckerGitHub : IDisposable
             KillAsyncTask();
 
             _isSilentCheck = isSilentCheck;
-            //updateClient.DownloadStringAsync(githubLink);
             cts = new();
             updateClient.GetAsync(githubLink, cts.Token).ContinueWith(UpdateClient_DownloadStringCompleted, cts.Token);
         }

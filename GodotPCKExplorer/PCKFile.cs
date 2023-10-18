@@ -33,7 +33,9 @@ namespace GodotPCKExplorer
         /// Now only: 0 or 1 (Encrypted).
         /// </summary>
         public int Flags;
-
+        /// <summary>
+        /// Pack Version
+        /// </summary>
         public int PackVersion;
 
         public PCKFile(BinaryReader reader, string path, long contentOffset, long positionOfOffsetValue, long size, byte[] MD5, int flags, int pack_version)
@@ -74,7 +76,7 @@ namespace GodotPCKExplorer
                 }
 
                 Directory.CreateDirectory(dir);
-                file = new BinaryWriter(File.OpenWrite(path));
+                file = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read));
             }
             catch (Exception ex)
             {
@@ -95,7 +97,6 @@ namespace GodotPCKExplorer
                     {
                         if (encKey == null)
                         {
-                            // TODO add test
                             PCKActions.progress?.ShowMessage($"Failed to extract the packed file.\nThe PCK file is encrypted, but the decryption key was not specified.", "Error", MessageType.Error);
                             return false;
                         }
@@ -104,7 +105,7 @@ namespace GodotPCKExplorer
                         {
                             foreach (var chunk in r.ReadEncryptedBlocks())
                             {
-                                file.Write(chunk);
+                                file.Write(chunk.Span);
                                 to_write -= chunk.Length;
                                 OnProgress?.Invoke(100 - (int)((double)to_write / Size * 100));
 
@@ -148,6 +149,7 @@ namespace GodotPCKExplorer
             {
                 var res = PCKActions.progress?.ShowMessage(ex, MessageType.Error, PCKMessageBoxButtons.OKCancel);
                 file.Close();
+
                 try
                 {
                     File.Delete(path);
@@ -158,6 +160,10 @@ namespace GodotPCKExplorer
                 {
                     return false;
                 }
+            }
+            finally
+            {
+                file.Close();
             }
 
             return true;

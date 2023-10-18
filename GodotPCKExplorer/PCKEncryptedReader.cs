@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace GodotPCKExplorer
 {
-    class PCKEncryptedReader : IDisposable
+    internal class PCKEncryptedReader : IDisposable
     {
         [ThreadStatic]
         static byte[]? temp_encryption_buffer;
@@ -29,11 +29,11 @@ namespace GodotPCKExplorer
 
             MD5 = binReader.ReadBytes(16);
             DataSize = binReader.ReadInt64();
-            StartIV = binReader.ReadBytes(16);
+            StartIV = binReader.ReadBytes(mbedTLS.CHUNK_SIZE);
 
             data_start_position = Stream.BaseStream.Position;
 
-            DataSizeEncoded = PCKUtils.AlignAddress(DataSize, 16);
+            DataSizeEncoded = PCKUtils.AlignAddress(DataSize, mbedTLS.CHUNK_SIZE);
             DataSizeDelta = (int)(DataSizeEncoded - DataSize);
         }
 
@@ -45,36 +45,36 @@ namespace GodotPCKExplorer
             }
         }
 
-        public IEnumerable<byte[]> ReadEncryptedBlocks()
+        public IEnumerable<ReadOnlyMemory<byte>> ReadEncryptedBlocks()
         {
             if (Stream == null)
             {
                 yield break;
             }
 
+            if (PCKUtils.BUFFER_MAX_SIZE % mbedTLS.CHUNK_SIZE != 0)
+                throw new ArgumentException($"{nameof(PCKUtils.BUFFER_MAX_SIZE)} must be a multiple of {mbedTLS.CHUNK_SIZE}.");
+
             temp_encryption_buffer ??= new byte[PCKUtils.BUFFER_MAX_SIZE];
+            var output_buffer = new Memory<byte>(temp_encryption_buffer, 0, PCKUtils.BUFFER_MAX_SIZE);
 
             byte[] iv = StartIV.ToArray();
             long end_position = Stream.BaseStream.Position + DataSizeEncoded;
 
             using var mtls = new mbedTLS();
-
             mtls.set_key(Key);
 
-            while (Stream.BaseStream.Position < end_position)
+            foreach (var block in PCKUtils.ReadStreamAsMemoryBlocks(Stream.BaseStream, data_start_position, end_position))
             {
-                if ((end_position - Stream.BaseStream.Position) > temp_encryption_buffer.Length)
+                mtls.decrypt_cfb(iv, block, output_buffer);
+                if (block.Length == PCKUtils.BUFFER_MAX_SIZE)
                 {
-                    var size = Stream.BaseStream.Read(temp_encryption_buffer, 0, temp_encryption_buffer.Length);
-                    mtls.decrypt_cfb(iv, temp_encryption_buffer, temp_encryption_buffer.Length, out byte[] output);
-                    yield return output;
+                    yield return new ReadOnlyMemory<byte>(temp_encryption_buffer, 0, PCKUtils.BUFFER_MAX_SIZE);
                 }
                 else
                 {
-                    byte[] buffer = new byte[end_position - Stream.BaseStream.Position];
-                    var size = Stream.BaseStream.Read(buffer, 0, buffer.Length);
-                    mtls.decrypt_cfb(iv, buffer, (int)(buffer.Length - DataSizeDelta), out byte[] output);
-                    yield return output;
+                    var dest_size = block.Length - DataSizeDelta;
+                    yield return new ReadOnlyMemory<byte>(temp_encryption_buffer, 0, dest_size);
                 }
             }
         }

@@ -1,6 +1,6 @@
 ﻿namespace GodotPCKExplorer.UI
 {
-    // TODO some actions with encoded PCK is not possible in UI
+    // TODO some actions with encrypted PCK is not possible in UI
     public partial class MainForm : Form
     {
         readonly PCKReader pckReader = new();
@@ -171,25 +171,6 @@
             }
         }
 
-        void UpdateRecentList()
-        {
-            recentToolStripMenuItem.DropDownItems.Clear();
-
-            if (GUIConfig.Instance.RecentOpenedFiles.Count > 0)
-            {
-                recentToolStripMenuItem.Enabled = true;
-                foreach (var f in GUIConfig.Instance.RecentOpenedFiles)
-                {
-                    recentToolStripMenuItem.DropDownItems.Add(
-                        new ToolStripButton(f.Path, null, (s, e) => OpenFile(f.Path, f.EncryptionKey)));
-                }
-            }
-            else
-            {
-                recentToolStripMenuItem.Enabled = false;
-            }
-        }
-
         string GetEncryptionStatusString()
         {
             var enc_text = "";
@@ -212,63 +193,107 @@
             return enc_text;
         }
 
+        PCKReaderEncryptionKeyResult GetEncryptionKey(string? path = null)
+        {
+            PCKReaderEncryptionKeyResult res = new();
+            RecentFiles? item = GUIConfig.Instance.RecentOpenedFiles.FirstOrDefault((i) => i.Path == path);
+
+            using var d = new OpenWithPCKEncryption(item?.EncryptionKey ?? "");
+            var dlg_res = d.ShowDialog(this);
+
+            if (dlg_res == DialogResult.Cancel)
+            {
+                res.IsCancelled = true;
+            }
+
+            res.Key = d.EncryptionKey;
+            return res;
+        }
+
+        void UpdateRecentList(string? path = null, bool remove = false, bool isEncrypted = false, bool updateKey = false, string? encryptionKey = null)
+        {
+            if (path != null)
+            {
+                if (!remove)
+                {
+                    var list = GUIConfig.Instance.RecentOpenedFiles;
+                    var item = list.FirstOrDefault((i) => i.Path == path);
+
+                    // Move to top if already exists
+                    if (item != null)
+                    {
+                        item.IsEncrypted = isEncrypted;
+
+                        // Override only if not null
+                        if (updateKey)
+                            item.EncryptionKey = encryptionKey ?? "";
+
+                        list.Remove(item);
+                        list.Insert(0, item);
+                    }
+                    else
+                    {
+                        list.Insert(0, new RecentFiles(path, isEncrypted, encryptionKey ?? ""));
+                        while (list.Count > 16)
+                            list.RemoveAt(list.Count - 1);
+                    }
+                }
+                else
+                {
+                    var list = GUIConfig.Instance.RecentOpenedFiles;
+
+                    var item = list.FirstOrDefault((i) => i.Path == path);
+                    if (item != null)
+                        list.Remove(item);
+                }
+
+                GUIConfig.Instance.Save();
+            }
+
+            recentToolStripMenuItem.DropDownItems.Clear();
+
+            if (GUIConfig.Instance.RecentOpenedFiles.Count > 0)
+            {
+                recentToolStripMenuItem.Enabled = true;
+                foreach (var f in GUIConfig.Instance.RecentOpenedFiles)
+                {
+                    recentToolStripMenuItem.DropDownItems.Add(
+                        new ToolStripButton(f.IsEncrypted ? f.Path + " 🔑" : f.Path, null, (s, e) => OpenFile(f.Path, f.EncryptionKey)) { Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft });
+                }
+            }
+            else
+            {
+                recentToolStripMenuItem.Enabled = false;
+            }
+        }
+
         public void OpenFile(string path, string? encKey = null)
         {
             CloseFile();
             bool enc_dialog_canceled = false;
 
-            string get_enc_key()
+            path = Path.GetFullPath(path);
+            string? encryption_key = null;
+
+            PCKReaderEncryptionKeyResult get_enc_key()
             {
                 if (!string.IsNullOrWhiteSpace(encKey))
                 {
-                    return encKey;
+                    encryption_key = encKey;
+                    return new PCKReaderEncryptionKeyResult() { Key = encKey };
                 }
                 else
                 {
-                    var item = GUIConfig.Instance.RecentOpenedFiles.FirstOrDefault((i) => i.Path == path);
-
-                    using var d = new OpenWithPCKEncryption(item?.EncryptionKey ?? "");
-                    var res = d.ShowDialog(this);
-
-                    if (res == DialogResult.Cancel)
-                    {
-                        enc_dialog_canceled = true;
-                    }
-
-                    if (item != null && !string.IsNullOrWhiteSpace(d.EncryptionKey))
-                    {
-                        item.EncryptionKey = d.EncryptionKey;
-                        GUIConfig.Instance.Save();
-                    }
-                    return d.EncryptionKey;
+                    var res = GetEncryptionKey(path);
+                    encryption_key = res.Key;
+                    return res;
                 }
             }
 
-            path = Path.GetFullPath(path);
-            if (pckReader.OpenFile(path, get_encryption_key: get_enc_key))
+            if (pckReader.OpenFile(path, getEncryptionKey: () => InvokeRequired ? Invoke(get_enc_key) : get_enc_key()))
             {
                 var enc_text = GetEncryptionStatusString();
                 Text = $"\"{Utils.GetShortPath(pckReader.PackPath, 50)}\" Pack version: {pckReader.PCK_VersionPack}. Godot Version: {pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}{enc_text}";
-
-                // update recent files
-                var list = GUIConfig.Instance.RecentOpenedFiles;
-                var item = list.FirstOrDefault((i) => i.Path == path);
-
-                // Move to top
-                if (item != null)
-                {
-                    var str = PCKUtils.ByteArrayToHexString(pckReader.EncryptionKey);
-                    if (str != "")
-                        item.EncryptionKey = str;
-                    list.Remove(item);
-                    list.Insert(0, item);
-                }
-                else
-                {
-                    list.Insert(0, new RecentFiles(path, PCKUtils.ByteArrayToHexString(pckReader.EncryptionKey)));
-                    while (list.Count > 16)
-                        list.RemoveAt(list.Count - 1);
-                }
 
                 TotalOpenedSize = 0;
 
@@ -281,7 +306,7 @@
                 extractToolStripMenuItem.Enabled = true;
 
                 GUIConfig.Instance.Save();
-                UpdateRecentList();
+                UpdateRecentList(path, false, pckReader.IsEncrypted, encryption_key != null, encryption_key);
                 UpdateStatuStrip();
                 UpdateListOfPCKContent();
             }
@@ -290,14 +315,8 @@
                 if (enc_dialog_canceled)
                     return;
 
-                // update recent files
-                var list = GUIConfig.Instance.RecentOpenedFiles;
-
-                var item = list.FirstOrDefault((i) => i.Path == path);
-                if (item != null)
-                    list.Remove(item);
                 GUIConfig.Instance.Save();
-                UpdateRecentList();
+                UpdateRecentList(path, true);
             }
         }
 
@@ -382,12 +401,11 @@
             var res = fbd_extract_folder.ShowDialog(this);
             if (res == DialogResult.OK)
             {
-                var rows = new List<string>();
+                var selectedRows = new List<string>();
                 foreach (DataGridViewRow i in dataGridView1.SelectedRows)
-                    rows.Add((string)i.Cells[0].Value);
+                    selectedRows.Add((string)i.Cells[0].Value);
 
-                Program.DoTaskWithProgressBar((t) => pckReader.ExtractFiles(rows, fbd_extract_folder.SelectedPath, overwriteExported.Checked, GUIConfig.Instance.CheckMD5Extracted, cancellationToken: t),
-                    this);
+                ExtractFilesFromPCK(selectedRows);
             }
         }
 
@@ -396,9 +414,26 @@
             var res = fbd_extract_folder.ShowDialog(this);
             if (res == DialogResult.OK)
             {
-                Program.DoTaskWithProgressBar((t) => pckReader.ExtractFiles(pckReader.Files.Select((f) => f.Key), fbd_extract_folder.SelectedPath, overwriteExported.Checked, GUIConfig.Instance.CheckMD5Extracted, cancellationToken: t),
-                    this);
+                ExtractFilesFromPCK(pckReader.Files.Select((f) => f.Key));
             }
+        }
+
+        void ExtractFilesFromPCK(IEnumerable<string> files)
+        {
+            var path = pckReader.PackPath;
+
+            Program.DoTaskWithProgressBar((t) =>
+            {
+                pckReader.ExtractFiles(
+                    names: files,
+                    folder: fbd_extract_folder.SelectedPath,
+                    overwriteExisting: overwriteExported.Checked,
+                    checkMD5: GUIConfig.Instance.CheckMD5Extracted,
+                    getEncryptionKey: () => InvokeRequired ? Invoke(() => GetEncryptionKey(path)) : GetEncryptionKey(path),
+                    cancellationToken: t);
+            }, this);
+
+            UpdateRecentList(path, false, pckReader.IsEncrypted, true, pckReader.ReceivedEncryptionKey);
         }
 
         private void packFolderToolStripMenuItem_Click(object? sender, EventArgs e)
@@ -466,7 +501,7 @@
 
                         try
                         {
-                            if (pck.OpenFile(files[0], false, log_names_progress: false))
+                            if (pck.OpenFile(files[0], false, logFileNamesProgress: false))
                             {
                                 e.Effect = DragDropEffects.Copy;
                                 return;
@@ -523,7 +558,7 @@
             {
                 using (var pck = new PCKReader())
                 {
-                    if (!pck.OpenFile(ofd_rip_select_pck.FileName, log_names_progress: false))
+                    if (!pck.OpenFile(ofd_rip_select_pck.FileName, logFileNamesProgress: false))
                     {
                         return;
                     }
@@ -536,7 +571,7 @@
 
                 if (sfd_rip_save_pack.ShowDialog(this) == DialogResult.OK)
                 {
-                    Program.DoTaskWithProgressBar((t) => PCKActions.RipPCKRun(ofd_rip_select_pck.FileName, sfd_rip_save_pack.FileName, cancellationToken: t),
+                    Program.DoTaskWithProgressBar((t) => PCKActions.Rip(ofd_rip_select_pck.FileName, sfd_rip_save_pack.FileName, cancellationToken: t),
                         this);
                 }
             }
@@ -548,7 +583,7 @@
             {
                 using (var pck = new PCKReader())
                 {
-                    if (!pck.OpenFile(ofd_split_exe_open.FileName, log_names_progress: false))
+                    if (!pck.OpenFile(ofd_split_exe_open.FileName, logFileNamesProgress: false))
                     {
                         return;
                     }
@@ -562,7 +597,7 @@
                 sfd_split_new_file.Filter = $"Original file extension|*{Path.GetExtension(ofd_split_exe_open.FileName)}|All Files|*.*";
                 if (sfd_split_new_file.ShowDialog(this) == DialogResult.OK)
                 {
-                    Program.DoTaskWithProgressBar((t) => PCKActions.SplitPCKRun(ofd_split_exe_open.FileName, sfd_split_new_file.FileName, cancellationToken: t),
+                    Program.DoTaskWithProgressBar((t) => PCKActions.Split(ofd_split_exe_open.FileName, sfd_split_new_file.FileName, cancellationToken: t),
                         this);
                 }
             }
@@ -574,7 +609,7 @@
             {
                 using (var pck = new PCKReader())
                 {
-                    if (!pck.OpenFile(ofd_merge_pck.FileName, log_names_progress: false))
+                    if (!pck.OpenFile(ofd_merge_pck.FileName, logFileNamesProgress: false))
                     {
                         return;
                     }
@@ -582,7 +617,7 @@
 
                 if (ofd_merge_target.ShowDialog(this) == DialogResult.OK)
                 {
-                    Program.DoTaskWithProgressBar((t) => PCKActions.MergePCKRun(ofd_merge_pck.FileName, ofd_merge_target.FileName, cancellationToken: t),
+                    Program.DoTaskWithProgressBar((t) => PCKActions.Merge(ofd_merge_pck.FileName, ofd_merge_target.FileName, cancellationToken: t),
                         this);
                 }
             }
@@ -592,7 +627,7 @@
         {
             if (ofd_remove_pck_from_exe.ShowDialog(this) == DialogResult.OK)
             {
-                Program.DoTaskWithProgressBar((t) => PCKActions.RipPCKRun(ofd_remove_pck_from_exe.FileName, cancellationToken: t),
+                Program.DoTaskWithProgressBar((t) => PCKActions.Rip(ofd_remove_pck_from_exe.FileName, cancellationToken: t),
                         this);
             }
         }
@@ -601,7 +636,7 @@
         {
             if (ofd_split_in_place.ShowDialog(this) == DialogResult.OK)
             {
-                Program.DoTaskWithProgressBar((t) => PCKActions.SplitPCKRun(ofd_split_in_place.FileName, null, false, cancellationToken: t),
+                Program.DoTaskWithProgressBar((t) => PCKActions.Split(ofd_split_in_place.FileName, null, false, cancellationToken: t),
                         this);
             }
         }

@@ -12,8 +12,6 @@ namespace GodotPCKExplorer
         public int Minor { get; set; }
         public int Revision { get; set; }
 
-        public readonly bool IsValid => PackVersion >= 0 && Major >= 0 && Minor >= 0 && Revision >= 0;
-
         public PCKVersion(int pck_version, int major, int minor, int revision)
         {
             PackVersion = pck_version;
@@ -46,6 +44,10 @@ namespace GodotPCKExplorer
         {
             return $"{PackVersion}.{Major}.{Minor}.{Revision}";
         }
-    }
 
+        public readonly bool IsValid()
+        {
+            return PackVersion >= 0 && Major >= 0 && Minor >= 0 && Revision >= 0;
+        }
+    }
 }
