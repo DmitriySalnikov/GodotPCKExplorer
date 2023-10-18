@@ -1,6 +1,4 @@
-﻿using System;
-using System.Security.Cryptography;
-using System.Windows.Forms;
+﻿using System.Security.Cryptography;
 
 namespace GodotPCKExplorer.UI
 {
@@ -15,7 +13,7 @@ namespace GodotPCKExplorer.UI
             cb_encrypt_files.Checked = GUIConfig.Instance.EncryptFiles;
         }
 
-        private void btn_ok_Click(object sender, EventArgs e)
+        private void btn_ok_Click(object? sender, EventArgs e)
         {
             if (!string.IsNullOrWhiteSpace(tb_key.Text) && !PCKUtils.HexStringValidate(tb_key.Text, 256 / 8))
             {
@@ -31,13 +29,11 @@ namespace GodotPCKExplorer.UI
             Close();
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void button1_Click(object? sender, EventArgs e)
         {
-            using (var aes = Aes.Create())
-            {
-                aes.GenerateKey();
-                tb_key.Text = BitConverter.ToString(aes.Key);
-            }
+            using var aes = Aes.Create();
+            aes.GenerateKey();
+            tb_key.Text = BitConverter.ToString(aes.Key);
         }
     }
 }

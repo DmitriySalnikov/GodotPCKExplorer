@@ -16,7 +16,7 @@ It is a viewer and editor for Godot Engine's PCK files with the ability to extra
 * `Split` files with embedded PCK into two separate files
 * Supports encrypted Godot 4 PCK
 * Supports only `Windows`
-* And also all these features are available via the `console`
+* And also all these features are available via the `console`. Just write `GodotPCKExplorer.UI.exe -h` to get help.
 
 ![Main Window](Images/MainForm.png)
 ![Main Window](Images/CreatePack.png)

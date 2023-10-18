@@ -1,10 +1,6 @@
-﻿using System;
-using System.Globalization;
-using System.IO;
+﻿using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Threading;
-using System.Windows.Forms;
 
 namespace GodotPCKExplorer.UI
 {
@@ -14,10 +10,10 @@ namespace GodotPCKExplorer.UI
         public static readonly string AppDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppName);
 
         static bool CMDMode = true;
-        static MainForm mainForm = null;
-        static BackgroundProgress progressBar = null;
+        static MainForm? mainForm = null;
+        static BackgroundProgress? progressBar = null;
 
-        static Logger logger;
+        static readonly Logger logger;
         static bool IsConsoleVisible = false;
 
         static int prev_progress_percent = 0;
@@ -90,7 +86,6 @@ namespace GodotPCKExplorer.UI
         public static void Cleanup()
         {
             logger?.Dispose();
-            logger = null;
 
             mainForm?.Dispose();
             mainForm = null;
@@ -102,7 +97,7 @@ namespace GodotPCKExplorer.UI
             logger.Write($"[Progress] {operation}: {txt}");
         }
 
-        public static void LogProgress(string operation, int number, string customPrefix = null)
+        public static void LogProgress(string operation, int number, string? customPrefix = null)
         {
             if (((DateTime.UtcNow - prev_progress_time).TotalSeconds > 1) || (prev_progress_percent != number && Math.Abs(number - prev_progress_percent) >= 5))
             {
@@ -228,9 +223,9 @@ namespace GodotPCKExplorer.UI
             IsConsoleVisible = false;
         }
 
-        public static void DoTaskWithProgressBar(Action<CancellationToken> work, Form parentForm = null, [CallerFilePath] string _file = "", [CallerMemberName] string _func = "", [CallerLineNumber] int _line = 0)
+        public static void DoTaskWithProgressBar(Action<CancellationToken> work, Form? parentForm = null, [CallerFilePath] string _file = "", [CallerMemberName] string _func = "", [CallerLineNumber] int _line = 0)
         {
-            Action<CancellationToken> action = (ct) =>
+            void action(CancellationToken ct)
             {
                 Thread.CurrentThread.Name = $"{Path.GetFileName(_file)}::{_func}::{_line}";
 
@@ -243,12 +238,11 @@ namespace GodotPCKExplorer.UI
                 {
                     ShowMessage(ex, MessageType.Error);
                 }
-            };
+            }
 
             progressBar = new BackgroundProgress(action);
             if (parentForm != null)
             {
-                progressBar.StartPosition = FormStartPosition.CenterParent;
                 progressBar.ShowDialog(parentForm);
             }
             else
@@ -260,7 +254,7 @@ namespace GodotPCKExplorer.UI
             progressBar = null;
         }
 
-        public static void OpenMainForm(string path, string encKey = null)
+        public static void OpenMainForm(string path, string? encKey = null)
         {
             if (mainForm == null)
             {

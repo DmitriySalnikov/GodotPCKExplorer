@@ -1,20 +1,16 @@
-﻿using System;
-using System.Threading;
-using System.Windows.Forms;
-
-namespace GodotPCKExplorer.UI
+﻿namespace GodotPCKExplorer.UI
 {
     public partial class BackgroundProgress : Form
     {
         public bool UnknowPercents { get; set; } = false;
 
         DateTime prevUpdateTime = DateTime.UtcNow;
-        float delta_time = 1 / 30; // 30 fps
+        const double deltaTime = 1.0 / 30; // 30 fps
         int prevPercent = 0;
 
-        Thread work = null;
-        Action<CancellationToken> work_action;
-        CancellationTokenSource cancellationTokenSource;
+        Thread? work = null;
+        readonly Action<CancellationToken> work_action;
+        readonly CancellationTokenSource cancellationTokenSource;
 
         public BackgroundProgress(Action<CancellationToken> action)
         {
@@ -23,10 +19,10 @@ namespace GodotPCKExplorer.UI
             work_action = action;
             Icon = Properties.Resources.icon;
             l_status.Text = "";
-            cancellationTokenSource = new CancellationTokenSource();
+            cancellationTokenSource = new();
         }
 
-        private void BackgroundProgress_Shown(object sender, EventArgs e)
+        private void BackgroundProgress_Shown(object? sender, EventArgs e)
         {
             work = new Thread(new ThreadStart(() =>
             {
@@ -39,7 +35,7 @@ namespace GodotPCKExplorer.UI
             work.Start();
         }
 
-        public void ReportProgress(string operation, int number, string customPrefix = null)
+        public void ReportProgress(string operation, int number, string? customPrefix = null)
         {
             if (number != PCKUtils.UnknownProgressStatus && customPrefix == null)
             {
@@ -50,7 +46,7 @@ namespace GodotPCKExplorer.UI
 
                 progressBar1.Style = ProgressBarStyle.Continuous;
                 var prct = Math.Max(0, Math.Min(100, number));
-                if ((DateTime.UtcNow - prevUpdateTime).TotalSeconds > delta_time || (prct - prevPercent) >= 5)
+                if ((DateTime.UtcNow - prevUpdateTime).TotalSeconds > deltaTime || (prct - prevPercent) >= 5)
                 {
                     prevUpdateTime = DateTime.UtcNow;
 
@@ -65,7 +61,7 @@ namespace GodotPCKExplorer.UI
 
                 if (customPrefix != null)
                 {
-                    if ((DateTime.UtcNow - prevUpdateTime).TotalSeconds > delta_time)
+                    if ((DateTime.UtcNow - prevUpdateTime).TotalSeconds > deltaTime)
                     {
                         prevUpdateTime = DateTime.UtcNow;
                         l_status.Text = customPrefix + number.ToString();
@@ -74,13 +70,13 @@ namespace GodotPCKExplorer.UI
             }
         }
 
-        private void btn_cancel_Click(object sender, EventArgs e)
+        private void btn_cancel_Click(object? sender, EventArgs e)
         {
             cancellationTokenSource.Cancel();
             Close();
         }
 
-        private void BackgroundProgress_FormClosing(object sender, FormClosingEventArgs e)
+        private void BackgroundProgress_FormClosing(object? sender, FormClosingEventArgs e)
         {
             cancellationTokenSource.Cancel();
             if (work != null)
@@ -90,7 +86,6 @@ namespace GodotPCKExplorer.UI
             }
             work = null;
 
-            work_action = null;
             cancellationTokenSource.Dispose();
         }
     }

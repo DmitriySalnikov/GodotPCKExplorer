@@ -63,6 +63,7 @@ namespace GodotPCKExplorer.UI
         static void HelpCommand()
         {
             runWithArgs = true;
+
             Program.Log("Help");
             Program.LogHelp();
             return;
@@ -81,8 +82,8 @@ namespace GodotPCKExplorer.UI
 
         static void OpenPCKCommand(string[] args)
         {
-            string path = null;
-            string encKey = null;
+            string? path = null;
+            string? encKey = null;
 
             try
             {
@@ -141,8 +142,8 @@ namespace GodotPCKExplorer.UI
         {
             runWithArgs = true;
 
-            string filePath = "";
-            string encKey = null;
+            string filePath;
+            string? encKey = null;
 
             try
             {
@@ -171,16 +172,16 @@ namespace GodotPCKExplorer.UI
                 return;
             }
 
-            PCKActions.InfoPCKRun(filePath, list_files, encKey);
+            PCKActions.PrintInfo(filePath, list_files, encKey);
         }
 
         static void ExtractPCKCommand(string[] args, bool overwriteExisting = true)
         {
             runWithArgs = true;
 
-            string filePath = "";
-            string dirPath = "";
-            string encKey = null;
+            string filePath;
+            string dirPath;
+            string? encKey = null;
 
             try
             {
@@ -210,7 +211,7 @@ namespace GodotPCKExplorer.UI
                 return;
             }
 
-            PCKActions.ExtractPCKRun(filePath, dirPath, overwriteExisting, encKey: encKey);
+            PCKActions.Extract(filePath, dirPath, overwriteExisting, encKey: encKey);
         }
 
         static void ExtractSkipExistingPCKCommand(string[] args)
@@ -222,11 +223,11 @@ namespace GodotPCKExplorer.UI
         {
             runWithArgs = true;
 
-            string dirPath = "";
-            string filePath = "";
-            string strVer = "";
+            string dirPath;
+            string filePath;
+            string strVer;
             uint alignment = 16;
-            string encKey = null;
+            string? encKey = null;
             string encType = "both";
 
             try
@@ -292,15 +293,16 @@ namespace GodotPCKExplorer.UI
                     break;
             }
 
-            PCKActions.PackPCKRun(dirPath, filePath, strVer, alignment, embed, encKey, encIndex, encFiles);
+            PCKActions.Pack(dirPath, filePath, strVer, alignment, embed, encKey, encIndex, encFiles);
         }
 
         static void RipPCKCommand(string[] args)
         {
             runWithArgs = true;
 
-            string exeFile = "";
-            string outFile = null;
+            string exeFile;
+            string? outFile = null;
+
             try
             {
                 if (args.Length >= 2)
@@ -329,15 +331,16 @@ namespace GodotPCKExplorer.UI
                 return;
             }
 
-            PCKActions.RipPCKRun(exeFile, outFile);
+            PCKActions.Rip(exeFile, outFile);
         }
 
         static void MergePCKCommand(string[] args)
         {
             runWithArgs = true;
 
-            string pckFile = "";
-            string exeFile = "";
+            string pckFile;
+            string exeFile;
+
             try
             {
                 if (args.Length == 3)
@@ -358,15 +361,15 @@ namespace GodotPCKExplorer.UI
                 return;
             }
 
-            PCKActions.MergePCKRun(pckFile, exeFile);
+            PCKActions.Merge(pckFile, exeFile);
         }
 
         static void SplitPCKCommand(string[] args)
         {
             runWithArgs = true;
 
-            string exeFile = "";
-            string pairName = null;
+            string exeFile;
+            string? pairName = null;
             try
             {
                 if (args.Length >= 2)
@@ -396,15 +399,15 @@ namespace GodotPCKExplorer.UI
                 return;
             }
 
-            PCKActions.SplitPCKRun(exeFile, pairName);
+            PCKActions.Split(exeFile, pairName);
         }
 
         static void ChangeVersionPCKCommand(string[] args)
         {
             runWithArgs = true;
 
-            string pckFile = "";
-            string strVer = "";
+            string pckFile;
+            string strVer;
 
             try
             {
@@ -426,7 +429,7 @@ namespace GodotPCKExplorer.UI
                 return;
             }
 
-            PCKActions.ChangePCKVersion(pckFile, strVer);
+            PCKActions.ChangeVersion(pckFile, strVer);
         }
     }
 }

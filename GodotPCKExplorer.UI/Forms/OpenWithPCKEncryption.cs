@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Windows.Forms;
-using GodotPCKExplorer;
-
-namespace GodotPCKExplorer.UI
+﻿namespace GodotPCKExplorer.UI
 {
     public partial class OpenWithPCKEncryption : Form
     {
@@ -19,7 +12,7 @@ namespace GodotPCKExplorer.UI
             DialogResult = DialogResult.Cancel;
         }
 
-        private void btn_ok_Click(object sender, EventArgs e)
+        private void btn_ok_Click(object? sender, EventArgs e)
         {
             if (!string.IsNullOrWhiteSpace(tb_key.Text) && !PCKUtils.HexStringValidate(tb_key.Text, 256 / 8))
             {

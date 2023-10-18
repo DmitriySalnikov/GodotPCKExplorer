@@ -43,10 +43,10 @@ namespace WinShellContextMenuRegistrator
         /// <param name="FileExtension">File extension. For example, ".jpg" or ".png".</param>
         /// <param name="AppCMDArguments">Command line arguments. For example, "-Extract \"%1\" \"%1_extracted\"", where %1 is file with your extension</param>
         /// <param name="AppIconPath">Command icon. For example, icons in "Create" menu</param>
-        public static void RegisterContexMenuCommand(RegistryBranch RegBranch, string AppPath, string AppCodeName, string AppCommandName, string AppCommandCodeName, string FileExtension, string AppCMDArguments, string AppIconPath = null)
+        public static void RegisterContexMenuCommand(RegistryBranch RegBranch, string AppPath, string AppCodeName, string AppCommandName, string AppCommandCodeName, string FileExtension, string AppCMDArguments, string? AppIconPath = null)
         {
             string branchStr = GetBranchString(RegBranch);
-            string iconPath = AppIconPath != null ? AppIconPath : AppPath;
+            string iconPath = AppIconPath ?? AppPath;
             string classesPath = branchStr + @"\Software\Classes\";
             string commandPath = classesPath + AppCodeName + @"\shell\" + AppCommandCodeName;
 
