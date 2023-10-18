@@ -29,22 +29,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      # Install the .NET Core workload
-      - name: Install .NET Core
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: 6.0.x
 
       # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
       - name: Setup MSBuild.exe
         uses: microsoft/setup-msbuild@v1.3.1
-
-      - name: Setup Nuget
-        uses: Nuget/setup-nuget@v1.1.1
 
       # Add nuget to cache
       - name: Setup Cache
@@ -58,7 +49,7 @@ jobs:
 
       # Restore the application to populate the obj folder with RuntimeIdentifiers
       - name: Restore nuget packages
-        run: nuget restore ${{ env.Solution_Path }}
+        run: msbuild ${{ env.Solution_Path }} /t:Restore /p:Configuration=${{ matrix.configuration }}
 
       - name: Build solution
         shell: powershell
