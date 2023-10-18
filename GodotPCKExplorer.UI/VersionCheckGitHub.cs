@@ -1,8 +1,5 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Net;
 using System.Reflection;
 
 internal class VersionCheckerGitHub : IDisposable
@@ -33,6 +30,10 @@ internal class VersionCheckerGitHub : IDisposable
         /// Used when the received data could not be processed
         /// </summary>
         FailedToProcessData,
+        /// <summary>
+        /// Already requesting
+        /// </summary>
+        FailedAlreadyRequesting,
     }
 
     public enum MSGDialogResult
@@ -43,17 +44,20 @@ internal class VersionCheckerGitHub : IDisposable
         Cancel = 2,
     }
 
-    public Version SkipVersion = null;
+    public Version? SkipVersion = null;
     /// <summary>
     /// Emits after the user has chosen to skip the version. Also this class will automatically update <see cref="SkipVersion"/>
     /// </summary>
-    public event EventHandler<VersionSkipByUserData> VersionSkippedByUser;
+    public event EventHandler<VersionSkipByUserData>? VersionSkippedByUser;
 
-    public delegate MSGDialogResult MessageBoxDelegate(MSGType type, Dictionary<string, string> customData, Exception ex);
+    public delegate MSGDialogResult MessageBoxDelegate(MSGType type, Dictionary<string, string> customData, Exception? ex);
 
-    WebClient updateClient = null;
+    HttpClient? updateClient = null;
     bool _isSilentCheck = true;
-    MessageBoxDelegate show_msg_box = null;
+    MessageBoxDelegate? show_msg_box = null;
+
+    CancellationTokenSource? cts = null;
+    Task? async_get = null;
 
     readonly Uri githubLink;
     readonly string appName;
@@ -75,17 +79,23 @@ internal class VersionCheckerGitHub : IDisposable
     {
         // Skip if currently checking
         if (updateClient != null)
+        {
+            if (!_isSilentCheck)
+                ShowMessageBox(MSGType.FailedAlreadyRequesting);
             return;
+        }
 
-        updateClient = new WebClient();
-        updateClient.DownloadStringCompleted += UpdateClient_DownloadStringCompleted;
-        updateClient.Headers.Add("Content-Type", "application/json");
-        updateClient.Headers.Add("User-Agent", appName);
+        updateClient = new HttpClient();
+        updateClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+        updateClient.DefaultRequestHeaders.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue(appName, Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "N/A"));
 
         try
         {
+            KillAsyncTask();
+
             _isSilentCheck = isSilentCheck;
-            updateClient.DownloadStringAsync(githubLink);
+            cts = new();
+            updateClient.GetAsync(githubLink, cts.Token).ContinueWith(UpdateClient_DownloadStringCompleted, cts.Token);
         }
         catch (Exception ex)
         {
@@ -95,12 +105,13 @@ internal class VersionCheckerGitHub : IDisposable
         }
     }
 
-    private void UpdateClient_DownloadStringCompleted(object sender, DownloadStringCompletedEventArgs e)
+    private void UpdateClient_DownloadStringCompleted(Task<HttpResponseMessage> taskRes)
     {
-        if (e.Error is WebException webExp)
+        var res = taskRes.Result;
+        if (!res.IsSuccessStatusCode)
         {
             if (!_isSilentCheck)
-                ShowMessageBox(MSGType.FailedToGetInfo, ex: webExp);
+                ShowMessageBox(MSGType.FailedToGetInfo, customData: new Dictionary<string, string> { { "respose", res.StatusCode.ToString() } });
 
             ClearUpdateData();
             return;
@@ -108,9 +119,9 @@ internal class VersionCheckerGitHub : IDisposable
 
         try
         {
-            dynamic resultObject = JsonConvert.DeserializeObject(e.Result);
-            Version newVersion = new Version(resultObject.tag_name.Value);
-            Version currentVersion = Assembly.GetExecutingAssembly().GetName().Version;
+            dynamic resultObject = JsonConvert.DeserializeObject(new StreamReader(res.Content.ReadAsStream()).ReadToEnd()) ?? throw new NullReferenceException();
+            Version newVersion = new(resultObject.tag_name.Value);
+            Version currentVersion = Assembly.GetExecutingAssembly().GetName().Version ?? new Version();
             string updateUrl = resultObject.html_url.Value;
 
             // Skip if the new version matches the skip version, or don't skip if checking manually
@@ -123,7 +134,7 @@ internal class VersionCheckerGitHub : IDisposable
                     if (updateDialog == MSGDialogResult.Yes)
                     {
                         // Open the download page
-                        Process.Start(updateUrl);
+                        Process.Start(new ProcessStartInfo(updateUrl) { UseShellExecute = true });
                     }
                     else if (updateDialog == MSGDialogResult.No)
                     {
@@ -149,8 +160,10 @@ internal class VersionCheckerGitHub : IDisposable
                 ShowMessageBox(MSGType.FailedToProcessData, ex: ex);
             }
         }
-
-        ClearUpdateData();
+        finally
+        {
+            ClearUpdateData();
+        }
     }
 
     void ClearUpdateData()
@@ -158,21 +171,35 @@ internal class VersionCheckerGitHub : IDisposable
         updateClient?.Dispose();
         updateClient = null;
         SkipVersion = null;
+    }
 
-        show_msg_box = null;
-        VersionSkippedByUser = null;
+    void KillAsyncTask()
+    {
+        if (async_get != null && cts != null)
+        {
+            cts.Cancel();
+            async_get.Wait();
+            async_get.Dispose();
+            cts.Dispose();
+            cts = null;
+            async_get = null;
+        }
     }
 
     public void Dispose()
     {
+        show_msg_box = null;
+        VersionSkippedByUser = null;
+
         ClearUpdateData();
+        KillAsyncTask();
     }
 
-    MSGDialogResult ShowMessageBox(MSGType type, Dictionary<string, string> customData = null, Exception ex = null)
+    MSGDialogResult ShowMessageBox(MSGType type, Dictionary<string, string>? customData = null, Exception? ex = null)
     {
         if (show_msg_box != null)
         {
-            return show_msg_box.Invoke(type, customData, ex);
+            return show_msg_box.Invoke(type, customData ?? new Dictionary<string, string>(), ex);
         }
         return MSGDialogResult.Cancel;
     }

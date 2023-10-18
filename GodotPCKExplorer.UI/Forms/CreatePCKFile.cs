@@ -1,17 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Windows.Forms;
-
-namespace GodotPCKExplorer.UI
+﻿namespace GodotPCKExplorer.UI
 {
     public partial class CreatePCKFile : Form
     {
-        Dictionary<string, PCKPacker.FileToPack> files = new Dictionary<string, PCKPacker.FileToPack>();
-        Font MatchCaseNormal = null;
-        Font MatchCaseStrikeout = null;
+        Dictionary<string, PCKPackerRegularFile> files = new();
+        Font MatchCaseNormal;
+        Font MatchCaseStrikeout;
 
         public CreatePCKFile()
         {
@@ -40,14 +33,18 @@ namespace GodotPCKExplorer.UI
 
         public void SetFolderPath(string path)
         {
-            List<PCKPacker.FileToPack> filesScan = new List<PCKPacker.FileToPack>();
+            var filesScan = new List<PCKPackerRegularFile>();
 
             if (Directory.Exists(path))
-                Program.DoTaskWithProgressBar((t) => filesScan = PCKUtils.ScanFoldersForFiles(Path.GetFullPath(path), cancellationToken: t),
+                Program.DoTaskWithProgressBar((t) => filesScan = PCKUtils.GetListOfFilesToPack(Path.GetFullPath(path), cancellationToken: t),
                     this);
 
             GC.Collect();
-            files = filesScan.ToDictionary((f) => f.OriginalPath);
+
+            if (filesScan != null)
+                files = filesScan.ToDictionary((f) => f.OriginalPath);
+            else
+                files = new();
 
             UpdateTableContent();
             CalculatePCKSize();
@@ -91,13 +88,13 @@ namespace GodotPCKExplorer.UI
                 btn_match_case.Font = MatchCaseStrikeout;
         }
 
-        private void dataGridView1_UserDeletedRow(object sender, DataGridViewRowEventArgs e)
+        private void dataGridView1_UserDeletedRow(object? sender, DataGridViewRowEventArgs e)
         {
             files.Remove((string)e.Row.Cells[0].Value);
             CalculatePCKSize();
         }
 
-        private void btn_create_Click(object sender, EventArgs e)
+        private void btn_create_Click(object? sender, EventArgs e)
         {
             var ver = new PCKVersion(int.Parse((string)cb_ver.SelectedItem), (int)nud_major.Value, (int)nud_minor.Value, (int)nud_revision.Value);
             DialogResult res = DialogResult.No;
@@ -119,7 +116,7 @@ namespace GodotPCKExplorer.UI
                 bool p_res = false;
                 Program.DoTaskWithProgressBar((t) =>
                 {
-                    p_res = PCKActions.PackPCKRun(
+                    p_res = PCKActions.Pack(
                         files.Values,
                         file,
                         ver.ToString(),
@@ -141,7 +138,7 @@ namespace GodotPCKExplorer.UI
             }
         }
 
-        private void dataGridView1_SortCompare(object sender, DataGridViewSortCompareEventArgs e)
+        private void dataGridView1_SortCompare(object? sender, DataGridViewSortCompareEventArgs e)
         {
             if (e.Column.Index != 1)
             {
@@ -153,7 +150,7 @@ namespace GodotPCKExplorer.UI
             e.Handled = true;
         }
 
-        private void tb_folder_path_KeyDown(object sender, KeyEventArgs e)
+        private void tb_folder_path_KeyDown(object? sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
@@ -162,7 +159,7 @@ namespace GodotPCKExplorer.UI
             }
         }
 
-        private void btn_browse_Click(object sender, EventArgs e)
+        private void btn_browse_Click(object? sender, EventArgs e)
         {
             if (fbd_pack_folder.ShowDialog(this) == DialogResult.OK)
             {
@@ -171,12 +168,12 @@ namespace GodotPCKExplorer.UI
             }
         }
 
-        private void btn_refresh_Click(object sender, EventArgs e)
+        private void btn_refresh_Click(object? sender, EventArgs e)
         {
             SetFolderPath(tb_folder_path.Text);
         }
 
-        private void textBoxWithPlaceholder1_KeyDown(object sender, KeyEventArgs e)
+        private void textBoxWithPlaceholder1_KeyDown(object? sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
@@ -186,12 +183,12 @@ namespace GodotPCKExplorer.UI
             }
         }
 
-        private void btn_filter_Click(object sender, EventArgs e)
+        private void btn_filter_Click(object? sender, EventArgs e)
         {
             UpdateTableContent();
         }
 
-        private void btn_match_case_Click(object sender, EventArgs e)
+        private void btn_match_case_Click(object? sender, EventArgs e)
         {
             GUIConfig.Instance.MatchCaseFilterPackingForm = !GUIConfig.Instance.MatchCaseFilterPackingForm;
             GUIConfig.Instance.Save();
@@ -199,13 +196,10 @@ namespace GodotPCKExplorer.UI
             UpdateTableContent();
         }
 
-        private void btn_generate_key_Click(object sender, EventArgs e)
+        private void btn_generate_key_Click(object? sender, EventArgs e)
         {
-            using (var tmp = new CreatePCKEncryption())
-            {
-                tmp.StartPosition = FormStartPosition.CenterParent;
-                tmp.ShowDialog(this);
-            }
+            using var tmp = new CreatePCKEncryption();
+            tmp.ShowDialog(this);
         }
     }
 }

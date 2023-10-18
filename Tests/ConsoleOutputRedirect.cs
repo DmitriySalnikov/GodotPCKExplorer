@@ -1,7 +1,4 @@
-﻿using System;
-using System.IO;
-
-namespace Tests
+﻿namespace Tests
 {
     internal class ConsoleOutputRedirect : IDisposable
     {

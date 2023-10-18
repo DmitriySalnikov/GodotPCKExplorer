@@ -28,103 +28,107 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.label1 = new System.Windows.Forms.Label();
-            this.cb_encrypt_index = new System.Windows.Forms.CheckBox();
-            this.cb_encrypt_files = new System.Windows.Forms.CheckBox();
-            this.btn_ok = new System.Windows.Forms.Button();
-            this.tb_key = new TextBoxWithPlaceholder();
-            this.button1 = new System.Windows.Forms.Button();
-            this.SuspendLayout();
+            label1 = new Label();
+            cb_encrypt_index = new CheckBox();
+            cb_encrypt_files = new CheckBox();
+            btn_ok = new Button();
+            tb_key = new TextBoxWithPlaceholder();
+            button1 = new Button();
+            SuspendLayout();
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(13, 13);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(191, 13);
-            this.label1.TabIndex = 0;
-            this.label1.Text = "256-bit AES key in hexadecimal format:";
+            label1.AutoSize = true;
+            label1.Location = new Point(15, 15);
+            label1.Margin = new Padding(4, 0, 4, 0);
+            label1.Name = "label1";
+            label1.Size = new Size(213, 15);
+            label1.TabIndex = 0;
+            label1.Text = "256-bit AES key in hexadecimal format:";
             // 
             // cb_encrypt_index
             // 
-            this.cb_encrypt_index.AutoSize = true;
-            this.cb_encrypt_index.Location = new System.Drawing.Point(12, 55);
-            this.cb_encrypt_index.Name = "cb_encrypt_index";
-            this.cb_encrypt_index.Size = new System.Drawing.Size(144, 17);
-            this.cb_encrypt_index.TabIndex = 2;
-            this.cb_encrypt_index.Text = "Encrypt Index ( files info )";
-            this.cb_encrypt_index.UseVisualStyleBackColor = true;
+            cb_encrypt_index.AutoSize = true;
+            cb_encrypt_index.Location = new Point(14, 63);
+            cb_encrypt_index.Margin = new Padding(4, 3, 4, 3);
+            cb_encrypt_index.Name = "cb_encrypt_index";
+            cb_encrypt_index.Size = new Size(160, 19);
+            cb_encrypt_index.TabIndex = 2;
+            cb_encrypt_index.Text = "Encrypt Index ( files info )";
+            cb_encrypt_index.UseVisualStyleBackColor = true;
             // 
             // cb_encrypt_files
             // 
-            this.cb_encrypt_files.AutoSize = true;
-            this.cb_encrypt_files.Location = new System.Drawing.Point(12, 78);
-            this.cb_encrypt_files.Name = "cb_encrypt_files";
-            this.cb_encrypt_files.Size = new System.Drawing.Size(83, 17);
-            this.cb_encrypt_files.TabIndex = 3;
-            this.cb_encrypt_files.Text = "Encrypt files";
-            this.cb_encrypt_files.UseVisualStyleBackColor = true;
+            cb_encrypt_files.AutoSize = true;
+            cb_encrypt_files.Location = new Point(14, 90);
+            cb_encrypt_files.Margin = new Padding(4, 3, 4, 3);
+            cb_encrypt_files.Name = "cb_encrypt_files";
+            cb_encrypt_files.Size = new Size(90, 19);
+            cb_encrypt_files.TabIndex = 3;
+            cb_encrypt_files.Text = "Encrypt files";
+            cb_encrypt_files.UseVisualStyleBackColor = true;
             // 
             // btn_ok
             // 
-            this.btn_ok.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.btn_ok.Location = new System.Drawing.Point(12, 101);
-            this.btn_ok.Name = "btn_ok";
-            this.btn_ok.Size = new System.Drawing.Size(360, 23);
-            this.btn_ok.TabIndex = 4;
-            this.btn_ok.Text = "Apply";
-            this.btn_ok.UseVisualStyleBackColor = true;
-            this.btn_ok.Click += new System.EventHandler(this.btn_ok_Click);
+            btn_ok.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            btn_ok.Location = new Point(14, 117);
+            btn_ok.Margin = new Padding(4, 3, 4, 3);
+            btn_ok.Name = "btn_ok";
+            btn_ok.Size = new Size(356, 27);
+            btn_ok.TabIndex = 4;
+            btn_ok.Text = "Apply";
+            btn_ok.UseVisualStyleBackColor = true;
+            btn_ok.Click += btn_ok_Click;
             // 
             // tb_key
             // 
-            this.tb_key.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.tb_key.CueBanner = "04bf1d.., 04 BF 1D.., 04-BF-1D..";
-            this.tb_key.Location = new System.Drawing.Point(12, 29);
-            this.tb_key.Name = "tb_key";
-            this.tb_key.Size = new System.Drawing.Size(294, 20);
-            this.tb_key.TabIndex = 5;
+            tb_key.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            tb_key.CueBanner = "04bf1d.., 04 BF 1D.., 04-BF-1D..";
+            tb_key.Location = new Point(14, 33);
+            tb_key.Margin = new Padding(4, 3, 4, 3);
+            tb_key.Name = "tb_key";
+            tb_key.Size = new Size(278, 23);
+            tb_key.TabIndex = 5;
             // 
             // button1
             // 
-            this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.button1.Location = new System.Drawing.Point(312, 27);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(60, 23);
-            this.button1.TabIndex = 6;
-            this.button1.Text = "Generate";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
+            button1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            button1.Location = new Point(300, 31);
+            button1.Margin = new Padding(4, 3, 4, 3);
+            button1.Name = "button1";
+            button1.Size = new Size(70, 27);
+            button1.TabIndex = 6;
+            button1.Text = "Generate";
+            button1.UseVisualStyleBackColor = true;
+            button1.Click += button1_Click;
             // 
             // CreatePCKEncryption
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(384, 130);
-            this.Controls.Add(this.button1);
-            this.Controls.Add(this.tb_key);
-            this.Controls.Add(this.btn_ok);
-            this.Controls.Add(this.cb_encrypt_files);
-            this.Controls.Add(this.cb_encrypt_index);
-            this.Controls.Add(this.label1);
-            this.MaximumSize = new System.Drawing.Size(1024, 169);
-            this.MinimumSize = new System.Drawing.Size(292, 169);
-            this.Name = "CreatePCKEncryption";
-            this.Text = "Encryption Settings";
-            this.ResumeLayout(false);
-            this.PerformLayout();
-
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(384, 150);
+            Controls.Add(button1);
+            Controls.Add(tb_key);
+            Controls.Add(btn_ok);
+            Controls.Add(cb_encrypt_files);
+            Controls.Add(cb_encrypt_index);
+            Controls.Add(label1);
+            Margin = new Padding(4, 3, 4, 3);
+            MaximumSize = new Size(1192, 189);
+            MinimumSize = new Size(292, 189);
+            Name = "CreatePCKEncryption";
+            Text = "Encryption Settings";
+            ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
 
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.CheckBox cb_encrypt_index;
-        private System.Windows.Forms.CheckBox cb_encrypt_files;
-        private System.Windows.Forms.Button btn_ok;
+        private Label label1;
+        private CheckBox cb_encrypt_index;
+        private CheckBox cb_encrypt_files;
+        private Button btn_ok;
         private TextBoxWithPlaceholder tb_key;
-        private System.Windows.Forms.Button button1;
+        private Button button1;
     }
 }

@@ -1,108 +1,111 @@
 ﻿namespace GodotPCKExplorer.UI
 {
-	partial class BackgroundProgress
-	{
-		/// <summary>
-		/// Required designer variable.
-		/// </summary>
-		private System.ComponentModel.IContainer components = null;
+    partial class BackgroundProgress
+    {
+        /// <summary>
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.IContainer components = null;
 
-		/// <summary>
-		/// Clean up any resources being used.
-		/// </summary>
-		/// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-		protected override void Dispose(bool disposing)
-		{
-			if (disposing && (components != null))
-			{
-				components.Dispose();
-			}
-			base.Dispose(disposing);
-		}
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
 
-		#region Windows Form Designer generated code
+        #region Windows Form Designer generated code
 
-		/// <summary>
-		/// Required method for Designer support - do not modify
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
-            this.progressBar1 = new System.Windows.Forms.ProgressBar();
-            this.btn_cancel = new System.Windows.Forms.Button();
-            this.l_status = new System.Windows.Forms.Label();
-            this.label1 = new System.Windows.Forms.Label();
-            this.SuspendLayout();
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
+            progressBar1 = new ProgressBar();
+            btn_cancel = new Button();
+            l_status = new Label();
+            label1 = new Label();
+            SuspendLayout();
             // 
             // progressBar1
             // 
-            this.progressBar1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.progressBar1.Location = new System.Drawing.Point(12, 12);
-            this.progressBar1.Name = "progressBar1";
-            this.progressBar1.Size = new System.Drawing.Size(414, 23);
-            this.progressBar1.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
-            this.progressBar1.TabIndex = 0;
+            progressBar1.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            progressBar1.Location = new Point(13, 12);
+            progressBar1.Margin = new Padding(4, 3, 4, 3);
+            progressBar1.Name = "progressBar1";
+            progressBar1.Size = new Size(360, 27);
+            progressBar1.Style = ProgressBarStyle.Continuous;
+            progressBar1.TabIndex = 0;
             // 
             // btn_cancel
             // 
-            this.btn_cancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btn_cancel.Location = new System.Drawing.Point(351, 41);
-            this.btn_cancel.Name = "btn_cancel";
-            this.btn_cancel.Size = new System.Drawing.Size(75, 39);
-            this.btn_cancel.TabIndex = 2;
-            this.btn_cancel.Text = "Cancel";
-            this.btn_cancel.UseVisualStyleBackColor = true;
-            this.btn_cancel.Click += new System.EventHandler(this.btn_cancel_Click);
+            btn_cancel.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btn_cancel.Location = new Point(287, 45);
+            btn_cancel.Margin = new Padding(4, 3, 4, 3);
+            btn_cancel.Name = "btn_cancel";
+            btn_cancel.Size = new Size(88, 35);
+            btn_cancel.TabIndex = 2;
+            btn_cancel.Text = "Cancel";
+            btn_cancel.UseVisualStyleBackColor = true;
+            btn_cancel.Click += btn_cancel_Click;
             // 
             // l_status
             // 
-            this.l_status.AutoSize = true;
-            this.l_status.Location = new System.Drawing.Point(12, 46);
-            this.l_status.Name = "l_status";
-            this.l_status.Size = new System.Drawing.Size(35, 13);
-            this.l_status.TabIndex = 3;
-            this.l_status.Text = "label1";
+            l_status.AutoSize = true;
+            l_status.Location = new Point(14, 47);
+            l_status.Margin = new Padding(4, 0, 4, 0);
+            l_status.Name = "l_status";
+            l_status.Size = new Size(38, 15);
+            l_status.TabIndex = 3;
+            l_status.Text = "label1";
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.label1.Location = new System.Drawing.Point(12, 67);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(336, 13);
-            this.label1.TabIndex = 4;
-            this.label1.Text = "* To view logs, use the \"Options - Show console\" in the main window.";
+            label1.ForeColor = SystemColors.GrayText;
+            label1.Location = new Point(13, 65);
+            label1.Margin = new Padding(4, 0, 4, 0);
+            label1.Name = "label1";
+            label1.Size = new Size(262, 35);
+            label1.TabIndex = 4;
+            label1.Text = "* To view logs, use the \"Options - Show console\" in the main window.";
             // 
             // BackgroundProgress
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(438, 89);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.l_status);
-            this.Controls.Add(this.btn_cancel);
-            this.Controls.Add(this.progressBar1);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-            this.MaximumSize = new System.Drawing.Size(2000, 128);
-            this.MinimizeBox = false;
-            this.MinimumSize = new System.Drawing.Size(454, 128);
-            this.Name = "BackgroundProgress";
-            this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
-            this.Text = "Please wait";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.BackgroundProgress_FormClosing);
-            this.Shown += new System.EventHandler(this.BackgroundProgress_Shown);
-            this.ResumeLayout(false);
-            this.PerformLayout();
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(388, 105);
+            Controls.Add(label1);
+            Controls.Add(l_status);
+            Controls.Add(btn_cancel);
+            Controls.Add(progressBar1);
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            Margin = new Padding(4, 3, 4, 3);
+            MaximizeBox = false;
+            MaximumSize = new Size(2000, 144);
+            MinimizeBox = false;
+            MinimumSize = new Size(404, 144);
+            Name = "BackgroundProgress";
+            SizeGripStyle = SizeGripStyle.Hide;
+            StartPosition = FormStartPosition.CenterParent;
+            Text = "Please wait";
+            FormClosing += BackgroundProgress_FormClosing;
+            Shown += BackgroundProgress_Shown;
+            ResumeLayout(false);
+            PerformLayout();
+        }
 
-		}
+        #endregion
 
-		#endregion
-
-		private System.Windows.Forms.ProgressBar progressBar1;
-		private System.Windows.Forms.Button btn_cancel;
-        private System.Windows.Forms.Label l_status;
-        private System.Windows.Forms.Label label1;
+        private ProgressBar progressBar1;
+        private Button btn_cancel;
+        private Label l_status;
+        private Label label1;
     }
 }

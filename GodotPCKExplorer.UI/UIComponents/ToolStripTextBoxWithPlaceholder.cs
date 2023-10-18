@@ -1,7 +1,4 @@
-﻿using System;
-using System.Drawing;
-using System.Runtime.InteropServices;
-using System.Windows.Forms;
+﻿using System.Runtime.InteropServices;
 
 // https://stackoverflow.com/a/50920121/8980874
 
@@ -17,13 +14,13 @@ public class ToolStripTextBoxWithPlaceholder : ToolStripTextBox
         this.Control.HandleCreated += Control_HandleCreated;
     }
 
-    private void Control_HandleCreated(object sender, EventArgs e)
+    private void Control_HandleCreated(object? sender, EventArgs e)
     {
         if (!string.IsNullOrEmpty(cueBanner))
             UpdateCueBanner();
     }
 
-    string cueBanner;
+    string cueBanner = "";
     public string CueBanner
     {
         get { return cueBanner; }
@@ -36,7 +33,7 @@ public class ToolStripTextBoxWithPlaceholder : ToolStripTextBox
 
     private void UpdateCueBanner()
     {
-        if (!GodotPCKExplorer.UI.Utils.IsRunningOnMono())
+        if (!Utils.IsRunningOnMono())
             SendMessage(this.Control.Handle, EM_SETCUEBANNER, 0, cueBanner);
     }
 }

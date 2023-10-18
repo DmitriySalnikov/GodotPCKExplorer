@@ -5,21 +5,12 @@ namespace GodotPCKExplorer
     public struct PCKVersion
     {
         const string version_string_pattern = @"^([0-9]{1,2})\.([0-9]{1,2})\.([0-9]{1,2})\.([0-9]{1,2})$";
-        static Regex VersionStringRegEx = new Regex(version_string_pattern);
+        static readonly Regex VersionStringRegEx = new Regex(version_string_pattern);
 
         public int PackVersion { get; set; }
         public int Major { get; set; }
         public int Minor { get; set; }
         public int Revision { get; set; }
-
-        // [Newtonsoft.Json.JsonIgnore]
-        public bool IsValid
-        {
-            get
-            {
-                return PackVersion >= 0 && Major >= 0 && Minor >= 0 && Revision >= 0;
-            }
-        }
 
         public PCKVersion(int pck_version, int major, int minor, int revision)
         {
@@ -49,10 +40,14 @@ namespace GodotPCKExplorer
             }
         }
 
-        public override string ToString()
+        public override readonly string ToString()
         {
             return $"{PackVersion}.{Major}.{Minor}.{Revision}";
         }
-    }
 
+        public readonly bool IsValid()
+        {
+            return PackVersion >= 0 && Major >= 0 && Minor >= 0 && Revision >= 0;
+        }
+    }
 }

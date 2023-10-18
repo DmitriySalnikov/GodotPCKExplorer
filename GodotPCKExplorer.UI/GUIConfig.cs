@@ -1,28 +1,25 @@
 ﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
 
 namespace GodotPCKExplorer.UI
 {
     class RecentFiles
     {
         public string Path;
+        public bool IsEncrypted;
         public string EncryptionKey;
 
-        public RecentFiles(string path, string encKey)
+        public RecentFiles(string path, bool isEncrypted, string encryptionKey)
         {
             Path = path;
-            EncryptionKey = encKey;
+            IsEncrypted = isEncrypted;
+            EncryptionKey = encryptionKey;
         }
     }
 
     class GUIConfig
     {
         [JsonIgnore]
-        public static GUIConfig Instance { get; private set; } = null;
+        public static GUIConfig Instance { get; private set; } = new();
 
         [JsonIgnore]
         static string SaveFile = Path.Combine(Program.AppDataPath, "settings.json");
@@ -55,7 +52,7 @@ namespace GodotPCKExplorer.UI
 
         #region Main Window
 
-        public List<RecentFiles> RecentOpenedFiles { get; set; } = new List<RecentFiles>();
+        public List<RecentFiles> RecentOpenedFiles { get; set; } = new();
         public bool MatchCaseFilterMainForm { get; set; } = false;
         public bool ShowConsole { get; set; } = false;
         public string SkipVersion { get; set; } = "";
@@ -66,21 +63,14 @@ namespace GodotPCKExplorer.UI
 
         GUIConfig()
         {
-            if (Instance == null)
-                Instance = this;
+            Instance ??= this;
         }
 
         public void Save()
         {
             try
             {
-                File.WriteAllText(SaveFile, JsonConvert.SerializeObject(
-                    this,
-                    Formatting.Indented,
-                    new JsonSerializerSettings()
-                    {
-                        ContractResolver = ShouldSerializeContractResolver.Instance
-                    }));
+                File.WriteAllText(SaveFile, JsonConvert.SerializeObject(this, Formatting.Indented));
             }
             catch (Exception ex)
             {
@@ -93,10 +83,9 @@ namespace GodotPCKExplorer.UI
             try
             {
                 if (File.Exists(SaveFile))
-                    Instance = JsonConvert.DeserializeObject<GUIConfig>(File.ReadAllText(SaveFile));
+                    Instance = JsonConvert.DeserializeObject<GUIConfig>(File.ReadAllText(SaveFile)) ?? new();
 
-                if (Instance == null)
-                    Instance = new GUIConfig();
+                Instance ??= new();
             }
             catch (Exception ex)
             {
@@ -106,6 +95,7 @@ namespace GodotPCKExplorer.UI
 
         #endregion
 
+#if false
         // https://stackoverflow.com/questions/25749509/how-can-i-tell-json-net-to-ignore-properties-in-a-3rd-party-object
         public class ShouldSerializeContractResolver : DefaultContractResolver
         {
@@ -124,5 +114,6 @@ namespace GodotPCKExplorer.UI
                 return property;
             }
         }
+#endif
     }
 }

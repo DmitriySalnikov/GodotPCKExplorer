@@ -1,6 +1,5 @@
-﻿using System;
+﻿using System.Diagnostics;
 using System.Reflection;
-using System.Windows.Forms;
 
 namespace GodotPCKExplorer.UI
 {
@@ -35,7 +34,7 @@ namespace GodotPCKExplorer.UI
                         return titleAttribute.Title;
                     }
                 }
-                return System.IO.Path.GetFileNameWithoutExtension(Assembly.GetExecutingAssembly().CodeBase);
+                return System.IO.Path.GetFileNameWithoutExtension(Assembly.GetExecutingAssembly().Location);
             }
         }
 
@@ -43,7 +42,7 @@ namespace GodotPCKExplorer.UI
         {
             get
             {
-                return Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                return Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "N/A";
             }
         }
 
@@ -100,9 +99,9 @@ namespace GodotPCKExplorer.UI
         }
         #endregion
 
-        private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        private void linkLabel1_LinkClicked(object? sender, LinkLabelLinkClickedEventArgs e)
         {
-            System.Diagnostics.Process.Start("https://github.com/DmitriySalnikov/GodotPCKExplorer.UI");
+            Process.Start(new ProcessStartInfo("https://github.com/DmitriySalnikov/GodotPCKExplorer") { UseShellExecute = true });
         }
     }
 }

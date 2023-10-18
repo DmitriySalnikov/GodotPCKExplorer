@@ -18,7 +18,12 @@ namespace GodotPCKExplorer
 
     public static class PCKUtils
     {
-        static Random rng = new Random();
+        [ThreadStatic]
+        static byte[]? temp_encryption_buffer;
+
+        [ThreadStatic]
+        static byte[]? md5_buffer;
+
         public const int PCK_VERSION_GODOT_3 = 1;
         public const int PCK_VERSION_GODOT_4 = 2;
         public const int PCK_MAGIC = 0x43504447;
@@ -26,7 +31,10 @@ namespace GodotPCKExplorer
         public const int PCK_FILE_ENCRYPTED = 1 << 0;
         public const int BUFFER_MAX_SIZE = 1024 * 1024;
         public const int UnknownProgressStatus = -1234;
-        public static string ByteArrayToHexString(byte[] data, string sepChar = "")
+
+        static readonly Random rng = new Random();
+
+        public static string ByteArrayToHexString(byte[]? data, string sepChar = "")
         {
             if (data != null)
                 return BitConverter.ToString(data).Replace("-", sepChar);
@@ -36,7 +44,7 @@ namespace GodotPCKExplorer
 
         // https://stackoverflow.com/a/321404/8980874
         // does the same thing as here https://github.com/godotengine/godot/blob/cfab3d2f57976913a03a891b30eaa0a5da4ff64f/core/io/pck_packer.cpp#L61
-        public static byte[] HexStringToByteArray(string hex)
+        public static byte[]? HexStringToByteArray(string? hex)
         {
             if (string.IsNullOrWhiteSpace(hex))
                 return null;
@@ -60,32 +68,96 @@ namespace GodotPCKExplorer
             if (matches.Count != 1)
                 return false;
             if (matches[0].Length == hex.Length)
-            {
-                if (expected_size_in_bytes != 0)
-                    return expected_size_in_bytes == hex.Length / 2;
-                else
-                    return false;
-            }
+                return expected_size_in_bytes != 0 && expected_size_in_bytes == hex.Length / 2;
 
             return false;
         }
 
-        // https://stackoverflow.com/a/10520086/8980874
-        public static byte[] GetFileMD5(string path)
+        internal static byte[] GetFileMD5(string path)
         {
-            using (var md5 = MD5.Create())
+            using var md5 = MD5.Create();
+            using var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+            var bytes = md5.ComputeHash(stream);
+            if (bytes.Length > 16)
+                throw new FormatException("Wrong size of MD5 hash");
+            return bytes;
+        }
+
+        internal static byte[] GetStreamMD5(Stream stream, long from = 0, long to = 0)
+        {
+            if (to - from < 0)
+                throw new ArgumentOutOfRangeException("The length of the range in the stream cannot be less than zero.");
+
+            if (from < 0)
+                throw new ArgumentOutOfRangeException("The starting address is less than zero.");
+
+            if (to > stream.Length)
+                throw new ArgumentOutOfRangeException("The end address is greater than the length of the stream.");
+
+            if (to == 0)
+                to = stream.Length;
+
+            md5_buffer ??= new byte[BUFFER_MAX_SIZE];
+            using var md5 = MD5.Create();
+
+            stream.Position = from;
+            while (stream.Position < to)
             {
-                using (var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                if (stream.Position + BUFFER_MAX_SIZE < to)
                 {
-                    var bytes = md5.ComputeHash(stream);
-                    if (bytes.Length > 16)
-                        throw new FormatException("Wrong size of MD5 hash");
-                    return bytes;
+                    _ = stream.Read(md5_buffer, 0, BUFFER_MAX_SIZE);
+                    md5.TransformBlock(md5_buffer, 0, BUFFER_MAX_SIZE, null, 0);
+                }
+                else
+                {
+                    long range = to - stream.Position;
+                    _ = stream.Read(md5_buffer, 0, (int)range);
+                    md5.TransformBlock(md5_buffer, 0, (int)range, null, 0);
+                }
+            }
+
+            md5.TransformFinalBlock(md5_buffer, 0, 0);
+            var bytes = md5.Hash;
+            if (bytes.Length > 16)
+                throw new FormatException("Wrong size of MD5 hash");
+            return bytes;
+        }
+
+        internal static IEnumerable<ReadOnlyMemory<byte>> ReadStreamAsMemoryBlocks(Stream stream, long from = 0, long to = 0)
+        {
+            if (to - from < 0)
+                throw new ArgumentOutOfRangeException("The length of the range in the stream cannot be less than zero.");
+
+            if (from < 0)
+                throw new ArgumentOutOfRangeException("The starting address is less than zero.");
+
+            if (to > stream.Length)
+                throw new ArgumentOutOfRangeException("The end address is greater than the length of the stream.");
+
+            if (to == 0)
+                to = stream.Length;
+
+            temp_encryption_buffer ??= new byte[BUFFER_MAX_SIZE];
+
+            stream.Position = from;
+            while (stream.Position < to)
+            {
+                if (stream.Position + BUFFER_MAX_SIZE < to)
+                {
+                    _ = stream.Read(temp_encryption_buffer, 0, BUFFER_MAX_SIZE);
+                    yield return new ReadOnlyMemory<byte>(temp_encryption_buffer, 0, BUFFER_MAX_SIZE);
+                }
+                else
+                {
+                    int range = (int)(to - stream.Position);
+                    _ = stream.Read(temp_encryption_buffer, 0, range);
+                    yield return new ReadOnlyMemory<byte>(temp_encryption_buffer, 0, range);
                 }
             }
         }
 
-        public static long AlignAddress(long p_n, uint p_alignment)
+        internal static long AlignAddress(long p_n, uint p_alignment)
         {
             if (p_alignment == 0)
                 return p_n;
@@ -97,7 +169,7 @@ namespace GodotPCKExplorer
                 return p_n + (p_alignment - rest);
         }
 
-        public static void AddPadding(BinaryWriter p_file, long p_bytes, bool randomFill = false)
+        internal static void AddPadding(BinaryWriter p_file, long p_bytes, bool randomFill = false)
         {
             if (p_bytes < 0)
                 throw new ArgumentOutOfRangeException(nameof(p_bytes));
@@ -117,20 +189,20 @@ namespace GodotPCKExplorer
             }
         }
 
-        public static List<PCKPacker.FileToPack> ScanFoldersForFiles(string folder, CancellationToken? cancellationToken = null)
+        public static List<PCKPackerRegularFile> GetListOfFilesToPack(string folder, CancellationToken? cancellationToken = null)
         {
             if (!Directory.Exists(folder))
-                return new List<PCKPacker.FileToPack>();
+                return new List<PCKPackerRegularFile>();
 
             folder = Path.GetFullPath(folder);
-            var files = new List<PCKPacker.FileToPack>();
+            var files = new List<PCKPackerRegularFile>();
             var cancel = false;
 
             const string op = "Scan folder";
             PCKActions.progress?.LogProgress(op, $"Started scanning files in '{folder}'");
             PCKActions.progress?.LogProgress(op, PCKUtils.UnknownProgressStatus);
 
-            ScanFoldersForFilesAdvanced(folder, files, ref folder, ref cancel, cancellationToken);
+            GetListOfFilesToPackRecursive(folder, files, ref folder, ref cancel, cancellationToken);
             if (cancel)
                 files.Clear();
             GC.Collect();
@@ -140,7 +212,7 @@ namespace GodotPCKExplorer
             return files;
         }
 
-        public static void ScanFoldersForFilesAdvanced(string folder, List<PCKPacker.FileToPack> files, ref string basePath, ref bool cancel, CancellationToken? cancellationToken = null)
+        static void GetListOfFilesToPackRecursive(string folder, List<PCKPackerRegularFile> files, ref string basePath, ref bool cancel, CancellationToken? cancellationToken = null)
         {
             const string op = "Scan folder";
             IEnumerable<string> dirEnums;
@@ -160,7 +232,7 @@ namespace GodotPCKExplorer
                 if (cancel || (cancellationToken?.IsCancellationRequested ?? false))
                     return;
 
-                ScanFoldersForFilesAdvanced(d, files, ref basePath, ref cancel, cancellationToken);
+                GetListOfFilesToPackRecursive(d, files, ref basePath, ref cancel, cancellationToken);
             }
 
             IEnumerable<string> filesEnum;
@@ -182,8 +254,7 @@ namespace GodotPCKExplorer
 
                 try
                 {
-                    var inf = new FileInfo(f);
-                    files.Add(new PCKPacker.FileToPack(f, f.Replace(basePath + Path.DirectorySeparatorChar, "res://").Replace("\\", "/"), inf.Length));
+                    files.Add(new PCKPackerRegularFile(f, f.Replace(basePath + Path.DirectorySeparatorChar, "res://").Replace("\\", "/")));
                     PCKActions.progress?.LogProgress(op, f);
                     PCKActions.progress?.LogProgress(op, files.Count, "Found files: ");
                 }
