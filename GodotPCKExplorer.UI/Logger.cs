@@ -74,6 +74,9 @@ namespace GodotPCKExplorer.UI
 
         public void Dispose()
         {
+            // Force print remaining part of output
+            FastConsole.Flush();
+
             flushFileAction?.Dispose();
             flushFileAction = null;
 
