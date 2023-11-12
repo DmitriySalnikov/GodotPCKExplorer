@@ -47,6 +47,8 @@ namespace GodotPCKExplorer.UI
                 Application.Run(mainForm);
             }
 
+            Cleanup();
+            // TODO return exitCode on errors
             //Environment.ExitCode = 0;
             return;
         }
