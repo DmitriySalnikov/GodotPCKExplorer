@@ -1,4 +1,6 @@
-﻿namespace GodotPCKExplorer.UI
+﻿using GodotPCKExplorer.Shared;
+
+namespace GodotPCKExplorer.UI
 {
     // TODO some actions with encrypted PCK is not possible in UI
     public partial class MainForm : Form
@@ -7,7 +9,7 @@
         readonly string FormBaseTitle = "";
         readonly Font MatchCaseNormal;
         readonly Font MatchCaseStrikeout;
-        readonly VersionCheckerGitHub versionCheckerGitHub = new("DmitriySalnikov", "GodotPCKExplorer", Program.AppName, ShowMessageBoxForVersionCheck);
+        readonly VersionCheckerGitHub versionCheckerGitHub = new("DmitriySalnikov", "GodotPCKExplorer", GlobalConstants.AppName, ShowMessageBoxForVersionCheck);
 
         long TotalOpenedSize = 0;
 
@@ -112,7 +114,7 @@
             {
                 case VersionCheckerGitHub.MSGType.InfoUpdateAvailable:
                     text = $"Current version: {customData["current_version"]}\nNew version: {customData["new_version"]}\nWould you like to go to the download page?\n\nSelect \"No\" to skip this version.";
-                    caption = $"A new version of {Program.AppName} is available";
+                    caption = $"A new version of {GlobalConstants.AppName} is available";
                     msg_type = MessageType.Info;
                     buttons = MessageBoxButtons.YesNoCancel;
                     break;

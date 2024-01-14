@@ -1,4 +1,4 @@
-﻿namespace GodotPCKExplorer.UI
+﻿namespace GodotPCKExplorer.Shared
 {
     public class DeferredAction : IDisposable
     {

@@ -1,14 +1,12 @@
 ﻿using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using GodotPCKExplorer.Shared;
 
 namespace GodotPCKExplorer.UI
 {
     internal static class Program
     {
-        public static readonly string AppName = "GodotPCKExplorer";
-        public static readonly string AppDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppName);
-
         static bool CMDMode = true;
         static MainForm? mainForm = null;
         static BackgroundProgress? progressBar = null;
@@ -55,16 +53,16 @@ namespace GodotPCKExplorer.UI
 
         static Program()
         {
-            if (!Directory.Exists(AppDataPath))
-                Directory.CreateDirectory(AppDataPath);
+            if (!Directory.Exists(GlobalConstants.AppDataPath))
+                Directory.CreateDirectory(GlobalConstants.AppDataPath);
 
             logger = new Logger("log.txt");
         }
 
         public static void Init()
         {
-            if (!Directory.Exists(AppDataPath))
-                Directory.CreateDirectory(AppDataPath);
+            if (!Directory.Exists(GlobalConstants.AppDataPath))
+                Directory.CreateDirectory(GlobalConstants.AppDataPath);
 
             // InvariantCulture for console and UI
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
@@ -87,7 +85,7 @@ namespace GodotPCKExplorer.UI
 
         public static void Cleanup()
         {
-            logger?.Dispose();
+            logger.Dispose();
 
             mainForm?.Dispose();
             mainForm = null;
@@ -183,7 +181,7 @@ namespace GodotPCKExplorer.UI
 
         public static void LogHelp()
         {
-            Log("\n" + Properties.Resources.HelpText);
+            Log("\n" + GlobalConstants.HelpText);
         }
 
         #endregion

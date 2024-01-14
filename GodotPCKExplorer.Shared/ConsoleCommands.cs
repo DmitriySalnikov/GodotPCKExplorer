@@ -1,10 +1,19 @@
-﻿using System;
-using System.IO;
-using System.Linq;
+﻿#if CONSOLE_BUILD
+using GodotPCKExplorer.Cmd;
+#else
+using GodotPCKExplorer.UI;
+#endif
+using GodotPCKExplorer;
+using System.Diagnostics;
+using System.Reflection;
 
-namespace GodotPCKExplorer.UI
+// ExitCode = 1: Error
+// ExitCode = 2: Exception
+
+namespace GodotPCKExplorer.Shared
+
 {
-    internal static class ConsoleCommands
+    public static class ConsoleCommands
     {
         static bool runWithArgs = false;
 
@@ -27,6 +36,9 @@ namespace GodotPCKExplorer.UI
             }
             catch (Exception ex)
             {
+#if CONSOLE_BUILD
+                Program.ExitCode = 1;
+#endif
                 Program.Log(ex);
             }
 
@@ -70,10 +82,13 @@ namespace GodotPCKExplorer.UI
 
         }
 
-        static bool TestEncryptionKey(string key)
+        static bool ValidateEncryptionKey(string key)
         {
             if (!PCKUtils.HexStringValidate(key, 256 / 8))
             {
+#if CONSOLE_BUILD
+                Program.ExitCode = 1;
+#endif
                 Program.Log("Invalid encryption key provided!");
                 return false;
             }
@@ -95,7 +110,7 @@ namespace GodotPCKExplorer.UI
                     {
                         encKey = args[2];
 
-                        if (!TestEncryptionKey(encKey))
+                        if (!ValidateEncryptionKey(encKey))
                             return;
                     }
                 }
@@ -126,16 +141,55 @@ namespace GodotPCKExplorer.UI
             {
                 if (File.Exists(path))
                 {
+#if CONSOLE_BUILD
+                    runWithArgs = true;
+                    if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                    {
+                        var split = Path.GetFileName(Assembly.GetExecutingAssembly().Location).Split('.');
+                        try
+                        {
+                            // !! Sync with UI !!
+                            var proc = Process.Start(split[0] + ".UI.exe", $"-o \"{path}\" {encKey ?? ""}");
+                            proc.WaitForExit();
+
+                            Program.ExitCode = proc.ExitCode;
+                            return;
+                        }
+                        catch (Exception ex)
+                        {
+                            Program.Log(ex);
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        Program.ExitCode = 1;
+                        throw new NotImplementedException("The UI is only supported on Windows");
+                    }
+#else
                     runWithArgs = false;
                     // force enable
                     Program.EnableMessageBoxes();
+                    // !! Sync with console !!
                     Program.OpenMainForm(path, encKey);
                     runWithArgs = true;
+                    return;
+#endif
                 }
                 else
                 {
+#if CONSOLE_BUILD
+                    Program.ExitCode = 1;
+#endif
                     Program.Log($"Specified file does not exists! '{path}'");
                 }
+            }
+            else
+            {
+#if CONSOLE_BUILD
+                Program.ExitCode = 1;
+#endif
+                Program.Log($"No path specified");
             }
         }
 
@@ -156,12 +210,15 @@ namespace GodotPCKExplorer.UI
                     {
                         encKey = args[2];
 
-                        if (!TestEncryptionKey(encKey))
+                        if (!ValidateEncryptionKey(encKey))
                             return;
                     }
                 }
                 else
                 {
+#if CONSOLE_BUILD
+                    Program.ExitCode = 1;
+#endif
                     Program.Log("Path to file not specified! Or incorrect number of arguments specified!");
                     Program.LogHelp();
                     return;
@@ -173,7 +230,10 @@ namespace GodotPCKExplorer.UI
                 return;
             }
 
-            PCKActions.PrintInfo(filePath, list_files, encKey);
+            var res = PCKActions.PrintInfo(filePath, list_files, encKey);
+#if CONSOLE_BUILD
+            Program.ExitCode = res ? 0 : 1;
+#endif
         }
 
         static void ExtractPCKCommand(string[] args, bool overwriteExisting = true)
@@ -195,12 +255,15 @@ namespace GodotPCKExplorer.UI
                     {
                         encKey = args[3];
 
-                        if (!TestEncryptionKey(encKey))
+                        if (!ValidateEncryptionKey(encKey))
                             return;
                     }
                 }
                 else
                 {
+#if CONSOLE_BUILD
+                    Program.ExitCode = 1;
+#endif
                     Program.Log($"Invalid number of arguments! Expected 3 or 4, but got {args.Length}");
                     Program.LogHelp();
                     return;
@@ -212,7 +275,10 @@ namespace GodotPCKExplorer.UI
                 return;
             }
 
-            PCKActions.Extract(filePath, dirPath, overwriteExisting, encKey: encKey);
+            var res = PCKActions.Extract(filePath, dirPath, overwriteExisting, encKey: encKey);
+#if CONSOLE_BUILD
+            Program.ExitCode = res ? 0 : 1;
+#endif
         }
 
         static void ExtractSkipExistingPCKCommand(string[] args)
@@ -247,7 +313,7 @@ namespace GodotPCKExplorer.UI
                         {
                             encKey = args[5];
 
-                            if (!TestEncryptionKey(encKey))
+                            if (!ValidateEncryptionKey(encKey))
                                 return;
 
                             if (args.Length > 6)
@@ -256,6 +322,9 @@ namespace GodotPCKExplorer.UI
 
                                 if (!new string[] { "both", "index", "files" }.Contains(encType))
                                 {
+#if CONSOLE_BUILD
+                                    Program.ExitCode = 1;
+#endif
                                     Program.Log($"Invalid encryption type: {encType}");
                                     Program.LogHelp();
                                     return;
@@ -266,6 +335,9 @@ namespace GodotPCKExplorer.UI
                 }
                 else
                 {
+#if CONSOLE_BUILD
+                    Program.ExitCode = 1;
+#endif
                     Program.Log($"Invalid number of arguments! Expected from 4 to 6, but got {args.Length}");
                     Program.LogHelp();
                     return;
@@ -294,7 +366,10 @@ namespace GodotPCKExplorer.UI
                     break;
             }
 
-            PCKActions.Pack(dirPath, filePath, strVer, alignment, embed, encKey, encIndex, encFiles);
+            var res = PCKActions.Pack(dirPath, filePath, strVer, alignment, embed, encKey, encIndex, encFiles);
+#if CONSOLE_BUILD
+            Program.ExitCode = res ? 0 : 1;
+#endif
         }
 
         static void RipPCKCommand(string[] args)
@@ -314,6 +389,9 @@ namespace GodotPCKExplorer.UI
 
                     if (args.Length > 4)
                     {
+#if CONSOLE_BUILD
+                        Program.ExitCode = 1;
+#endif
                         Program.Log($"Invalid number of arguments! Expected 2 or 3, but got {args.Length}");
                         Program.LogHelp();
                         return;
@@ -321,6 +399,9 @@ namespace GodotPCKExplorer.UI
                 }
                 else
                 {
+#if CONSOLE_BUILD
+                    Program.ExitCode = 1;
+#endif
                     Program.Log($"Path to file or directory not specified!");
                     Program.LogHelp();
                     return;
@@ -332,7 +413,10 @@ namespace GodotPCKExplorer.UI
                 return;
             }
 
-            PCKActions.Rip(exeFile, outFile);
+            var res = PCKActions.Rip(exeFile, outFile);
+#if CONSOLE_BUILD
+            Program.ExitCode = res ? 0 : 1;
+#endif
         }
 
         static void MergePCKCommand(string[] args)
@@ -351,6 +435,9 @@ namespace GodotPCKExplorer.UI
                 }
                 else
                 {
+#if CONSOLE_BUILD
+                    Program.ExitCode = 1;
+#endif
                     Program.Log($"Invalid number of arguments! Expected 3, but got {args.Length}");
                     Program.LogHelp();
                     return;
@@ -362,7 +449,10 @@ namespace GodotPCKExplorer.UI
                 return;
             }
 
-            PCKActions.Merge(pckFile, exeFile);
+            var res = PCKActions.Merge(pckFile, exeFile);
+#if CONSOLE_BUILD
+            Program.ExitCode = res ? 0 : 1;
+#endif
         }
 
         static void SplitPCKCommand(string[] args)
@@ -382,6 +472,9 @@ namespace GodotPCKExplorer.UI
 
                     if (args.Length > 3)
                     {
+#if CONSOLE_BUILD
+                        Program.ExitCode = 1;
+#endif
                         Program.Log($"Invalid number of arguments! Expected 2 or 3, but got {args.Length}");
                         Program.LogHelp();
                         return;
@@ -389,6 +482,9 @@ namespace GodotPCKExplorer.UI
                 }
                 else
                 {
+#if CONSOLE_BUILD
+                    Program.ExitCode = 1;
+#endif
                     Program.Log($"Path to file not specified!");
                     Program.LogHelp();
                     return;
@@ -400,7 +496,10 @@ namespace GodotPCKExplorer.UI
                 return;
             }
 
-            PCKActions.Split(exeFile, pairName);
+            var res = PCKActions.Split(exeFile, pairName);
+#if CONSOLE_BUILD
+            Program.ExitCode = res ? 0 : 1;
+#endif
         }
 
         static void ChangeVersionPCKCommand(string[] args)
@@ -419,6 +518,9 @@ namespace GodotPCKExplorer.UI
                 }
                 else
                 {
+#if CONSOLE_BUILD
+                    Program.ExitCode = 1;
+#endif
                     Program.Log($"Invalid number of arguments! Expected 3, but got {args.Length}");
                     Program.LogHelp();
                     return;
@@ -430,7 +532,10 @@ namespace GodotPCKExplorer.UI
                 return;
             }
 
-            PCKActions.ChangeVersion(pckFile, strVer);
+            var res = PCKActions.ChangeVersion(pckFile, strVer);
+#if CONSOLE_BUILD
+            Program.ExitCode = res ? 0 : 1;
+#endif
         }
     }
 }

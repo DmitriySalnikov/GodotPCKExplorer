@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "GodotPCKExplorer.Console": {
+      "commandName": "Project",
+      "commandLineArgs": "-o \"C:\\My\\Projects\\GE\\Build!!!\\4.pck\""
+    }
+  }
+}
