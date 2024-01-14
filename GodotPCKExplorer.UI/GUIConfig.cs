@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using GodotPCKExplorer.Shared;
+using Newtonsoft.Json;
 
 namespace GodotPCKExplorer.UI
 {
@@ -22,7 +23,7 @@ namespace GodotPCKExplorer.UI
         public static GUIConfig Instance { get; private set; } = new();
 
         [JsonIgnore]
-        static string SaveFile = Path.Combine(Program.AppDataPath, "settings.json");
+        static string SaveFile = Path.Combine(GlobalConstants.AppDataPath, "settings.json");
 
         #region Packing
 

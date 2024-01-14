@@ -30,6 +30,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\GodotPCKExplorer.Console\GodotPCKExplorer.Console.csproj">
+			<Aliases>ConsoleProject,%(Aliases)</Aliases>
+		</ProjectReference>
 		<ProjectReference Include="..\GodotPCKExplorer\GodotPCKExplorer.csproj" />
 	</ItemGroup>
 
@@ -51,5 +54,7 @@
 	<ItemGroup>
 		<Using Include="GodotPCKExplorer.UI" />
 	</ItemGroup>
+
+	<Import Project="..\GodotPCKExplorer.Shared\GodotPCKExplorer.Shared.projitems" Label="Shared" />
 
 </Project>

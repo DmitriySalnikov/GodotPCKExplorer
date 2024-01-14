@@ -39,6 +39,10 @@ cmake -G "Visual Studio 17 2022" -A win32 -S . -B "build32" -DMSVC_STATIC_RUNTIM
 cmake --build build32 --config Debug -j %CPUs%
 cmake --build build32 --config Release -j %CPUs%
 
+title Clear Libs
+echo ------- Remove folders -------
+rmdir /S /Q ..\libs
+
 title Install x64
 echo ------- x64 install -------
 cmake --install build64 --prefix ../libs

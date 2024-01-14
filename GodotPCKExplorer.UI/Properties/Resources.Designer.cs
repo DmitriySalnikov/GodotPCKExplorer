@@ -61,32 +61,6 @@ namespace GodotPCKExplorer.UI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Godot can embed &apos;.pck&apos; files into other files.
-        ///Therefore, GodotPCKExplorer can open both &apos;.pck&apos; and files with embedded &apos;pck&apos;.
-        ///Encryption is only verified with PCK for Godot 4.
-        ///&quot;&quot; - Paths and other arguments must be without spaces or inside quotes.
-        ///{} - Optional arguments
-        ///
-        ///Examples of valid commands:
-        ///-o	Open pack file
-        ///	-o [path to pack] {[encryption key]}
-        ///	-o C:/Game.exe
-        ///	-o C:/Game.pck
-        ///
-        ///-i	Show pack file info
-        ///	-i [path to pack]
-        ///	-i C:/Game.exe
-        ///	-i C:/Game.pck
-        ///	
-        ///-l	Show pack file info with  [rest of string was truncated]&quot;;.
-        /// </summary>
-        internal static string HelpText {
-            get {
-                return ResourceManager.GetString("HelpText", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
         internal static System.Drawing.Icon icon {

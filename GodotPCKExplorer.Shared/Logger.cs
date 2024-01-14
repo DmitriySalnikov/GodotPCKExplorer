@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using System.Text;
 
-namespace GodotPCKExplorer.UI
+namespace GodotPCKExplorer.Shared
 {
     // https://stackoverflow.com/a/57837393
     public static class FastConsole
@@ -49,12 +49,11 @@ namespace GodotPCKExplorer.UI
 
         public Logger(string saveFile)
         {
-            this.saveFile = Path.Combine(Program.AppDataPath, saveFile);
+            this.saveFile = Path.Combine(GlobalConstants.AppDataPath, saveFile);
             flushFastConsole = new DeferredAction(() => FastConsole.Flush(), 500);
 
             try
             {
-
                 string dir_name = Path.GetDirectoryName(this.saveFile) ?? "";
                 if (!Directory.Exists(dir_name))
                     Directory.CreateDirectory(dir_name);
