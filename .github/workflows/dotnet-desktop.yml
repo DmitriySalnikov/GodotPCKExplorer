@@ -2,9 +2,9 @@ name: 🛠️ .NET Desktop
 
 on:
   push:
-    paths-ignore: [HexEditorStructures/**, Images/**, mbedTLS_AES/**, Tests/**, "*.*"]
+    paths-ignore: [HexEditorStructures/**, Images/**, mbedTLS_AES/**, ObtainEncryptionKey/**, Tests/**, "*.*"]
   pull_request:
-    paths-ignore: [HexEditorStructures/**, Images/**, mbedTLS_AES/**, Tests/**, "*.*"]
+    paths-ignore: [HexEditorStructures/**, Images/**, mbedTLS_AES/**, ObtainEncryptionKey/**, Tests/**, "*.*"]
 
 # Stop the same workflow actions
 concurrency:
@@ -23,7 +23,7 @@ jobs:
     env:
       Artifact_Name: GodotPCKExplorer
       Project_Name: GodotPCKExplorer.UI
-      MSBuild_Project_Name: GodotPCKExplorer_UI
+      MSBuild_Project_Name: Explorer\GodotPCKExplorer_UI
       Solution_Path: GodotPCKExplorer.sln
       SDK_Name: net6.0-windows
 
@@ -53,7 +53,7 @@ jobs:
 
       - name: Build solution
         shell: powershell
-        run: msbuild ${{ env.Solution_Path }} /t:${{ env.MSBuild_Project_Name }} /p:Configuration=${{ matrix.configuration }} /p:Platform="x64" /m:2
+        run: msbuild ${{ env.Solution_Path }} /t:${{ env.MSBuild_Project_Name }} /p:Configuration=${{ matrix.configuration }} /p:Platform="x64" /m:4
 
       - name: Prepare artifacts
         if: matrix.configuration == 'Release'
@@ -65,14 +65,14 @@ jobs:
 
       - name: Upload build artifacts
         if: matrix.configuration == 'Release'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.Artifact_Name }}
           path: ${{ env.Project_Name }}/bin/x64/${{ matrix.configuration }}/${{ env.SDK_Name }}
 
       - name: Upload build artifacts
         if: matrix.configuration != 'Release'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.Artifact_Name }}_${{ matrix.configuration }}
           path: ${{ env.Project_Name }}/bin/${{ matrix.configuration }}/${{ env.SDK_Name }}

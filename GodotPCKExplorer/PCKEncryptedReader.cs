@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace GodotPCKExplorer
 {
-    internal class PCKEncryptedReader : IDisposable
+    public class PCKEncryptedReader : IDisposable
     {
         [ThreadStatic]
         static byte[]? temp_encryption_buffer;
@@ -16,6 +16,7 @@ namespace GodotPCKExplorer
         readonly long start_position;
         readonly long data_start_position;
         public byte[] MD5;
+        public long HeaderSize;
         public long DataSize;
         public long DataSizeEncoded;
         int DataSizeDelta;
@@ -33,6 +34,7 @@ namespace GodotPCKExplorer
 
             data_start_position = Stream.BaseStream.Position;
 
+            HeaderSize = (int)(data_start_position - start_position);
             DataSizeEncoded = PCKUtils.AlignAddress(DataSize, mbedTLS.CHUNK_SIZE);
             DataSizeDelta = (int)(DataSizeEncoded - DataSize);
         }

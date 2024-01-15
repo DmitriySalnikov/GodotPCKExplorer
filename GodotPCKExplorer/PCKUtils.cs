@@ -19,7 +19,7 @@ namespace GodotPCKExplorer
     public static class PCKUtils
     {
         [ThreadStatic]
-        static byte[]? temp_encryption_buffer;
+        static byte[]? temp_buffer;
 
         [ThreadStatic]
         static byte[]? md5_buffer;
@@ -73,7 +73,7 @@ namespace GodotPCKExplorer
             return false;
         }
 
-        internal static byte[] GetFileMD5(string path)
+        public static byte[] GetFileMD5(string path)
         {
             using var md5 = MD5.Create();
             using var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -84,7 +84,7 @@ namespace GodotPCKExplorer
             return bytes;
         }
 
-        internal static byte[] GetStreamMD5(Stream stream, long from = 0, long to = 0)
+        public static byte[] GetStreamMD5(Stream stream, long from = 0, long to = 0)
         {
             if (to - from < 0)
                 throw new ArgumentOutOfRangeException("The length of the range in the stream cannot be less than zero.");
@@ -138,26 +138,26 @@ namespace GodotPCKExplorer
             if (to == 0)
                 to = stream.Length;
 
-            temp_encryption_buffer ??= new byte[BUFFER_MAX_SIZE];
+            temp_buffer ??= new byte[BUFFER_MAX_SIZE];
 
             stream.Position = from;
             while (stream.Position < to)
             {
                 if (stream.Position + BUFFER_MAX_SIZE < to)
                 {
-                    _ = stream.Read(temp_encryption_buffer, 0, BUFFER_MAX_SIZE);
-                    yield return new ReadOnlyMemory<byte>(temp_encryption_buffer, 0, BUFFER_MAX_SIZE);
+                    _ = stream.Read(temp_buffer, 0, BUFFER_MAX_SIZE);
+                    yield return new ReadOnlyMemory<byte>(temp_buffer, 0, BUFFER_MAX_SIZE);
                 }
                 else
                 {
                     int range = (int)(to - stream.Position);
-                    _ = stream.Read(temp_encryption_buffer, 0, range);
-                    yield return new ReadOnlyMemory<byte>(temp_encryption_buffer, 0, range);
+                    _ = stream.Read(temp_buffer, 0, range);
+                    yield return new ReadOnlyMemory<byte>(temp_buffer, 0, range);
                 }
             }
         }
 
-        internal static long AlignAddress(long p_n, uint p_alignment)
+        public static long AlignAddress(long p_n, uint p_alignment)
         {
             if (p_alignment == 0)
                 return p_n;
@@ -169,7 +169,7 @@ namespace GodotPCKExplorer
                 return p_n + (p_alignment - rest);
         }
 
-        internal static void AddPadding(BinaryWriter p_file, long p_bytes, bool randomFill = false)
+        public static void AddPadding(BinaryWriter p_file, long p_bytes, bool randomFill = false)
         {
             if (p_bytes < 0)
                 throw new ArgumentOutOfRangeException(nameof(p_bytes));

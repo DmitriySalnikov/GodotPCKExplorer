@@ -1,72 +1,20 @@
-﻿using System;
-using System.Globalization;
-using System.Linq;
+﻿using System.Globalization;
+using GodotPCKExplorer;
 
-namespace GodotPCKExplorer
+namespace ObtainPCKEncryptionKey
 {
-    public enum PCKMessageBoxIcon : byte
+    internal class ProgressReporterBrute : IPCKProgressReporter
     {
-        None = 0,
-        Hand = 0x10,
-        Question = 0x20,
-        Exclamation = 48,
-        Asterisk = 0x40,
-        Stop = 0x10,
-        Error = 0x10,
-        Warning = 48,
-        Information = 0x40
-    }
+        [ThreadStatic]
+        public static bool DisableLogs;
 
-    public enum PCKMessageBoxButtons : byte
-    {
-        OK,
-        OKCancel,
-        AbortRetryIgnore,
-        YesNoCancel,
-        YesNo,
-        RetryCancel
-    }
-
-    public enum PCKDialogResult : byte
-    {
-        None,
-        OK,
-        Cancel,
-        Abort,
-        Retry,
-        Ignore,
-        Yes,
-        No
-    }
-
-    public interface IPCKProgressReporter
-    {
-        /// <summary>
-        /// Output percent or some number if prefix is not null
-        /// </summary>
-        /// <param name="operation">current operation name</param>
-        /// <param name="number">number to print</param>
-        /// <param name="customPrefix">number prefix. If null, output percentages from 0 to 100. Otherwise - any number with a prefix.</param>
-        void LogProgress(string operation, int number, string? customPrefix = null);
-
-        void LogProgress(string operation, string str);
-
-        void Log(string txt);
-
-        void Log(Exception ex);
-
-        PCKDialogResult ShowMessage(string text, string title, MessageType messageType = MessageType.None, PCKMessageBoxButtons boxButtons = PCKMessageBoxButtons.OK);
-
-        PCKDialogResult ShowMessage(Exception ex, MessageType messageType = MessageType.None, PCKMessageBoxButtons boxButtons = PCKMessageBoxButtons.OK);
-    }
-
-    internal class BasicPCKProgressReporter : IPCKProgressReporter
-    {
         int prev_progress = 0;
         DateTime prev_time = DateTime.UtcNow;
 
         public void LogProgress(string operation, int number, string? customPrefix = null)
         {
+            if (DisableLogs) return;
+
             if (((DateTime.UtcNow - prev_time).TotalSeconds > 1) || (prev_progress != number && Math.Abs(number - prev_progress) >= 5))
             {
                 if (customPrefix != null)
@@ -81,11 +29,15 @@ namespace GodotPCKExplorer
 
         public void LogProgress(string operation, string str)
         {
+            if (DisableLogs) return;
+
             Log($"[Progress] {operation}: {str}");
         }
 
         public void Log(string txt)
         {
+            if (DisableLogs) return;
+
             var isFirst = true;
             txt = string.Join("\n",
                 txt.Split('\n').
@@ -101,11 +53,15 @@ namespace GodotPCKExplorer
 
         public void Log(Exception ex)
         {
+            if (DisableLogs) return;
+
             Log($"Exception:\n{ex.Message}\nStackTrace:\n{ex.StackTrace}");
         }
 
         public PCKDialogResult ShowMessage(string text, string title, MessageType messageType = MessageType.None, PCKMessageBoxButtons boxButtons = PCKMessageBoxButtons.OK)
         {
+            if (DisableLogs) return PCKDialogResult.OK;
+
             Log($"[{messageType}] \"{title}\": {text}");
 
 #if DEV_ENABLED
@@ -116,9 +72,12 @@ namespace GodotPCKExplorer
 
         public PCKDialogResult ShowMessage(Exception ex, MessageType messageType = MessageType.None, PCKMessageBoxButtons boxButtons = PCKMessageBoxButtons.OK)
         {
+            if (DisableLogs) return PCKDialogResult.OK;
+
             var res = ShowMessage(ex.Message, ex.GetType().Name, messageType, boxButtons);
             Log(ex);
             return res;
         }
     }
+
 }

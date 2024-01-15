@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net6.0-windows</TargetFramework>
+		<Nullable>enable</Nullable>
+		<UseWindowsForms>true</UseWindowsForms>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Title>Obtain PCK Encryption Key</Title>
+		<Product>ObtainPCKEncryptionKey</Product>
+		<PackageId>ObtainPCKEncryptionKey</PackageId>
+		<Authors>Dmitriy Salnikov</Authors>
+		<Description>A small utility to find the encryption key for PCK.</Description>
+		<Copyright>Copyright © 2024</Copyright>
+		<PackageProjectUrl>https://github.com/DmitriySalnikov/GodotPCKExplorer/tree/master/ObtainEncryptionKey</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/DmitriySalnikov/GodotPCKExplorer/tree/master/ObtainEncryptionKey</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<NeutralLanguage>en</NeutralLanguage>
+		<Version>1.0.0</Version>
+
+		<NoWarn>$(NoWarn);IDE1006</NoWarn>
+
+		<Platforms>AnyCPU;x64</Platforms>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\GodotPCKExplorer\GodotPCKExplorer.csproj" />
+	</ItemGroup>
+
+</Project>
