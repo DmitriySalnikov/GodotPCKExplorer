@@ -2,7 +2,9 @@
 
 It is a viewer and editor for Godot Engine's PCK files with the ability to extract content and create new packages. Supports Godot 3 and 4.
 
-[Download](#download).
+[Download](#download)
+
+Also `PCK Bruteforcer` is available as part of this project [here](Bruteforcer/).
 
 ## Features
 
@@ -16,7 +18,8 @@ It is a viewer and editor for Godot Engine's PCK files with the ability to extra
 * `Split` files with embedded PCK into two separate files
 * Supports encrypted Godot 4 PCK
 * Supports only `Windows`
-* And also all these features are available via the `console`. Just write `GodotPCKExplorer.UI.exe -h` to get help.
+* Windows, Linux and macOS are supported
+* And also all these features are available via the `console`. Just write `GodotPCKExplorer.Console.exe -h` to get help.
 
 ![Main Window](Images/MainForm.png)
 ![Main Window](Images/CreatePack.png)
@@ -24,13 +27,24 @@ It is a viewer and editor for Godot Engine's PCK files with the ability to extra
 
 ## Support
 
-[<img src="https://upload.wikimedia.org/wikipedia/commons/8/8f/QIWI_logo.svg" alt="qiwi" width=90px/>](https://qiwi.com/n/DMITRIYSALNIKOV)
+<a href="https://boosty.to/dmitriysalnikov/donate"><img src="./Images/boosty.png" alt="Boosty" width=150px/></a>
 
-[<img src="https://static.boosty.to/assets/images/boostyDomainLogo.5Vlxt.svg" alt="Boosty" width=120px/>](https://boosty.to/dmitriysalnikov/donate)
+<img src="./Images/USDT-TRC20.png" alt="USDT-TRC20" width=150px/>
+
+<b>USDT-TRC20 TEw934PrsffHsAn5M63SoHYRuZo984EF6v</b>
 
 ## Download
 
 The binaries of the latest version are available on [**itch.io**](https://dmitriysalnikov.itch.io/godot-pck-explorer) or on the [**Github Releases page**](https://github.com/DmitriySalnikov/GodotPCKExplorer/releases/latest).
+
+> [!IMPORTANT]
+> Starting from version 1.4.0, `.NET 8` is required to work. Its download should be prompted when you run `.exe` files in Windows, if it has not been installed previously.
+>
+> The `.NET Desktop Runtime` is required to use the UI versions of the program.
+>
+> On Linux and macOS, you just need to install the `.NET Runtime`.
+>
+> `.NET 8` is available [here](https://dotnet.microsoft.com/en-us/download/dotnet/8.0).
 
 ## License
 

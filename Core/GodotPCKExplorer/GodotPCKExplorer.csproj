@@ -1,0 +1,47 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.1</TargetFramework>
+		<Configurations>Debug;Release;Dev</Configurations>
+		<Platforms>AnyCPU;x64</Platforms>
+		<NoWarn>$(NoWarn);IDE1006</NoWarn>
+		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+
+		<DefaultItemExcludes>
+			$(DefaultItemExcludes);
+			mbedTLS\**\*.exp;
+			mbedTLS\**\*.lib;
+			mbedTLS\**\*.pdb;
+			**\.gitignore
+		</DefaultItemExcludes>
+
+		<PlatformTarget>AnyCPU</PlatformTarget>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|AnyCPU'">
+		<DefineConstants>$(DefineConstants);DEV_ENABLED</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|x64'">
+		<DefineConstants>$(DefineConstants);DEV_ENABLED</DefineConstants>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Update="mbedTLS\linux_x64\mbedTLS_AES.so">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="mbedTLS\linux_x86\mbedTLS_AES.so">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="mbedTLS\mac_universal\mbedTLS_AES.dylib">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="mbedTLS\win_x64\mbedTLS_AES.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="mbedTLS\win_x86\mbedTLS_AES.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+</Project>

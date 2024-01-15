@@ -2,13 +2,13 @@ name: 🛠️ .NET Desktop
 
 on:
   push:
-    paths-ignore: [HexEditorStructures/**, Images/**, mbedTLS_AES/**, ObtainEncryptionKey/**, Tests/**, "*.*"]
+    paths-ignore: [HexEditorStructures/**, Images/**, mbedTLS_AES/**, Bruteforcer/**, Tests/**, "*.*"]
   pull_request:
-    paths-ignore: [HexEditorStructures/**, Images/**, mbedTLS_AES/**, ObtainEncryptionKey/**, Tests/**, "*.*"]
+    paths-ignore: [HexEditorStructures/**, Images/**, mbedTLS_AES/**, Bruteforcer/**, Tests/**, "*.*"]
 
 # Stop the same workflow actions
 concurrency:
-  group: ${{github.workflow}}-${{github.event.pull_request.number || github.run_id}}
+  group: ${{github.workflow}}-${{github.event.pull_request.number || github.ref}}
   cancel-in-progress: true
 
 jobs:
@@ -24,8 +24,10 @@ jobs:
       Artifact_Name: GodotPCKExplorer
       Project_Name: GodotPCKExplorer.UI
       MSBuild_Project_Name: Explorer\GodotPCKExplorer_UI
+      Bruteforcer_Project_Name: Bruteforcer\PCKBruteforcer_UI
       Solution_Path: GodotPCKExplorer.sln
-      SDK_Name: net6.0-windows
+      SDK_Name: net8.0-windows
+      Platform_Name: x64
 
     steps:
       - name: Checkout
@@ -43,23 +45,23 @@ jobs:
         with:
           path: ~/.nuget/packages
           # Look to see if there is a cache hit for the corresponding requirements file
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          key: ${{runner.os}}-nuget-${{hashFiles('**/*.csproj')}}
           restore-keys: |
-            ${{ runner.os }}-nuget
+            ${{runner.os}}-nuget
 
       # Restore the application to populate the obj folder with RuntimeIdentifiers
       - name: Restore nuget packages
-        run: msbuild ${{ env.Solution_Path }} /t:Restore /p:Configuration=${{ matrix.configuration }}
+        run: msbuild ${{env.Solution_Path}} /t:Restore /p:Configuration=${{matrix.configuration}}
 
-      - name: Build solution
+      - name: Build ${{env.MSBuild_Project_Name}}
         shell: powershell
-        run: msbuild ${{ env.Solution_Path }} /t:${{ env.MSBuild_Project_Name }} /p:Configuration=${{ matrix.configuration }} /p:Platform="x64" /m:4
+        run: msbuild ${{env.Solution_Path}} /t:${{env.MSBuild_Project_Name}} /p:Configuration=${{matrix.configuration}} /p:Platform="${{env.Platform_Name}}" /m:4
 
       - name: Prepare artifacts
         if: matrix.configuration == 'Release'
         shell: powershell
         run: |
-          Get-ChildItem "${{ env.Project_Name }}/bin/x64/${{ matrix.configuration }}/" -Directory | ForEach-Object {
+          Get-ChildItem "bin/${{env.Project_Name}}/x64/${{matrix.configuration}}/" -Directory | ForEach-Object {
              Get-ChildItem $_.FullName | Where-Object { ('.pdb', '.xml').Contains($_.Extension) } | Remove-Item -Force
           }
 
@@ -67,12 +69,16 @@ jobs:
         if: matrix.configuration == 'Release'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.Artifact_Name }}
-          path: ${{ env.Project_Name }}/bin/x64/${{ matrix.configuration }}/${{ env.SDK_Name }}
+          name: ${{env.Artifact_Name}}
+          path: bin/${{env.Project_Name}}/x64/${{matrix.configuration}}/${{env.SDK_Name}}
 
       - name: Upload build artifacts
         if: matrix.configuration != 'Release'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.Artifact_Name }}_${{ matrix.configuration }}
-          path: ${{ env.Project_Name }}/bin/${{ matrix.configuration }}/${{ env.SDK_Name }}
+          name: ${{env.Artifact_Name}}_${{matrix.configuration}}
+          path: bin/${{env.Project_Name}}/${{matrix.configuration}}/${{env.SDK_Name}}
+
+      - name: Build ${{env.Bruteforcer_Project_Name}}
+        shell: powershell
+        run: msbuild ${{env.Solution_Path}} /t:${{env.Bruteforcer_Project_Name}} /p:Configuration=${{matrix.configuration}} /p:Platform="${{env.Platform_Name}}" /m:4
