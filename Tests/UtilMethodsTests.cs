@@ -34,7 +34,7 @@ namespace Tests
 
         static string ZipFilePath
         {
-            get => Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "", $"../../../Test{GodotVersion}.zip");
+            get => Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "", $"Test{GodotVersion}.zip");
         }
 
         static string PlatformFolder
@@ -54,6 +54,7 @@ namespace Tests
         static readonly string binaries_base = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "", "TestBinaries");
         static readonly string binaries = Path.Combine(binaries_base, PlatformFolder);
         static readonly string pck_error = "Error: Couldn't load project data at path \".\". Is the .pck file missing?";
+        static readonly string DefaultGodotArgs = "--headless";
 
         readonly List<string> OriginalTestFiles = new();
 
@@ -353,18 +354,18 @@ namespace Tests
 
             File.Copy(testEXE, out_exe);
 
-            using (var r = new RunAppWithOutput(out_exe, ""))
+            using (var r = new RunAppWithOutput(out_exe, DefaultGodotArgs))
                 AssertNotError(r.GetConsoleText());
 
             // test embed pack
-            using (var r = new RunAppWithOutput(testEmbedPack, ""))
+            using (var r = new RunAppWithOutput(testEmbedPack, DefaultGodotArgs))
                 AssertNotError(r.GetConsoleText());
 
             Title("Run without PCK");
             if (File.Exists(newPckPath))
                 File.Delete(newPckPath);
 
-            using (var r = new RunAppWithOutput(out_exe, ""))
+            using (var r = new RunAppWithOutput(out_exe, DefaultGodotArgs))
                 AssertHasError(r.GetConsoleText());
         }
 
@@ -438,17 +439,17 @@ namespace Tests
             Assert.That(PCKActions.Merge(testPCK, newEXE1Byte, true), Is.True);
 
             Title("Bad run");
-            using (var r = new RunAppWithOutput(newEXE, ""))
+            using (var r = new RunAppWithOutput(newEXE, DefaultGodotArgs))
                 AssertHasError(r.GetConsoleText());
 
             Title("Good runs");
             File.Delete(newEXE);
             File.Copy(testEXE, newEXE);
             Assert.That(PCKActions.Merge(testPCK, newEXE), Is.True);
-            using (var r = new RunAppWithOutput(newEXE, ""))
+            using (var r = new RunAppWithOutput(newEXE, DefaultGodotArgs))
                 AssertNotError(r.GetConsoleText());
 
-            using (var r = new RunAppWithOutput(newEXE1Byte, ""))
+            using (var r = new RunAppWithOutput(newEXE1Byte, DefaultGodotArgs))
                 if (GodotVersion == 3)
                     AssertNotError(r.GetConsoleText());
                 else if (GodotVersion == 3)
@@ -494,13 +495,13 @@ namespace Tests
             Assert.That(PCKActions.Rip(new_pck, null, true), Is.False);
 
             Title("Good run");
-            using (var r = new RunAppWithOutput(new_exe, ""))
+            using (var r = new RunAppWithOutput(new_exe, DefaultGodotArgs))
                 AssertNotError(r.GetConsoleText());
 
             Title("Run without PCK");
             if (File.Exists(new_pck))
                 File.Delete(new_pck);
-            using (var r = new RunAppWithOutput(new_exe, ""))
+            using (var r = new RunAppWithOutput(new_exe, DefaultGodotArgs))
                 AssertHasError(r.GetConsoleText());
 
             Title("Rip locked");
@@ -553,10 +554,10 @@ namespace Tests
             Assert.That(PCKActions.Split(exe), Is.False);
 
             Title("Good runs");
-            using (var r = new RunAppWithOutput(exe, ""))
+            using (var r = new RunAppWithOutput(exe, DefaultGodotArgs))
                 AssertNotError(r.GetConsoleText());
 
-            using (var r = new RunAppWithOutput(new_exe, ""))
+            using (var r = new RunAppWithOutput(new_exe, DefaultGodotArgs))
                 AssertNotError(r.GetConsoleText());
 
             Title("Bad runs");
@@ -564,10 +565,10 @@ namespace Tests
                 if (File.Exists(f))
                     File.Delete(f);
 
-            using (var r = new RunAppWithOutput(exe, ""))
+            using (var r = new RunAppWithOutput(exe, DefaultGodotArgs))
                 AssertHasError(r.GetConsoleText());
 
-            using (var r = new RunAppWithOutput(new_exe, ""))
+            using (var r = new RunAppWithOutput(new_exe, DefaultGodotArgs))
                 AssertHasError(r.GetConsoleText());
 
             if (/*!Utils.IsRunningOnMono()*/true)
@@ -611,13 +612,13 @@ namespace Tests
             {
                 Assert.That(PCKActions.ChangeVersion(pck, newVersion.ToString()), Is.True);
                 Assert.That(GetPCKVersion(pck), Is.EqualTo(newVersion));
-                using (var r = new RunAppWithOutput(exe, ""))
+                using (var r = new RunAppWithOutput(exe, DefaultGodotArgs))
                     AssertHasError(r.GetConsoleText());
 
                 Assert.That(PCKActions.ChangeVersion(pck, origVersion.ToString()), Is.True);
                 Assert.That(GetPCKVersion(pck), Is.EqualTo(origVersion));
 
-                using (var r = new RunAppWithOutput(exe, ""))
+                using (var r = new RunAppWithOutput(exe, DefaultGodotArgs))
                     AssertNotError(r.GetConsoleText());
             });
 
@@ -627,13 +628,13 @@ namespace Tests
                 Assert.That(PCKActions.ChangeVersion(exeEmbedded, newVersion.ToString()), Is.True);
                 Assert.That(GetPCKVersion(exeEmbedded), Is.EqualTo(newVersion));
 
-                using (var r = new RunAppWithOutput(exeEmbedded, ""))
+                using (var r = new RunAppWithOutput(exeEmbedded, DefaultGodotArgs))
                     AssertHasError(r.GetConsoleText());
 
                 Assert.That(PCKActions.ChangeVersion(exeEmbedded, origVersion.ToString()), Is.True);
                 Assert.That(GetPCKVersion(exeEmbedded), Is.EqualTo(origVersion));
 
-                using (var r = new RunAppWithOutput(exeEmbedded, ""))
+                using (var r = new RunAppWithOutput(exeEmbedded, DefaultGodotArgs))
                     AssertNotError(r.GetConsoleText());
             });
         }
@@ -702,25 +703,25 @@ namespace Tests
 
             Assert.Multiple(() =>
             {
-                using (var r = new RunAppWithOutput(exe, ""))
+                using (var r = new RunAppWithOutput(exe, DefaultGodotArgs))
                     AssertNotError(r.GetConsoleText());
 
-                using (var r = new RunAppWithOutput(exe_embedded, ""))
+                using (var r = new RunAppWithOutput(exe_embedded, DefaultGodotArgs))
                     AssertNotError(r.GetConsoleText());
 
-                using (var r = new RunAppWithOutput(exe_ripped, ""))
+                using (var r = new RunAppWithOutput(exe_ripped, DefaultGodotArgs))
                     AssertNotError(r.GetConsoleText());
 
-                using (var r = new RunAppWithOutput(exe_new, ""))
+                using (var r = new RunAppWithOutput(exe_new, DefaultGodotArgs))
                     AssertNotError(r.GetConsoleText());
 
-                using (var r = new RunAppWithOutput(exe_new_files, ""))
+                using (var r = new RunAppWithOutput(exe_new_files, DefaultGodotArgs))
                     AssertNotError(r.GetConsoleText());
             });
 
             Title("PCK bad test runs");
 
-            using (var r = new RunAppWithOutput(exe_new_wrong_key, ""))
+            using (var r = new RunAppWithOutput(exe_new_wrong_key, DefaultGodotArgs))
                 AssertHasError(r.GetConsoleText());
         }
     }

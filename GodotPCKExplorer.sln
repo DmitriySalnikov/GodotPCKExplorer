@@ -3,19 +3,21 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31919.166
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mbedTLS_AES", "mbedTLS_AES\mbedTLS_AES.vcxproj", "{E57DCA52-531B-4244-8727-67B7CA2374BC}"
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Global.Shared", "Core\Global.Shared\Global.Shared.shproj", "{0E354F23-8795-4119-8669-FCCDF193BE6D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GodotPCKExplorer", "GodotPCKExplorer\GodotPCKExplorer.csproj", "{37268AA0-B7A7-494D-9DF0-7C08240E44C4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GodotPCKExplorer", "Core\GodotPCKExplorer\GodotPCKExplorer.csproj", "{37268AA0-B7A7-494D-9DF0-7C08240E44C4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GodotPCKExplorer.UI", "GodotPCKExplorer.UI\GodotPCKExplorer.UI.csproj", "{6747C3ED-4F67-4457-B439-F18A90E3D084}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GodotPCKExplorer.UI", "Explorer\UI\GodotPCKExplorer.UI.csproj", "{6747C3ED-4F67-4457-B439-F18A90E3D084}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GodotPCKExplorer.Console", "Explorer\Console\GodotPCKExplorer.Console.csproj", "{E16FDF11-E3A7-4248-915C-F6E0E581EF72}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PCKBruteforcer", "Bruteforcer\PCKBruteforcer\PCKBruteforcer.csproj", "{D9815CB2-44FD-44B6-A145-21052779CC98}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PCKBruteforcer.UI", "Bruteforcer\UI\PCKBruteforcer.UI.csproj", "{B605FA7E-7FBC-4AEC-8EF6-1E653CD3CF31}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PCKBruteforcer.Console", "Bruteforcer\Console\PCKBruteforcer.Console.csproj", "{6D0449F6-EC27-4A9D-97C9-005611947C37}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj", "{92349402-96E5-45FF-8E8B-5C7BC8FE534F}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GodotPCKExplorer.Console", "GodotPCKExplorer.Console\GodotPCKExplorer.Console.csproj", "{E16FDF11-E3A7-4248-915C-F6E0E581EF72}"
-EndProject
-Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "GodotPCKExplorer.Shared", "GodotPCKExplorer.Shared\GodotPCKExplorer.Shared.shproj", "{AF0019C8-E84A-4C2A-96E5-D805547D9E03}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObtainPCKEncryptionKey", "ObtainEncryptionKey\ObtainPCKEncryptionKey.csproj", "{B605FA7E-7FBC-4AEC-8EF6-1E653CD3CF31}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{5CE9EA6C-33B0-41AF-A6B3-F25EDBEDAC9E}"
 EndProject
@@ -24,6 +26,11 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{C100225E-44F7-4748-9A97-16D025E0B913}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Bruteforcer", "Bruteforcer", "{7158BC90-4FE9-4729-A2A4-7DB28FD1D2C8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{78BC50E6-FEA3-493F-9125-892785A5316C}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,12 +42,6 @@ Global
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{E57DCA52-531B-4244-8727-67B7CA2374BC}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{E57DCA52-531B-4244-8727-67B7CA2374BC}.Debug|x64.ActiveCfg = Debug|x64
-		{E57DCA52-531B-4244-8727-67B7CA2374BC}.Dev|Any CPU.ActiveCfg = Debug|Win32
-		{E57DCA52-531B-4244-8727-67B7CA2374BC}.Dev|x64.ActiveCfg = Debug|x64
-		{E57DCA52-531B-4244-8727-67B7CA2374BC}.Release|Any CPU.ActiveCfg = Release|Win32
-		{E57DCA52-531B-4244-8727-67B7CA2374BC}.Release|x64.ActiveCfg = Release|x64
 		{37268AA0-B7A7-494D-9DF0-7C08240E44C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{37268AA0-B7A7-494D-9DF0-7C08240E44C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{37268AA0-B7A7-494D-9DF0-7C08240E44C4}.Debug|x64.ActiveCfg = Debug|x64
@@ -65,18 +66,6 @@ Global
 		{6747C3ED-4F67-4457-B439-F18A90E3D084}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6747C3ED-4F67-4457-B439-F18A90E3D084}.Release|x64.ActiveCfg = Release|x64
 		{6747C3ED-4F67-4457-B439-F18A90E3D084}.Release|x64.Build.0 = Release|x64
-		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Debug|x64.Build.0 = Debug|Any CPU
-		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Dev|Any CPU.ActiveCfg = Debug|Any CPU
-		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Dev|Any CPU.Build.0 = Debug|Any CPU
-		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Dev|x64.ActiveCfg = Debug|Any CPU
-		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Dev|x64.Build.0 = Debug|Any CPU
-		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Release|x64.ActiveCfg = Release|x64
-		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Release|x64.Build.0 = Release|x64
 		{E16FDF11-E3A7-4248-915C-F6E0E581EF72}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E16FDF11-E3A7-4248-915C-F6E0E581EF72}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E16FDF11-E3A7-4248-915C-F6E0E581EF72}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -89,6 +78,18 @@ Global
 		{E16FDF11-E3A7-4248-915C-F6E0E581EF72}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E16FDF11-E3A7-4248-915C-F6E0E581EF72}.Release|x64.ActiveCfg = Release|Any CPU
 		{E16FDF11-E3A7-4248-915C-F6E0E581EF72}.Release|x64.Build.0 = Release|Any CPU
+		{D9815CB2-44FD-44B6-A145-21052779CC98}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9815CB2-44FD-44B6-A145-21052779CC98}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9815CB2-44FD-44B6-A145-21052779CC98}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D9815CB2-44FD-44B6-A145-21052779CC98}.Debug|x64.Build.0 = Debug|Any CPU
+		{D9815CB2-44FD-44B6-A145-21052779CC98}.Dev|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9815CB2-44FD-44B6-A145-21052779CC98}.Dev|Any CPU.Build.0 = Debug|Any CPU
+		{D9815CB2-44FD-44B6-A145-21052779CC98}.Dev|x64.ActiveCfg = Debug|Any CPU
+		{D9815CB2-44FD-44B6-A145-21052779CC98}.Dev|x64.Build.0 = Debug|Any CPU
+		{D9815CB2-44FD-44B6-A145-21052779CC98}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9815CB2-44FD-44B6-A145-21052779CC98}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9815CB2-44FD-44B6-A145-21052779CC98}.Release|x64.ActiveCfg = Release|Any CPU
+		{D9815CB2-44FD-44B6-A145-21052779CC98}.Release|x64.Build.0 = Release|Any CPU
 		{B605FA7E-7FBC-4AEC-8EF6-1E653CD3CF31}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B605FA7E-7FBC-4AEC-8EF6-1E653CD3CF31}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B605FA7E-7FBC-4AEC-8EF6-1E653CD3CF31}.Debug|x64.ActiveCfg = Debug|x64
@@ -101,25 +102,52 @@ Global
 		{B605FA7E-7FBC-4AEC-8EF6-1E653CD3CF31}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B605FA7E-7FBC-4AEC-8EF6-1E653CD3CF31}.Release|x64.ActiveCfg = Release|x64
 		{B605FA7E-7FBC-4AEC-8EF6-1E653CD3CF31}.Release|x64.Build.0 = Release|x64
+		{6D0449F6-EC27-4A9D-97C9-005611947C37}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D0449F6-EC27-4A9D-97C9-005611947C37}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6D0449F6-EC27-4A9D-97C9-005611947C37}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6D0449F6-EC27-4A9D-97C9-005611947C37}.Debug|x64.Build.0 = Debug|Any CPU
+		{6D0449F6-EC27-4A9D-97C9-005611947C37}.Dev|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D0449F6-EC27-4A9D-97C9-005611947C37}.Dev|Any CPU.Build.0 = Debug|Any CPU
+		{6D0449F6-EC27-4A9D-97C9-005611947C37}.Dev|x64.ActiveCfg = Debug|Any CPU
+		{6D0449F6-EC27-4A9D-97C9-005611947C37}.Dev|x64.Build.0 = Debug|Any CPU
+		{6D0449F6-EC27-4A9D-97C9-005611947C37}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6D0449F6-EC27-4A9D-97C9-005611947C37}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6D0449F6-EC27-4A9D-97C9-005611947C37}.Release|x64.ActiveCfg = Release|Any CPU
+		{6D0449F6-EC27-4A9D-97C9-005611947C37}.Release|x64.Build.0 = Release|Any CPU
+		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Debug|x64.Build.0 = Debug|Any CPU
+		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Dev|Any CPU.ActiveCfg = Debug|Any CPU
+		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Dev|Any CPU.Build.0 = Debug|Any CPU
+		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Dev|x64.ActiveCfg = Debug|Any CPU
+		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Dev|x64.Build.0 = Debug|Any CPU
+		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Release|x64.ActiveCfg = Release|x64
+		{92349402-96E5-45FF-8E8B-5C7BC8FE534F}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{E57DCA52-531B-4244-8727-67B7CA2374BC} = {5CE9EA6C-33B0-41AF-A6B3-F25EDBEDAC9E}
+		{0E354F23-8795-4119-8669-FCCDF193BE6D} = {5CE9EA6C-33B0-41AF-A6B3-F25EDBEDAC9E}
 		{37268AA0-B7A7-494D-9DF0-7C08240E44C4} = {5CE9EA6C-33B0-41AF-A6B3-F25EDBEDAC9E}
 		{6747C3ED-4F67-4457-B439-F18A90E3D084} = {9AB73BA0-778E-4071-9ADD-F5FFC235884C}
-		{92349402-96E5-45FF-8E8B-5C7BC8FE534F} = {C100225E-44F7-4748-9A97-16D025E0B913}
 		{E16FDF11-E3A7-4248-915C-F6E0E581EF72} = {9AB73BA0-778E-4071-9ADD-F5FFC235884C}
-		{AF0019C8-E84A-4C2A-96E5-D805547D9E03} = {9AB73BA0-778E-4071-9ADD-F5FFC235884C}
+		{D9815CB2-44FD-44B6-A145-21052779CC98} = {7158BC90-4FE9-4729-A2A4-7DB28FD1D2C8}
 		{B605FA7E-7FBC-4AEC-8EF6-1E653CD3CF31} = {7158BC90-4FE9-4729-A2A4-7DB28FD1D2C8}
+		{6D0449F6-EC27-4A9D-97C9-005611947C37} = {7158BC90-4FE9-4729-A2A4-7DB28FD1D2C8}
+		{92349402-96E5-45FF-8E8B-5C7BC8FE534F} = {C100225E-44F7-4748-9A97-16D025E0B913}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {27A59958-092D-4B56-A10A-7C2F47551701}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		GodotPCKExplorer.Shared\GodotPCKExplorer.Shared.projitems*{6747c3ed-4f67-4457-b439-f18a90e3d084}*SharedItemsImports = 5
-		GodotPCKExplorer.Shared\GodotPCKExplorer.Shared.projitems*{af0019c8-e84a-4c2a-96e5-d805547d9e03}*SharedItemsImports = 13
-		GodotPCKExplorer.Shared\GodotPCKExplorer.Shared.projitems*{e16fdf11-e3a7-4248-915c-f6e0e581ef72}*SharedItemsImports = 5
+		Core\Global.Shared\Global.Shared.projitems*{0e354f23-8795-4119-8669-fccdf193be6d}*SharedItemsImports = 13
+		Core\Global.Shared\Global.Shared.projitems*{6747c3ed-4f67-4457-b439-f18a90e3d084}*SharedItemsImports = 5
+		Core\Global.Shared\Global.Shared.projitems*{6d0449f6-ec27-4a9d-97c9-005611947c37}*SharedItemsImports = 5
+		Core\Global.Shared\Global.Shared.projitems*{b605fa7e-7fbc-4aec-8ef6-1e653cd3cf31}*SharedItemsImports = 5
+		Core\Global.Shared\Global.Shared.projitems*{e16fdf11-e3a7-4248-915c-f6e0e581ef72}*SharedItemsImports = 5
 	EndGlobalSection
 EndGlobal
