@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Diagnostics;
 using System.Reflection;
 
@@ -119,10 +120,12 @@ internal sealed class VersionCheckerGitHub : IDisposable
 
         try
         {
-            dynamic resultObject = JsonConvert.DeserializeObject(new StreamReader(res.Content.ReadAsStream()).ReadToEnd()) ?? throw new NullReferenceException();
-            Version newVersion = new(resultObject.tag_name.Value);
+            JsonDocument resultObject = JsonDocument.Parse(new StreamReader(res.Content.ReadAsStream()).ReadToEnd()) ?? throw new NullReferenceException();
+            var json = resultObject.RootElement;
+
+            Version newVersion = new(json.GetProperty("tag_name").GetString() ?? throw new NullReferenceException());
             Version currentVersion = Assembly.GetExecutingAssembly().GetName().Version ?? new Version();
-            string updateUrl = resultObject.html_url.Value;
+            string updateUrl = json.GetProperty("html_url").GetString() ?? throw new NullReferenceException();
 
             // Skip if the new version matches the skip version, or don't skip if checking manually
             if (newVersion != SkipVersion || !_isSilentCheck)
@@ -204,13 +207,8 @@ internal sealed class VersionCheckerGitHub : IDisposable
         return MSGDialogResult.Cancel;
     }
 
-    public class VersionSkipByUserData : EventArgs
+    public class VersionSkipByUserData(Version skippedVersion) : EventArgs
     {
-        public Version SkippedVersion;
-
-        public VersionSkipByUserData(Version skippedVersion)
-        {
-            SkippedVersion = skippedVersion;
-        }
+        public Version SkippedVersion = skippedVersion;
     }
 }

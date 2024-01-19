@@ -4,6 +4,7 @@
 		<OutputType>Exe</OutputType>
 		<TargetFramework>net8.0-windows</TargetFramework>
 		<UseWindowsForms>true</UseWindowsForms>
+		<EnableWindowsTargeting>true</EnableWindowsTargeting>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<ApplicationIcon>icon.ico</ApplicationIcon>
 		<Title>Godot PCK Explorer</Title>
@@ -29,10 +30,6 @@
 
 	<ItemGroup>
 		<Compile Include="..\Console\ConsoleCommands.cs" Link="ConsoleCommands.cs" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 	</ItemGroup>
 
 	<ItemGroup>

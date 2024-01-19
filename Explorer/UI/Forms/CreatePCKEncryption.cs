@@ -33,7 +33,7 @@ namespace GodotPCKExplorer.UI
         {
             using var aes = Aes.Create();
             aes.GenerateKey();
-            tb_key.Text = BitConverter.ToString(aes.Key);
+            tb_key.Text = PCKUtils.ByteArrayToHexString(aes.Key);
         }
     }
 }

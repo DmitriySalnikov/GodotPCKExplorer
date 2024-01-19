@@ -1,13 +1,14 @@
 ﻿using GodotPCKExplorer.GlobalShared;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace GodotPCKExplorer.UI
 {
     class RecentFiles(string path, bool isEncrypted, string encryptionKey)
     {
-        public string Path = path;
-        public bool IsEncrypted = isEncrypted;
-        public string EncryptionKey = encryptionKey;
+        public string Path { get; set; } = path;
+        public bool IsEncrypted { get; set; } = isEncrypted;
+        public string EncryptionKey { get; set; } = encryptionKey;
     }
 
     class GUIConfig
@@ -16,7 +17,7 @@ namespace GodotPCKExplorer.UI
         public static GUIConfig Instance { get; private set; } = new();
 
         [JsonIgnore]
-        static string SaveFile = Path.Combine(GlobalConstants.AppDataPath, "settings.json");
+        static readonly string SaveFile = Path.Combine(GlobalConstants.AppDataPath, "settings.json");
 
         #region Packing
 
@@ -60,11 +61,56 @@ namespace GodotPCKExplorer.UI
             Instance ??= this;
         }
 
+        public GUIConfig(
+            PCKVersion packedVersion,
+            bool embedPCK,
+            string folderPath,
+            bool matchCaseFilterPackingForm,
+            uint pckAlignment,
+
+
+            bool encryptPCK,
+            string encryptionKey,
+            bool encryptIndex,
+            bool encryptFiles,
+
+
+            bool overwriteExtracted,
+            bool checkMD5Extracted,
+
+            List<RecentFiles> recentOpenedFiles,
+            bool matchCaseFilterMainForm,
+            bool showConsole,
+            string skipVersion
+            )
+        {
+            PackedVersion = packedVersion;
+            EmbedPCK = embedPCK;
+            FolderPath = folderPath;
+            MatchCaseFilterPackingForm = matchCaseFilterPackingForm;
+            PCKAlignment = pckAlignment;
+
+            EncryptPCK = encryptPCK;
+            EncryptionKey = encryptionKey;
+            EncryptIndex = encryptIndex;
+            EncryptFiles = encryptFiles;
+
+            OverwriteExtracted = overwriteExtracted;
+            CheckMD5Extracted = checkMD5Extracted;
+
+            RecentOpenedFiles = recentOpenedFiles;
+            MatchCaseFilterMainForm = matchCaseFilterMainForm;
+            ShowConsole = showConsole;
+            SkipVersion = skipVersion;
+        }
+
+        [JsonIgnore]
+        readonly JsonSerializerOptions serializerOptions = new() { WriteIndented = true, IncludeFields = true };
         public void Save()
         {
             try
             {
-                File.WriteAllText(SaveFile, JsonConvert.SerializeObject(this, Formatting.Indented));
+                File.WriteAllText(SaveFile, JsonSerializer.Serialize(this, serializerOptions));
             }
             catch (Exception ex)
             {
@@ -77,7 +123,7 @@ namespace GodotPCKExplorer.UI
             try
             {
                 if (File.Exists(SaveFile))
-                    Instance = JsonConvert.DeserializeObject<GUIConfig>(File.ReadAllText(SaveFile)) ?? new();
+                    Instance = JsonSerializer.Deserialize<GUIConfig>(File.ReadAllText(SaveFile)) ?? new();
 
                 Instance ??= new();
             }
@@ -88,26 +134,5 @@ namespace GodotPCKExplorer.UI
         }
 
         #endregion
-
-#if false
-        // https://stackoverflow.com/questions/25749509/how-can-i-tell-json-net-to-ignore-properties-in-a-3rd-party-object
-        public class ShouldSerializeContractResolver : DefaultContractResolver
-        {
-            public static ShouldSerializeContractResolver Instance { get; } = new ShouldSerializeContractResolver();
-
-            protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
-            {
-                JsonProperty property = base.CreateProperty(member, memberSerialization);
-                if (property.DeclaringType == typeof(PCKVersion) && property.PropertyType != typeof(int))
-                {
-#if DEV_ENABLED
-                    Console.WriteLine($"Ignoring {member.DeclaringType}.{member.Name} on save");
-#endif
-                    property.Ignored = true;
-                }
-                return property;
-            }
-        }
-#endif
     }
 }

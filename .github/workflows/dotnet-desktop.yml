@@ -11,23 +11,24 @@ concurrency:
   group: ${{github.workflow}}-${{github.event.pull_request.number || github.ref}}
   cancel-in-progress: true
 
+env:
+  Artifact_Name: GodotPCKExplorer
+  Project_Name: GodotPCKExplorer.UI
+  MSBuild_Project_Name: Explorer\GodotPCKExplorer_UI
+  Bruteforcer_Project_Name: Bruteforcer\PCKBruteforcer_UI
+  Solution_Path: GodotPCKExplorer.sln
+  SDK_Name: net8.0-windows
+  Platform_Name: x64
+
 jobs:
   build:
+    name: Build ${{matrix.configuration}}
     strategy:
       fail-fast: false
       matrix:
         configuration: [Debug, Release]
 
     runs-on: windows-latest
-
-    env:
-      Artifact_Name: GodotPCKExplorer
-      Project_Name: GodotPCKExplorer.UI
-      MSBuild_Project_Name: Explorer\GodotPCKExplorer_UI
-      Bruteforcer_Project_Name: Bruteforcer\PCKBruteforcer_UI
-      Solution_Path: GodotPCKExplorer.sln
-      SDK_Name: net8.0-windows
-      Platform_Name: x64
 
     steps:
       - name: Checkout
@@ -82,3 +83,19 @@ jobs:
       - name: Build ${{env.Bruteforcer_Project_Name}}
         shell: powershell
         run: msbuild ${{env.Solution_Path}} /t:${{env.Bruteforcer_Project_Name}} /p:Configuration=${{matrix.configuration}} /p:Platform="${{env.Platform_Name}}" /m:4
+
+
+  tests:
+    name: Tests
+    #needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run unit tests
+        shell: bash
+        run: dotnet test Tests -p:Parallel=0

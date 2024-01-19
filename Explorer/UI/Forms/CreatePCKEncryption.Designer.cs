@@ -74,7 +74,7 @@
             btn_ok.Location = new Point(14, 117);
             btn_ok.Margin = new Padding(4, 3, 4, 3);
             btn_ok.Name = "btn_ok";
-            btn_ok.Size = new Size(356, 27);
+            btn_ok.Size = new Size(552, 27);
             btn_ok.TabIndex = 4;
             btn_ok.Text = "Apply";
             btn_ok.UseVisualStyleBackColor = true;
@@ -87,13 +87,13 @@
             tb_key.Location = new Point(14, 33);
             tb_key.Margin = new Padding(4, 3, 4, 3);
             tb_key.Name = "tb_key";
-            tb_key.Size = new Size(278, 23);
+            tb_key.Size = new Size(474, 23);
             tb_key.TabIndex = 5;
             // 
             // button1
             // 
             button1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            button1.Location = new Point(300, 31);
+            button1.Location = new Point(496, 31);
             button1.Margin = new Padding(4, 3, 4, 3);
             button1.Name = "button1";
             button1.Size = new Size(70, 27);
@@ -106,7 +106,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(384, 150);
+            ClientSize = new Size(580, 150);
             Controls.Add(button1);
             Controls.Add(tb_key);
             Controls.Add(btn_ok);

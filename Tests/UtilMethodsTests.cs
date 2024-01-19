@@ -2,11 +2,11 @@
 using System.Collections;
 using System.IO.Compression;
 using GodotPCKExplorer;
+using PCKBruteforcer;
 
 namespace Tests
 {
-    [TestFixture]
-    [Apartment(ApartmentState.STA)]
+    [TestFixture, NonParallelizable, SingleThreaded]
     [TestFixtureSource(typeof(MyFixtureData), nameof(MyFixtureData.FixtureParams))]
     public class UtilMethodsTests
     {
@@ -15,24 +15,9 @@ namespace Tests
             get => OperatingSystem.IsWindows() ? ".exe" : "";
         }
 
-        internal static int ExecutableRunDelay
-        {
-            get
-            {
-                if (OperatingSystem.IsWindows())
-                {
-                    return 1000;
-                }
-                else
-                {
-                    return 1500;
-                }
-            }
-        }
+        int GodotVersion = 0;
 
-        static int GodotVersion = 0;
-
-        static string ZipFilePath
+        string ZipFilePath
         {
             get => Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "", $"Test{GodotVersion}.zip");
         }
@@ -51,12 +36,12 @@ namespace Tests
             }
         }
 
-        static readonly string binaries_base = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "", "TestBinaries");
-        static readonly string binaries = Path.Combine(binaries_base, PlatformFolder);
-        static readonly string pck_error = "Error: Couldn't load project data at path \".\". Is the .pck file missing?";
-        static readonly string DefaultGodotArgs = "--headless";
+        static readonly string DefaultGodotArgs = "--headless --quit";
 
-        readonly List<string> OriginalTestFiles = [];
+        string binaries_base;
+        string binaries;
+
+        List<string> OriginalTestFiles = [];
 
         public UtilMethodsTests(int version)
         {
@@ -73,20 +58,6 @@ namespace Tests
             return name + ExecutableExtension;
         }
 
-        static string RemoveTimestampFromLogs(string logs)
-        {
-            logs = logs.Replace("\r\n", "\n").Replace("\r", "\n").Trim();
-            var lines = logs.Split('\n');
-            for (int i = 0; i < lines.Length; i++)
-            {
-                var split = lines[i].Split(new char[] { '\t' }, 2);
-                if (split.Length == 2)
-                    lines[i] = split[1];
-            }
-
-            return string.Join(Environment.NewLine, lines);
-        }
-
         static PCKVersion GetPCKVersion(string pack)
         {
             Console.WriteLine($"Getting version");
@@ -95,7 +66,7 @@ namespace Tests
             using (var output = new ConsoleOutputRedirect())
             {
                 Assert.That(PCKActions.PrintInfo(pack), Is.True);
-                console_output = RemoveTimestampFromLogs(output.GetOuput());
+                console_output = TUtils.RemoveTimestampFromLogs(output.GetOuput());
                 var lines = console_output.Replace("\r\n", "\n").Replace("\r", "\n").Split('\n');
                 foreach (var l in lines)
                 {
@@ -112,20 +83,14 @@ namespace Tests
             return ver;
         }
 
-        static void AssertHasError(string output)
-        {
-            Assert.That(output.Trim(), Does.StartWith(pck_error));
-        }
-
-        static void AssertNotError(string output)
-        {
-            Assert.That(output.Trim(), Does.Not.StartWith(pck_error));
-        }
-
         [SetUp]
         public void GodotPCKInit()
         {
-            PCKActions.Init();
+            if (!PCKActions.IsInited)
+                PCKActions.Init(new ProgressReporterTests($"{TestContext.CurrentContext.Test.MethodName ?? "!NoTest!"}({GodotVersion})"));
+
+            binaries_base = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "", "TestBinaries", $"{GodotVersion}_{TestContext.CurrentContext.Test.MethodName}");
+            binaries = Path.Combine(binaries_base, PlatformFolder);
 
             if (!Directory.Exists(binaries_base))
                 Directory.CreateDirectory(binaries_base);
@@ -141,7 +106,9 @@ namespace Tests
                     Directory.CreateDirectory(Path.GetDirectoryName(file) ?? "");
 
                     if (f.FullName.StartsWith(PlatformFolder))
+                    {
                         f.ExtractToFile(file, false);
+                    }
                 }
                 catch { }
             }
@@ -156,11 +123,18 @@ namespace Tests
 
         private void ClearBinaries()
         {
-            foreach (var d in Directory.GetDirectories(binaries_base))
-                Directory.Delete(d, true);
-            foreach (var f in Directory.GetFiles(binaries_base, "*", SearchOption.AllDirectories))
-                if (!OriginalTestFiles.Contains(f))
-                    File.Delete(f);
+            for (int i = 0; i < 5; i++)
+            {
+                try
+                {
+                    foreach (var d in Directory.GetDirectories(binaries_base))
+                        Directory.Delete(d, true);
+                    foreach (var f in Directory.GetFiles(binaries_base, "*", SearchOption.AllDirectories))
+                        if (!OriginalTestFiles.Contains(f))
+                            File.Delete(f);
+                }
+                catch { }
+            }
         }
 
         /* TODO add UI tests?..
@@ -211,7 +185,6 @@ namespace Tests
 
             Title("Compare content with folder");
             var list_of_files = PCKUtils.GetListOfFilesToPack(Path.GetFullPath(exportTestPath));
-            Assert.Multiple(() =>
             {
                 using var pck = new PCKReader();
 
@@ -222,7 +195,7 @@ namespace Tests
                     Assert.That(pck.Files.ContainsKey(f.Path), Is.True);
 
                 pck.Close();
-            });
+            }
 
             // select at least one file
             var rnd = new Random();
@@ -239,7 +212,6 @@ namespace Tests
 
             Title("Extract only seleceted files and compare");
             var export_files = seleceted_files.Select((s) => s.Path);
-            Assert.Multiple(() =>
             {
                 Assert.That(PCKActions.Extract(testPCK, exportTestSelectedPath, true, export_files), Is.True);
 
@@ -248,10 +220,9 @@ namespace Tests
 
                 foreach (var f in export_files)
                     Assert.That(exportedSelectedList.FindIndex((l) => l.Path == f), Is.Not.EqualTo(-1));
-            });
+            }
 
             Title("Extract only seleceted wrong files and compare");
-            Assert.Multiple(() =>
             {
                 var wrong_selected = export_files.ToList();
                 for (int i = 0; i < wrong_selected.Count; i++)
@@ -259,16 +230,14 @@ namespace Tests
 
                 Assert.That(PCKActions.Extract(testPCK, exportTestSelectedWrongPath, true, wrong_selected), Is.True);
                 Assert.That(Directory.Exists(exportTestSelectedWrongPath), Is.False);
-            });
+            }
 
             Title("Extract empty list");
-            Assert.Multiple(() =>
             {
                 Assert.That(PCKActions.Extract(testPCK, exportTestSelectedWrongPath, true, Array.Empty<string>()), Is.False);
-            });
+            }
 
             Title("Extract without overwrite");
-            Assert.Multiple(() =>
             {
                 Assert.That(PCKActions.Extract(testPCK, overwritePath, true), Is.True);
                 var files = Directory.GetFiles(overwritePath);
@@ -280,35 +249,32 @@ namespace Tests
 
                 Assert.That(File.ReadAllText(files[0]), Is.EqualTo("Test"));
                 Assert.That(File.Exists(files[1]), Is.True);
-            });
+            }
 
             Title("Pack new PCK");
             string ver = GetPCKVersion(testPCK).ToString();
-            Assert.Multiple(() =>
             {
                 Assert.That(PCKActions.Pack(exportTestPath, newPckPath, ver), Is.True);
 
-                if (/*!Utils.IsRunningOnMono()*/true)
+                if (OperatingSystem.IsWindows())
                 {
                     Title("Locked file");
                     string locked_file = Path.Combine(exportTestPath, "out.lock");
                     using var f = new LockedFile(locked_file);
                     Assert.That(PCKActions.Pack(exportTestPath, locked_file, ver), Is.False);
                 }
-            });
+            }
 
             Title("Wrong version and directory");
-            Assert.Multiple(() =>
             {
                 Assert.That(PCKActions.Pack(exportTestPath, newPckPath, "1234"), Is.False);
                 Assert.That(PCKActions.Pack(exportTestPath, newPckPath, "123.33.2.1"), Is.False);
                 Assert.That(PCKActions.Pack(exportTestPath, newPckPath, "-1.0.2.1"), Is.False);
                 Assert.That(PCKActions.Pack(exportTestPath + "WrongPath", newPckPath, ver), Is.False);
-            });
+            }
 
             // Compare new PCK content with alredy existing trusted list of files 'list_of_files'
             Title("Compare files to original list");
-            Assert.Multiple(() =>
             {
                 using var pck = new PCKReader();
                 Assert.That(pck.OpenFile(testPCK), Is.True);
@@ -316,29 +282,26 @@ namespace Tests
                     Assert.That(list_of_files.FindIndex((l) => l.Path == f), Is.Not.EqualTo(-1));
 
                 pck.Close();
-            });
+            }
 
             Title("Pack embedded");
-            Assert.Multiple(() =>
             {
-                File.Copy(testEXE, testEmbedPack);
+                TUtils.CopyFile(testEXE, testEmbedPack);
                 Assert.That(PCKActions.Pack(exportTestPath, testEmbedPack, ver, embed: true), Is.True);
                 Assert.That(File.Exists(Path.ChangeExtension(testEmbedPack, Exe(".old"))), Is.True);
-            });
+            }
 
             Title("Pack embedded again");
-            Assert.Multiple(() =>
             {
                 Assert.That(PCKActions.Pack(exportTestPath, testEmbedPack, ver, embed: true), Is.False);
                 Assert.That(File.Exists(Path.ChangeExtension(testEmbedPack, Exe(".old"))), Is.False);
-            });
+            }
 
             Title("Pack only selected files");
 
             Assert.That(PCKActions.Pack(seleceted_files, selectedFilesPck, ver), Is.True);
 
             Title("Compare selected to pack content with new pck");
-            Assert.Multiple(() =>
             {
                 using var pck = new PCKReader();
                 Assert.That(pck.OpenFile(selectedFilesPck), Is.True);
@@ -348,25 +311,25 @@ namespace Tests
                     Assert.That(seleceted_files.FindIndex((l) => l.Path == f), Is.Not.EqualTo(-1));
 
                 pck.Close();
-            });
+            }
 
             Title("Good run");
 
-            File.Copy(testEXE, out_exe);
+            TUtils.CopyFile(testEXE, out_exe);
 
-            using (var r = new RunAppWithOutput(out_exe, DefaultGodotArgs))
-                AssertNotError(r.GetConsoleText());
+            using (var r = new RunGodotWithOutput(out_exe, DefaultGodotArgs))
+                Assert.That(r.IsSuccess(), Is.True);
 
             // test embed pack
-            using (var r = new RunAppWithOutput(testEmbedPack, DefaultGodotArgs))
-                AssertNotError(r.GetConsoleText());
+            using (var r = new RunGodotWithOutput(testEmbedPack, DefaultGodotArgs))
+                Assert.That(r.IsSuccess(), Is.True);
 
             Title("Run without PCK");
             if (File.Exists(newPckPath))
                 File.Delete(newPckPath);
 
-            using (var r = new RunAppWithOutput(out_exe, DefaultGodotArgs))
-                AssertHasError(r.GetConsoleText());
+            using (var r = new RunGodotWithOutput(out_exe, DefaultGodotArgs))
+                Assert.That(r.IsSuccess(), Is.False);
         }
 
         [Test]
@@ -378,35 +341,32 @@ namespace Tests
             string newEXE1Byte = Path.Combine(binaries, Exe("TestMerge1Byte"));
             string newEXE_old = Path.Combine(binaries, Exe("TestMerge.old"));
 
-            File.Copy(testEXE, newEXE);
+            TUtils.CopyFile(testEXE, newEXE);
 
             Title("Merge");
-            Assert.Multiple(() =>
             {
                 Assert.That(PCKActions.Merge(testPCK, newEXE), Is.True);
                 Assert.That(File.Exists(newEXE_old), Is.True);
-            });
+            }
 
             Title("Again");
-            Assert.Multiple(() =>
             {
                 Assert.That(PCKActions.Merge(testPCK, newEXE), Is.False);
 
                 File.Delete(newEXE);
-                File.Copy(testEXE, newEXE);
-            });
+                TUtils.CopyFile(testEXE, newEXE);
+            }
 
             Title("Merge without backup");
-            Assert.Multiple(() =>
             {
                 Assert.That(PCKActions.Merge(testPCK, newEXE, true), Is.True);
                 Assert.That(File.Exists(newEXE_old), Is.False);
 
                 File.Delete(newEXE);
-                File.Copy(testEXE, newEXE);
-            });
+                TUtils.CopyFile(testEXE, newEXE);
+            }
 
-            if (/*!Utils.IsRunningOnMono()*/true)
+            if (OperatingSystem.IsWindows())
             {
                 Title("Locked backup");
                 // creates new (old + ExecutableExtension) 0kb
@@ -419,11 +379,10 @@ namespace Tests
             }
 
             Title("Wrong Files");
-            Assert.Multiple(() =>
             {
                 Assert.That(PCKActions.Merge(testPCK + "Wrong", newEXE), Is.False);
                 Assert.That(PCKActions.Merge(testPCK, newEXE + "Wrong", true), Is.False);
-            });
+            }
 
             Title("Same File");
             Assert.That(PCKActions.Merge(testPCK, testPCK, true), Is.False);
@@ -439,21 +398,21 @@ namespace Tests
             Assert.That(PCKActions.Merge(testPCK, newEXE1Byte, true), Is.True);
 
             Title("Bad run");
-            using (var r = new RunAppWithOutput(newEXE, DefaultGodotArgs))
-                AssertHasError(r.GetConsoleText());
+            using (var r = new RunGodotWithOutput(newEXE, DefaultGodotArgs))
+                Assert.That(r.IsSuccess(), Is.False);
 
             Title("Good runs");
             File.Delete(newEXE);
-            File.Copy(testEXE, newEXE);
+            TUtils.CopyFile(testEXE, newEXE);
             Assert.That(PCKActions.Merge(testPCK, newEXE), Is.True);
-            using (var r = new RunAppWithOutput(newEXE, DefaultGodotArgs))
-                AssertNotError(r.GetConsoleText());
+            using (var r = new RunGodotWithOutput(newEXE, DefaultGodotArgs))
+                Assert.That(r.IsSuccess(), Is.True);
 
-            using (var r = new RunAppWithOutput(newEXE1Byte, DefaultGodotArgs))
+            using (var r = new RunGodotWithOutput(newEXE1Byte, DefaultGodotArgs))
                 if (GodotVersion == 3)
-                    AssertNotError(r.GetConsoleText());
-                else if (GodotVersion == 3)
-                    AssertHasError(r.GetConsoleText());
+                    Assert.That(r.IsSuccess(), Is.True);
+                else if (GodotVersion == 4)
+                    Assert.That(r.IsSuccess(), Is.False);
         }
 
         [Test]
@@ -464,59 +423,56 @@ namespace Tests
             string new_pck = Path.Combine(binaries, "TestRip.pck");
             string locked_exe_str = Path.Combine(binaries, Exe("TestLockedRip"));
 
-            File.Copy(Path.Combine(binaries, Exe("TestEmbedded")), new_exe);
+            TUtils.CopyFile(Path.Combine(binaries, Exe("TestEmbedded")), new_exe);
 
             Title("Rip embedded");
             Assert.That(PCKActions.Rip(new_exe, new_pck), Is.True);
 
             Title("Rip wrong files");
-            Assert.Multiple(() =>
             {
                 Assert.That(PCKActions.Rip(Path.Combine(binaries, Exe("Test")), new_pck), Is.False);
                 Assert.That(PCKActions.Rip(new_pck, new_pck), Is.False);
 
-                if (/*!Utils.IsRunningOnMono()*/true)
+                if (OperatingSystem.IsWindows())
                 {
                     Title("Locked file");
                     string locked_file = Path.Combine(binaries, "test.lock");
                     using var f = new LockedFile(locked_file);
                     Assert.That(PCKActions.Rip(new_exe, locked_file), Is.False);
                 }
-            });
+            }
 
             Title("Rip PCK from exe");
-            Assert.Multiple(() =>
             {
                 Assert.That(PCKActions.Rip(new_exe, null, true), Is.True);
                 Assert.That(File.Exists(new_exe_old), Is.False);
-            });
+            }
 
             Title("Rip PCK from PCK");
             Assert.That(PCKActions.Rip(new_pck, null, true), Is.False);
 
             Title("Good run");
-            using (var r = new RunAppWithOutput(new_exe, DefaultGodotArgs))
-                AssertNotError(r.GetConsoleText());
+            using (var r = new RunGodotWithOutput(new_exe, DefaultGodotArgs))
+                Assert.That(r.IsSuccess(), Is.True);
 
             Title("Run without PCK");
             if (File.Exists(new_pck))
                 File.Delete(new_pck);
-            using (var r = new RunAppWithOutput(new_exe, DefaultGodotArgs))
-                AssertHasError(r.GetConsoleText());
+            using (var r = new RunGodotWithOutput(new_exe, DefaultGodotArgs))
+                Assert.That(r.IsSuccess(), Is.False);
 
             Title("Rip locked");
 
-            File.Copy(Path.Combine(binaries, Exe("TestEmbedded")), locked_exe_str);
+            TUtils.CopyFile(Path.Combine(binaries, Exe("TestEmbedded")), locked_exe_str);
 
             using (var locked_exe = File.OpenWrite(locked_exe_str))
                 Assert.That(PCKActions.Rip(locked_exe_str), Is.False);
 
             Title("Rip and remove .old");
-            Assert.Multiple(() =>
             {
                 Assert.That(PCKActions.Rip(locked_exe_str, null, true), Is.True);
                 Assert.That(File.Exists(Path.ChangeExtension(locked_exe_str, Exe(".old"))), Is.False);
-            });
+            }
         }
 
         [Test]
@@ -527,66 +483,63 @@ namespace Tests
             string new_exe = Path.Combine(binaries, "SplitFolder", Exe("Split"));
             string new_pck = Path.Combine(binaries, "SplitFolder", "Split.pck");
 
-            File.Copy(Path.Combine(binaries, Exe("TestEmbedded")), exe);
+            TUtils.CopyFile(Path.Combine(binaries, Exe("TestEmbedded")), exe);
 
             Title("Split with custom pair name and check files");
-            Assert.Multiple(() =>
             {
                 Assert.That(PCKActions.Split(exe, new_exe), Is.True);
                 Assert.That(File.Exists(new_exe), Is.True);
                 Assert.That(File.Exists(new_pck), Is.True);
                 Assert.That(File.Exists(Path.ChangeExtension(new_exe, Exe(".old"))), Is.False);
-            });
+            }
 
             Title("Can't copy with same name");
             Assert.That(PCKActions.Split(exe, exe), Is.False);
 
             Title("Split with same name");
-            Assert.Multiple(() =>
             {
                 Assert.That(PCKActions.Split(exe), Is.True);
                 Assert.That(File.Exists(exe), Is.True);
                 Assert.That(File.Exists(pck), Is.True);
                 Assert.That(File.Exists(Path.ChangeExtension(new_exe, Exe(".old"))), Is.False);
-            });
+            }
 
             Title("Already splitted");
             Assert.That(PCKActions.Split(exe), Is.False);
 
             Title("Good runs");
-            using (var r = new RunAppWithOutput(exe, DefaultGodotArgs))
-                AssertNotError(r.GetConsoleText());
+            using (var r = new RunGodotWithOutput(exe, DefaultGodotArgs))
+                Assert.That(r.IsSuccess(), Is.True);
 
-            using (var r = new RunAppWithOutput(new_exe, DefaultGodotArgs))
-                AssertNotError(r.GetConsoleText());
+            using (var r = new RunGodotWithOutput(new_exe, DefaultGodotArgs))
+                Assert.That(r.IsSuccess(), Is.True);
 
             Title("Bad runs");
             foreach (var f in new string[] { pck, new_pck })
                 if (File.Exists(f))
                     File.Delete(f);
 
-            using (var r = new RunAppWithOutput(exe, DefaultGodotArgs))
-                AssertHasError(r.GetConsoleText());
+            using (var r = new RunGodotWithOutput(exe, DefaultGodotArgs))
+                Assert.That(r.IsSuccess(), Is.False);
 
-            using (var r = new RunAppWithOutput(new_exe, DefaultGodotArgs))
-                AssertHasError(r.GetConsoleText());
+            using (var r = new RunGodotWithOutput(new_exe, DefaultGodotArgs))
+                Assert.That(r.IsSuccess(), Is.False);
 
-            if (/*!Utils.IsRunningOnMono()*/true)
+            if (OperatingSystem.IsWindows())
             {
                 Title("Split with locked output");
                 foreach (var f in new string[] { new_exe, new_pck })
                     if (File.Exists(f))
                         File.Delete(f);
-                File.Copy(Path.Combine(binaries, "Test.pck"), new_pck);
+                TUtils.CopyFile(Path.Combine(binaries, "Test.pck"), new_pck);
 
                 using (var l = new LockedFile(new_pck, false))
                     Assert.That(PCKActions.Split(Path.Combine(binaries, Exe("TestEmbedded")), new_exe), Is.False);
 
-                Assert.Multiple(() =>
                 {
                     Assert.That(File.Exists(new_exe), Is.False);
                     Assert.That(File.Exists(new_pck), Is.True);
-                });
+                }
             }
         }
 
@@ -597,9 +550,9 @@ namespace Tests
             string pck = Path.Combine(binaries, "TestVersion.pck");
             string exeEmbedded = Path.Combine(binaries, Exe("TestVersionEmbedded"));
 
-            File.Copy(Path.Combine(binaries, Exe("Test")), exe);
-            File.Copy(Path.Combine(binaries, "Test.pck"), pck);
-            File.Copy(Path.Combine(binaries, Exe("TestEmbedded")), exeEmbedded);
+            TUtils.CopyFile(Path.Combine(binaries, Exe("Test")), exe);
+            TUtils.CopyFile(Path.Combine(binaries, "Test.pck"), pck);
+            TUtils.CopyFile(Path.Combine(binaries, Exe("TestEmbedded")), exeEmbedded);
 
             var origVersion = GetPCKVersion(pck);
             var newVersion = origVersion;
@@ -608,35 +561,33 @@ namespace Tests
             newVersion.Revision += 2;
 
             Title("Regular pck test runs");
-            Assert.Multiple(() =>
             {
                 Assert.That(PCKActions.ChangeVersion(pck, newVersion.ToString()), Is.True);
                 Assert.That(GetPCKVersion(pck), Is.EqualTo(newVersion));
-                using (var r = new RunAppWithOutput(exe, DefaultGodotArgs))
-                    AssertHasError(r.GetConsoleText());
+                using (var r = new RunGodotWithOutput(exe, DefaultGodotArgs))
+                    Assert.That(r.IsSuccess(), Is.False);
 
                 Assert.That(PCKActions.ChangeVersion(pck, origVersion.ToString()), Is.True);
                 Assert.That(GetPCKVersion(pck), Is.EqualTo(origVersion));
 
-                using (var r = new RunAppWithOutput(exe, DefaultGodotArgs))
-                    AssertNotError(r.GetConsoleText());
-            });
+                using (var r = new RunGodotWithOutput(exe, DefaultGodotArgs))
+                    Assert.That(r.IsSuccess(), Is.True);
+            };
 
             Title("Embedded test runs");
-            Assert.Multiple(() =>
             {
                 Assert.That(PCKActions.ChangeVersion(exeEmbedded, newVersion.ToString()), Is.True);
                 Assert.That(GetPCKVersion(exeEmbedded), Is.EqualTo(newVersion));
 
-                using (var r = new RunAppWithOutput(exeEmbedded, DefaultGodotArgs))
-                    AssertHasError(r.GetConsoleText());
+                using (var r = new RunGodotWithOutput(exeEmbedded, DefaultGodotArgs))
+                    Assert.That(r.IsSuccess(), Is.False);
 
                 Assert.That(PCKActions.ChangeVersion(exeEmbedded, origVersion.ToString()), Is.True);
                 Assert.That(GetPCKVersion(exeEmbedded), Is.EqualTo(origVersion));
 
-                using (var r = new RunAppWithOutput(exeEmbedded, DefaultGodotArgs))
-                    AssertNotError(r.GetConsoleText());
-            });
+                using (var r = new RunGodotWithOutput(exeEmbedded, DefaultGodotArgs))
+                    Assert.That(r.IsSuccess(), Is.True);
+            };
         }
 
         [Test]
@@ -662,12 +613,12 @@ namespace Tests
             string pck_ripped = Path.Combine(binaries, "TestEncryptedRipped.pck");
             string exe_embedded = Path.Combine(binaries, Exe("TestEncryptedEmbedded"));
 
-            File.Copy(Path.Combine(binaries, Exe("Test")), exe);
-            File.Copy(Path.Combine(binaries, Exe("Test")), exe_embedded);
-            File.Copy(Path.Combine(binaries, Exe("Test")), exe_new);
-            File.Copy(Path.Combine(binaries, Exe("Test")), exe_new_files);
-            File.Copy(Path.Combine(binaries, Exe("Test")), exe_ripped);
-            File.Copy(Path.Combine(binaries, Exe("Test")), exe_new_wrong_key);
+            TUtils.CopyFile(Path.Combine(binaries, Exe("Test")), exe);
+            TUtils.CopyFile(Path.Combine(binaries, Exe("Test")), exe_embedded);
+            TUtils.CopyFile(Path.Combine(binaries, Exe("Test")), exe_new);
+            TUtils.CopyFile(Path.Combine(binaries, Exe("Test")), exe_new_files);
+            TUtils.CopyFile(Path.Combine(binaries, Exe("Test")), exe_ripped);
+            TUtils.CopyFile(Path.Combine(binaries, Exe("Test")), exe_new_wrong_key);
 
             Title("PCK info");
             Assert.That(PCKActions.PrintInfo(pck, true, enc_key), Is.True);
@@ -701,28 +652,27 @@ namespace Tests
 
             Title("PCK good test runs");
 
-            Assert.Multiple(() =>
             {
-                using (var r = new RunAppWithOutput(exe, DefaultGodotArgs))
-                    AssertNotError(r.GetConsoleText());
+                using (var r = new RunGodotWithOutput(exe, DefaultGodotArgs))
+                    Assert.That(r.IsSuccess(), Is.True);
 
-                using (var r = new RunAppWithOutput(exe_embedded, DefaultGodotArgs))
-                    AssertNotError(r.GetConsoleText());
+                using (var r = new RunGodotWithOutput(exe_embedded, DefaultGodotArgs))
+                    Assert.That(r.IsSuccess(), Is.True);
 
-                using (var r = new RunAppWithOutput(exe_ripped, DefaultGodotArgs))
-                    AssertNotError(r.GetConsoleText());
+                using (var r = new RunGodotWithOutput(exe_ripped, DefaultGodotArgs))
+                    Assert.That(r.IsSuccess(), Is.True);
 
-                using (var r = new RunAppWithOutput(exe_new, DefaultGodotArgs))
-                    AssertNotError(r.GetConsoleText());
+                using (var r = new RunGodotWithOutput(exe_new, DefaultGodotArgs))
+                    Assert.That(r.IsSuccess(), Is.True);
 
-                using (var r = new RunAppWithOutput(exe_new_files, DefaultGodotArgs))
-                    AssertNotError(r.GetConsoleText());
-            });
+                using (var r = new RunGodotWithOutput(exe_new_files, DefaultGodotArgs))
+                    Assert.That(r.IsSuccess(), Is.True);
+            }
 
             Title("PCK bad test runs");
 
-            using (var r = new RunAppWithOutput(exe_new_wrong_key, DefaultGodotArgs))
-                AssertHasError(r.GetConsoleText());
+            using (var r = new RunGodotWithOutput(exe_new_wrong_key, DefaultGodotArgs))
+                Assert.That(r.IsSuccess(), Is.False);
         }
     }
 
