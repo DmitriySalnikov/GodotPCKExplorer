@@ -16,6 +16,8 @@
 		</DefaultItemExcludes>
 
 		<PlatformTarget>AnyCPU</PlatformTarget>
+		<Version>1.4.0</Version>
+		<AssemblyVersion>$(Version)</AssemblyVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|AnyCPU'">
@@ -25,6 +27,15 @@
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|x64'">
 		<DefineConstants>$(DefineConstants);DEV_ENABLED</DefineConstants>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <Compile Remove="bin\**" />
+	  <Compile Remove="obj\**" />
+	  <EmbeddedResource Remove="bin\**" />
+	  <EmbeddedResource Remove="obj\**" />
+	  <None Remove="bin\**" />
+	  <None Remove="obj\**" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<None Update="mbedTLS\linux_x64\mbedTLS_AES.so">

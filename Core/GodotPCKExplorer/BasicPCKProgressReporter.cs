@@ -66,7 +66,7 @@ namespace GodotPCKExplorer
         DateTime prev_time = DateTime.UtcNow;
         public Action<string>? PrintLogText;
 
-        public void LogProgress(string operation, int number, string? customPrefix = null)
+        public virtual void LogProgress(string operation, int number, string? customPrefix = null)
         {
             if (((DateTime.UtcNow - prev_time).TotalSeconds > 1) || (prev_progress != number && Math.Abs(number - prev_progress) >= 5))
             {
@@ -80,12 +80,12 @@ namespace GodotPCKExplorer
             }
         }
 
-        public void LogProgress(string operation, string str)
+        public virtual void LogProgress(string operation, string str)
         {
             Log($"[Progress] {operation}: {str}");
         }
 
-        public void Log(string txt)
+        public virtual void Log(string txt)
         {
             var isFirst = true;
 
@@ -107,12 +107,12 @@ namespace GodotPCKExplorer
             }
         }
 
-        public void Log(Exception ex)
+        public virtual void Log(Exception ex)
         {
             Log($"[!] {ex.GetType().Name}:\n{ex.Message}\nStackTrace:\n{ex.StackTrace}");
         }
 
-        public PCKDialogResult ShowMessage(string text, string title, MessageType messageType = MessageType.None, PCKMessageBoxButtons boxButtons = PCKMessageBoxButtons.OK)
+        public virtual PCKDialogResult ShowMessage(string text, string title, MessageType messageType = MessageType.None, PCKMessageBoxButtons boxButtons = PCKMessageBoxButtons.OK)
         {
             Log($"[{messageType}] \"{title}\": {text}");
 
@@ -122,7 +122,7 @@ namespace GodotPCKExplorer
             return PCKDialogResult.OK;
         }
 
-        public PCKDialogResult ShowMessage(Exception ex, MessageType messageType = MessageType.None, PCKMessageBoxButtons boxButtons = PCKMessageBoxButtons.OK)
+        public virtual PCKDialogResult ShowMessage(Exception ex, MessageType messageType = MessageType.None, PCKMessageBoxButtons boxButtons = PCKMessageBoxButtons.OK)
         {
             var res = ShowMessage(ex.Message, ex.GetType().Name, messageType, boxButtons);
             Log(ex);

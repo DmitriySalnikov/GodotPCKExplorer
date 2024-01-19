@@ -15,6 +15,7 @@ namespace GodotPCKExplorer
         [DllImport("kernel32.dll")]
         private static extern bool FreeLibrary(IntPtr dllToUnload);
 
+        public static bool IsInited { get; private set; } = false;
 
         /// <summary>
         /// Indicates whether the encryption library is loaded.
@@ -40,6 +41,7 @@ namespace GodotPCKExplorer
         public static void Init()
         {
             LoadNativeLibs();
+            IsInited = true;
         }
 
         /// <summary>
@@ -50,6 +52,7 @@ namespace GodotPCKExplorer
         {
             progress = progressReporter;
             LoadNativeLibs();
+            IsInited = true;
         }
 
         /// <summary>
@@ -64,6 +67,7 @@ namespace GodotPCKExplorer
             };
             progress = rep;
             LoadNativeLibs();
+            IsInited = true;
         }
 
         static void LoadNativeLibs()
@@ -127,6 +131,7 @@ namespace GodotPCKExplorer
             mbedTLS.UnloadMethods();
             mbedTLSLib?.Dispose();
             mbedTLSLib = null;
+            IsInited = false;
         }
 
         /// <summary>

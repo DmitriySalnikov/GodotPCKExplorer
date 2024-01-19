@@ -12,9 +12,9 @@ namespace GodotPCKExplorer
         public int Minor { get; set; }
         public int Revision { get; set; }
 
-        public PCKVersion(int pck_version, int major, int minor, int revision)
+        public PCKVersion(int pckVersion, int major, int minor, int revision)
         {
-            PackVersion = pck_version;
+            PackVersion = pckVersion;
             Major = major;
             Minor = minor;
             Revision = revision;
