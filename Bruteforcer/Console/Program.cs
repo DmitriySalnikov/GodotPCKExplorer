@@ -1,5 +1,6 @@
 ﻿using GodotPCKExplorer;
 using GodotPCKExplorer.GlobalShared;
+using System.Globalization;
 
 namespace PCKBruteforcer.Cmd
 {
@@ -26,6 +27,10 @@ namespace PCKBruteforcer.Cmd
 
         static Program()
         {
+            // InvariantCulture for console and UI
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+
             if (!Directory.Exists(GlobalConstants.AppDataPath))
                 Directory.CreateDirectory(GlobalConstants.AppDataPath);
 

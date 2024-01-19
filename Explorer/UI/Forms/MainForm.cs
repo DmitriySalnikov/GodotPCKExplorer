@@ -650,7 +650,13 @@ namespace GodotPCKExplorer.UI
             }
         }
 
-        private void toolStripMenuItem1_Click(object? sender, EventArgs e)
+        private void toolStripMenuItem_clearFilter_Click(object sender, EventArgs e)
+        {
+            searchText.Text = string.Empty;
+            UpdateListOfPCKContent();
+        }
+
+        private void toolStripMenuItem_filter_Click(object? sender, EventArgs e)
         {
             UpdateListOfPCKContent();
         }

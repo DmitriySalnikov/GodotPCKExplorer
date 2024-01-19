@@ -34,7 +34,10 @@ namespace GodotPCKExplorer.Cmd
                 LogEx(ex);
             }
 
+            var help = () => { Program.Log("Please specify which action you want to run."); HelpCommand(); };
+
             if (args.Length > 0)
+            {
                 IterateCommands(
 #if CONSOLE_BUILD
                  () => { if (args[0] == "-i") InfoPCKCommand(args, false); },
@@ -54,8 +57,15 @@ namespace GodotPCKExplorer.Cmd
 #else
                  () => { if (args[0] == "-o" || args.Length == 1) OpenPCKCommand(args); },
 #endif
-                 () => { Program.Log("Please specify which action you want to trigger."); HelpCommand(); }
+                 () => { help(); }
                  );
+            }
+#if CONSOLE_BUILD
+            else
+            {
+                help();
+            }
+#endif
 
             return runWithArgs;
         }
@@ -211,7 +221,6 @@ namespace GodotPCKExplorer.Cmd
             string dirPath;
             string filePath;
             string strVer;
-            uint alignment = 16;
             string? encKey = null;
             string encType = "both";
 
@@ -225,31 +234,26 @@ namespace GodotPCKExplorer.Cmd
 
                     if (args.Length > 4)
                     {
-                        alignment = uint.Parse(args[4]);
+                        encKey = args[4];
+
+                        if (!ValidateEncryptionKey(encKey))
+                            return;
 
                         if (args.Length > 5)
                         {
-                            encKey = args[5];
+                            encType = args[5];
 
-                            if (!ValidateEncryptionKey(encKey))
-                                return;
-
-                            if (args.Length > 6)
+                            if (!new string[] { "both", "index", "files" }.Contains(encType))
                             {
-                                encType = args[6];
-
-                                if (!new string[] { "both", "index", "files" }.Contains(encType))
-                                {
-                                    LogErrHelp($"Invalid encryption type: {encType}");
-                                    return;
-                                }
+                                LogErrHelp($"Invalid encryption type: {encType}");
+                                return;
                             }
                         }
                     }
                 }
                 else
                 {
-                    LogErrHelp($"Invalid number of arguments! Expected from 4 to 6, but got {args.Length}");
+                    LogErrHelp($"Invalid number of arguments! Expected from 4 to 5, but got {args.Length}");
                     return;
                 }
             }
@@ -276,7 +280,7 @@ namespace GodotPCKExplorer.Cmd
                     break;
             }
 
-            var res = PCKActions.Pack(dirPath, filePath, strVer, alignment, embed, encKey, encIndex, encFiles);
+            var res = PCKActions.Pack(dirPath, filePath, strVer, 16, embed, encKey, encIndex, encFiles);
             SetResult(res);
         }
 

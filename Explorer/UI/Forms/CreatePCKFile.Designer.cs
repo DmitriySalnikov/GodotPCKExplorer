@@ -29,7 +29,7 @@
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
-            DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(CreatePCKFile));
             dataGridView1 = new DataGridView();
             filePath = new DataGridViewTextBoxColumn();
@@ -59,6 +59,7 @@
             label4 = new Label();
             btn_generate_key = new Button();
             cb_enable_encryption = new CheckBox();
+            btn_clearFilter = new Button();
             ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)nud_major).BeginInit();
             ((System.ComponentModel.ISupportInitialize)nud_minor).BeginInit();
@@ -92,8 +93,8 @@
             // 
             // size
             // 
-            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleRight;
-            size.DefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleRight;
+            size.DefaultCellStyle = dataGridViewCellStyle2;
             size.FillWeight = 15F;
             size.HeaderText = "Size";
             size.Name = "size";
@@ -102,7 +103,7 @@
             // btn_create
             // 
             btn_create.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btn_create.Font = new Font("Microsoft Sans Serif", 12F, FontStyle.Regular, GraphicsUnit.Point);
+            btn_create.Font = new Font("Microsoft Sans Serif", 12F);
             btn_create.Location = new Point(760, 398);
             btn_create.Margin = new Padding(4, 3, 4, 3);
             btn_create.Name = "btn_create";
@@ -234,7 +235,7 @@
             // btn_browse
             // 
             btn_browse.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btn_browse.Location = new Point(654, 7);
+            btn_browse.Location = new Point(657, 6);
             btn_browse.Margin = new Padding(4, 3, 4, 3);
             btn_browse.Name = "btn_browse";
             btn_browse.Size = new Size(88, 23);
@@ -262,7 +263,7 @@
             // btn_filter
             // 
             btn_filter.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btn_filter.Location = new Point(749, 37);
+            btn_filter.Location = new Point(749, 36);
             btn_filter.Margin = new Padding(4, 3, 4, 3);
             btn_filter.Name = "btn_filter";
             btn_filter.Size = new Size(88, 23);
@@ -275,9 +276,9 @@
             // 
             btn_match_case.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btn_match_case.FlatStyle = FlatStyle.Popup;
-            btn_match_case.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Regular, GraphicsUnit.Point);
-            btn_match_case.Location = new Point(469, 37);
-            btn_match_case.Margin = new Padding(4, 3, 4, 3);
+            btn_match_case.Font = new Font("Microsoft Sans Serif", 8.25F);
+            btn_match_case.Location = new Point(453, 36);
+            btn_match_case.Margin = new Padding(2, 3, 2, 3);
             btn_match_case.Name = "btn_match_case";
             btn_match_case.Size = new Size(30, 23);
             btn_match_case.TabIndex = 21;
@@ -300,8 +301,8 @@
             // 
             searchText.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             searchText.CueBanner = "Filter text (? and * allowed)";
-            searchText.Location = new Point(503, 37);
-            searchText.Margin = new Padding(4, 3, 4, 3);
+            searchText.Location = new Point(487, 36);
+            searchText.Margin = new Padding(2, 3, 0, 3);
             searchText.Name = "searchText";
             searchText.Size = new Size(239, 23);
             searchText.TabIndex = 20;
@@ -355,11 +356,25 @@
             cb_enable_encryption.Text = "Enable encryption";
             cb_enable_encryption.UseVisualStyleBackColor = true;
             // 
+            // btn_clearFilter
+            // 
+            btn_clearFilter.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btn_clearFilter.Location = new Point(726, 36);
+            btn_clearFilter.Margin = new Padding(0, 0, 2, 0);
+            btn_clearFilter.Name = "btn_clearFilter";
+            btn_clearFilter.Size = new Size(19, 23);
+            btn_clearFilter.TabIndex = 29;
+            btn_clearFilter.Text = "X";
+            toolTip1.SetToolTip(btn_clearFilter, "Clear filter");
+            btn_clearFilter.UseVisualStyleBackColor = true;
+            btn_clearFilter.Click += btn_clearFilter_Click;
+            // 
             // CreatePCKFile
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(850, 484);
+            Controls.Add(btn_clearFilter);
             Controls.Add(cb_enable_encryption);
             Controls.Add(btn_generate_key);
             Controls.Add(label4);
@@ -426,5 +441,6 @@
         private CheckBox cb_enable_encryption;
         private DataGridViewTextBoxColumn filePath;
         private DataGridViewTextBoxColumn size;
+        private Button btn_clearFilter;
     }
 }

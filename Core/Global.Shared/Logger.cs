@@ -35,10 +35,11 @@ namespace GodotPCKExplorer.GlobalShared
         public static void Flush() { lock (str) str.Flush(); }
     };
 
-    public class Logger : IDisposable
+    public sealed class Logger : IDisposable
     {
         public bool DuplicateToConsole = true;
 
+        bool disposed = false;
         readonly string saveFile;
         TextWriter? logWriter = null;
         DeferredAction? flushFileAction = null;
@@ -74,6 +75,10 @@ namespace GodotPCKExplorer.GlobalShared
 
         public void Dispose()
         {
+            if (disposed)
+                return;
+
+            disposed = true;
             // Force print remaining part of output
             FastConsole.Flush();
 

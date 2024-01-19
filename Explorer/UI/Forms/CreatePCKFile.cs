@@ -189,6 +189,12 @@
             }
         }
 
+        private void btn_clearFilter_Click(object sender, EventArgs e)
+        {
+            searchText.Text = string.Empty;
+            UpdateTableContent();
+        }
+
         private void btn_filter_Click(object? sender, EventArgs e)
         {
             UpdateTableContent();

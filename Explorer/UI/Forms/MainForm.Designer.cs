@@ -56,6 +56,7 @@
             registerProgram_ToolStripMenuItem = new ToolStripMenuItem();
             showConsoleToolStripMenuItem = new ToolStripMenuItem();
             toolStripMenuItem_filterButton = new ToolStripMenuItem();
+            toolStripMenuItem_clearFilter = new ToolStripMenuItem();
             searchText = new ToolStripTextBoxWithPlaceholder();
             tsmi_match_case_filter = new ToolStripMenuItem();
             helpToolStripMenuItem = new ToolStripMenuItem();
@@ -95,7 +96,7 @@
             // 
             // menuStrip1
             // 
-            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, extractToolStripMenuItem, integrationToolStripMenuItem, toolStripMenuItem_filterButton, searchText, tsmi_match_case_filter, helpToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, extractToolStripMenuItem, integrationToolStripMenuItem, toolStripMenuItem_filterButton, toolStripMenuItem_clearFilter, searchText, tsmi_match_case_filter, helpToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.Padding = new Padding(7, 2, 0, 2);
@@ -275,7 +276,17 @@
             toolStripMenuItem_filterButton.Name = "toolStripMenuItem_filterButton";
             toolStripMenuItem_filterButton.Size = new Size(45, 23);
             toolStripMenuItem_filterButton.Text = "Filter";
-            toolStripMenuItem_filterButton.Click += toolStripMenuItem1_Click;
+            toolStripMenuItem_filterButton.Click += toolStripMenuItem_filter_Click;
+            // 
+            // toolStripMenuItem_clearFilter
+            // 
+            toolStripMenuItem_clearFilter.Alignment = ToolStripItemAlignment.Right;
+            toolStripMenuItem_clearFilter.Name = "toolStripMenuItem_clearFilter";
+            toolStripMenuItem_clearFilter.Padding = new Padding(0);
+            toolStripMenuItem_clearFilter.Size = new Size(18, 23);
+            toolStripMenuItem_clearFilter.Text = "X";
+            toolStripMenuItem_clearFilter.ToolTipText = "Clear filter";
+            toolStripMenuItem_clearFilter.Click += toolStripMenuItem_clearFilter_Click;
             // 
             // searchText
             // 
@@ -289,7 +300,7 @@
             // 
             tsmi_match_case_filter.Alignment = ToolStripItemAlignment.Right;
             tsmi_match_case_filter.CheckOnClick = true;
-            tsmi_match_case_filter.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            tsmi_match_case_filter.Font = new Font("Segoe UI", 9F);
             tsmi_match_case_filter.Name = "tsmi_match_case_filter";
             tsmi_match_case_filter.Size = new Size(33, 23);
             tsmi_match_case_filter.Text = "Aa";
@@ -479,7 +490,7 @@
             // 
             ofd_change_version.Title = "Select the file containing .pck";
             // 
-            // MainForm
+            // ExplorerMainForm
             // 
             AllowDrop = true;
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -491,7 +502,7 @@
             Controls.Add(menuStrip1);
             MainMenuStrip = menuStrip1;
             Margin = new Padding(4, 3, 4, 3);
-            Name = "MainForm";
+            Name = "ExplorerMainForm";
             Text = "Godot PCK Explorer";
             FormClosing += Form1_FormClosing;
             DragDrop += Form1_DragDrop;
@@ -564,6 +575,7 @@
         private ToolStripMenuItem helpToolStripMenuItem;
         private ToolStripMenuItem about_toolStripMenuItem1;
         private ToolStripMenuItem checkUpdates_toolStripMenuItem1;
+        private ToolStripMenuItem toolStripMenuItem_clearFilter;
     }
 }
 
