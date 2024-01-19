@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace GodotPCKExplorer
 {
-    public class mbedTLS : IDisposable
+    public sealed class mbedTLS : IDisposable
     {
         const string LIB_NAME = "mbedTLS_AES";
         public const int CHUNK_SIZE = 16;

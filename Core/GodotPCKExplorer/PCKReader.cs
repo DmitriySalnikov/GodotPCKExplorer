@@ -15,7 +15,7 @@ namespace GodotPCKExplorer
         public bool IsCancelled;
     }
 
-    public class PCKReader : IDisposable
+    public sealed class PCKReader : IDisposable
     {
         BinaryReader? binReader = null;
         public Dictionary<string, PCKFile> Files = new Dictionary<string, PCKFile>();
@@ -33,7 +33,7 @@ namespace GodotPCKExplorer
         public long PCK_EndPosition = 0;
         public bool PCK_Embedded = false;
 
-        public byte[]? ReceivedEncryptionKey { get; protected set; } = null;
+        public byte[]? ReceivedEncryptionKey { get; set; } = null;
 
         public PCKVersion PCK_Version { get { return new PCKVersion(PCK_VersionPack, PCK_VersionMajor, PCK_VersionMinor, PCK_VersionRevision); } }
         public bool IsOpened { get { return binReader != null; } }

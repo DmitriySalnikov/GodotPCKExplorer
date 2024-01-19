@@ -1,0 +1,111 @@
+name: ↗️ Update mbedTLS
+
+on:
+  workflow_dispatch: 
+
+# Stop the same workflow actions
+concurrency:
+  group: ${{github.workflow}}-${{github.ref}}
+  cancel-in-progress: true
+
+env:
+  OUTPUT_DIR: Core/GodotPCKExplorer/mbedTLS
+  PROJECT_DIR: Core/mbedTLS_AES
+
+jobs:
+  build:
+    name: Build mbedTLS (${{matrix.os}})
+    runs-on: ${{matrix.runner}}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-latest
+            os: win
+            sciprt: build_mbedTLS_AES.bat
+          - runner: ubuntu-20.04
+            os: linux
+            sciprt: build_mbedTLS_AES_linux.sh
+          - runner: macos-latest
+            os: mac
+            sciprt: build_mbedTLS_AES_mac.sh
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Clean up old binaries
+        shell: bash
+        run: rm -rf ${{env.OUTPUT_DIR}}/**/*
+
+      # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
+      - name: Setup MSBuild.exe
+        if: matrix.os == 'win'
+        uses: microsoft/setup-msbuild@v1.3.1
+
+      - name: Setup 32-bit libs
+        if: matrix.os == 'linux'
+        run: |
+          sudo apt install gcc-multilib g++-multilib
+
+      - name: Build mbedTLS_AES
+        shell: bash
+        run: |
+          cd ${{env.PROJECT_DIR}}
+
+          sh_files=$(find . -mindepth 1 -maxdepth 1 -type f)
+          for file in $sh_files; do
+            folder_basename=$(basename "$file")
+            if [[ "$folder_basename" == *".sh" ]]; then
+              if [ "${{matrix.os}}" == "linux" ]; then
+                chmod +x "$file"
+              elif [ "${{matrix.os}}" == "mac" ]; then
+                chmod 755 "$file"
+              fi
+            fi
+          done
+
+          ./${{matrix.sciprt}}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: lib_${{matrix.os}}
+          path: ${{env.OUTPUT_DIR}}/${{matrix.os}}*/
+
+  update:
+    name: Update binaries
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Remove old binaries
+        shell: bash
+        run: rm -rf ${{env.OUTPUT_DIR}}/**/*
+
+      - name: Download Binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{env.OUTPUT_DIR}}/
+          merge-multiple: true
+
+      - name: Commit and report
+        shell: bash
+        run: |
+          git config --global user.name 'github-actions-auto-updater[bot]'
+          git config --global user.email 'github-actions-auto-updater[bot]@users.noreply.github.com'
+          git diff
+          git add -A
+          git commit -am "[CI] ↗️ Updated mbedTLS Binaries: ${{github.sha}}"
+          git push
+
+          echo "## Changed files:" >> $GITHUB_STEP_SUMMARY
+          codeblock_tmp=$'```\nSTATS\n```'
+          echo "${codeblock_tmp//STATS/$(git diff --stat HEAD~)}" >> $GITHUB_STEP_SUMMARY

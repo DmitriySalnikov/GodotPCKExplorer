@@ -16,6 +16,7 @@ namespace GodotPCKExplorer.Cmd
     public static class ConsoleCommands
     {
         static bool runWithArgs = false;
+        private static readonly string[] encyptionTypes = ["both", "index", "files"];
 
         // TODO add CMD tests?..
         public static bool RunCommand(string[] args)
@@ -243,7 +244,7 @@ namespace GodotPCKExplorer.Cmd
                         {
                             encType = args[5];
 
-                            if (!new string[] { "both", "index", "files" }.Contains(encType))
+                            if (!encyptionTypes.Contains(encType))
                             {
                                 LogErrHelp($"Invalid encryption type: {encType}");
                                 return;

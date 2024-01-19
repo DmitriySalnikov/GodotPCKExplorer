@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace GodotPCKExplorer
 {
-    public class PCKEncryptedReader : IDisposable
+    public sealed class PCKEncryptedReader : IDisposable
     {
         [ThreadStatic]
         static byte[]? temp_encryption_buffer;

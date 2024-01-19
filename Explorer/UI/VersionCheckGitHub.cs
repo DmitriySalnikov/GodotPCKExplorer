@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Reflection;
 
-internal class VersionCheckerGitHub : IDisposable
+internal sealed class VersionCheckerGitHub : IDisposable
 {
     public enum MSGType
     {
@@ -199,7 +199,7 @@ internal class VersionCheckerGitHub : IDisposable
     {
         if (show_msg_box != null)
         {
-            return show_msg_box.Invoke(type, customData ?? new Dictionary<string, string>(), ex);
+            return show_msg_box.Invoke(type, customData ?? [], ex);
         }
         return MSGDialogResult.Cancel;
     }

@@ -14,78 +14,41 @@ namespace PCKBruteforcer
 
         public double ReportUpdateInterval = 0.25;
 
-        struct StartData
+        struct StartData(string exe, string pck, bool encIndex, long startPos, long endPos, CancellationTokenSource ct, int threadIdx, string? testFileName, PCKFile? testFile, MemoryStream? memStr)
         {
-            public string exe;
-            public string pck;
-            public bool encIndex;
-            public long startPos;
-            public long endPos;
-            public CancellationTokenSource ct;
-            public Action<int, long>? reportProgress;
-            public int threadIdx;
-            public string? testFileName = null;
-            public PCKFile? testFile = null;
-            public MemoryStream? memStr = null;
-
-            public StartData(string exe, string pck, bool encIndex, long startPos, long endPos, CancellationTokenSource ct, int threadIdx, string? testFileName, PCKFile? testFile, MemoryStream? memStr)
-            {
-                this.exe = exe;
-                this.pck = pck;
-                this.encIndex = encIndex;
-                this.startPos = startPos;
-                this.endPos = endPos;
-                this.ct = ct;
-                this.reportProgress = null;
-                this.threadIdx = threadIdx;
-                this.testFileName = testFileName;
-                this.testFile = testFile;
-                this.memStr = memStr;
-            }
+            public string exe = exe;
+            public string pck = pck;
+            public bool encIndex = encIndex;
+            public long startPos = startPos;
+            public long endPos = endPos;
+            public CancellationTokenSource ct = ct;
+            public Action<int, long>? reportProgress = null;
+            public int threadIdx = threadIdx;
+            public string? testFileName = testFileName;
+            public PCKFile? testFile = testFile;
+            public MemoryStream? memStr = memStr;
         }
 
-        public struct ResultData
+        public struct ResultData(bool result, string key, long address)
         {
-            public bool found;
-            public string key;
-            public long address;
-
-            public ResultData(bool result, string key, long address)
-            {
-                this.found = result;
-                this.key = key;
-                this.address = address;
-            }
+            public bool found = result;
+            public string key = key;
+            public long address = address;
         }
 
-        public struct ReportData
+        public struct ReportData(TimeSpan elapsedTime, TimeSpan remainingTime, double progressPercent, ThreadProgressData[] threadsData)
         {
-            public TimeSpan ElapsedTime;
-            public TimeSpan RemainingTime;
-            public double ProgressPercent;
-            public ThreadProgressData[] ThreadsData;
-
-            public ReportData(TimeSpan elapsedTime, TimeSpan remainingTime, double progressPercent, ThreadProgressData[] threadsData)
-            {
-                ElapsedTime = elapsedTime;
-                RemainingTime = remainingTime;
-                ProgressPercent = progressPercent;
-                ThreadsData = threadsData;
-            }
+            public TimeSpan ElapsedTime = elapsedTime;
+            public TimeSpan RemainingTime = remainingTime;
+            public double ProgressPercent = progressPercent;
+            public ThreadProgressData[] ThreadsData = threadsData;
         }
 
-        public struct ThreadProgressData
+        public struct ThreadProgressData(int progress, string text, Color color)
         {
-            public int progress;
-            public string text;
-            public Color color;
-
-            public ThreadProgressData(int progress, string text, Color color)
-            {
-                this.progress = progress;
-                this.text = text;
-                this.color = color;
-            }
+            public int progress = progress;
+            public string text = text;
+            public Color color = color;
         }
 
         readonly Action? disablePCKLogs_cb;
@@ -272,7 +235,7 @@ namespace PCKBruteforcer
                         fileReader.BaseStream.Position = pck_in_memory_file.Offset;
 
                         // Read encrypted header
-                        using var encReader = new PCKEncryptedReader(fileReader, Array.Empty<byte>());
+                        using var encReader = new PCKEncryptedReader(fileReader, []);
                         // Restore position to header start
                         fileReader.BaseStream.Position = pck_in_memory_file.Offset;
 
@@ -287,7 +250,7 @@ namespace PCKBruteforcer
                     return;
                 }
 
-                List<Thread> threads = new();
+                List<Thread> threads = [];
                 ResultData[] thread_results = new ResultData[threadsCount];
                 ThreadProgressData[] thread_progress = new ThreadProgressData[threadsCount];
                 object task_progress_mutex = new();
@@ -414,7 +377,7 @@ namespace PCKBruteforcer
                             prev_percent = perc;
                             prev_time = DateTime.UtcNow;
 
-                            safe_thread_progress = thread_progress.ToArray();
+                            safe_thread_progress = [.. thread_progress];
 
                             ReportProgress(new ReportData(elapsed, remaining_time, perc, safe_thread_progress));
 

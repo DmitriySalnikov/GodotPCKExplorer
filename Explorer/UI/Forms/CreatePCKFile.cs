@@ -2,9 +2,9 @@
 {
     public partial class CreatePCKFile : Form
     {
-        Dictionary<string, PCKPackerRegularFile> files = new();
-        Font MatchCaseNormal;
-        Font MatchCaseStrikeout;
+        Dictionary<string, PCKPackerRegularFile> files = [];
+        readonly Font MatchCaseNormal;
+        readonly Font MatchCaseStrikeout;
 
         public CreatePCKFile()
         {
@@ -44,7 +44,7 @@
             if (filesScan != null)
                 files = filesScan.ToDictionary((f) => f.OriginalPath);
             else
-                files = new();
+                files = [];
 
             UpdateTableContent();
             CalculatePCKSize();

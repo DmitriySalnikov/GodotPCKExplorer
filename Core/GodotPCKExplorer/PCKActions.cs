@@ -58,8 +58,10 @@ namespace GodotPCKExplorer
         /// <param name="logPrinter">Custom action for printing log texts.</param>
         public static void Init(Action<string> logPrinter)
         {
-            var rep = new BasicPCKProgressReporter();
-            rep.PrintLogText = logPrinter;
+            var rep = new BasicPCKProgressReporter
+            {
+                PrintLogText = logPrinter
+            };
             progress = rep;
             LoadNativeLibs();
         }

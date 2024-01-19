@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace GodotPCKExplorer
 {
-    public class PCKFile
+    public sealed class PCKFile
     {
         private readonly BinaryReader reader;
         /// <summary>

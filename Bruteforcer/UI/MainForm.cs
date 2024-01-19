@@ -10,13 +10,13 @@ namespace PCKBruteforcer.UI
         [DllImport("user32.dll")]
         static extern int FlashWindow(IntPtr Hwnd, bool Revert);
 
-        readonly List<Control> browse_buttons = new();
+        readonly List<Control> browse_buttons = [];
         CancellationTokenSource? cancellationToken = null;
         Bruteforcer? bruteforcer;
         Task? bgTask = null;
 
         readonly ProgressReporterBrute progress;
-        readonly List<ProgressBarEx> progressBars = new();
+        readonly List<ProgressBarEx> progressBars = [];
         static readonly int ProgressRowHeight = 20;
 
         public BruteforcerMainForm()

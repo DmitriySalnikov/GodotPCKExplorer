@@ -526,7 +526,7 @@ namespace GodotPCKExplorer.UI
             e.Effect = DragDropEffects.None;
         }
 
-        static readonly DragDropEffects[] allowedEffects = new DragDropEffects[] { DragDropEffects.Copy, DragDropEffects.Link };
+        static readonly DragDropEffects[] allowedEffects = [DragDropEffects.Copy, DragDropEffects.Link];
         private void Form1_DragDrop(object? sender, DragEventArgs e)
         {
             if (e.Data != null && e.Data.GetDataPresent(DataFormats.FileDrop) && allowedEffects.Contains(e.Effect))
