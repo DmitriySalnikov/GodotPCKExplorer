@@ -3,18 +3,11 @@ using Newtonsoft.Json;
 
 namespace GodotPCKExplorer.UI
 {
-    class RecentFiles
+    class RecentFiles(string path, bool isEncrypted, string encryptionKey)
     {
-        public string Path;
-        public bool IsEncrypted;
-        public string EncryptionKey;
-
-        public RecentFiles(string path, bool isEncrypted, string encryptionKey)
-        {
-            Path = path;
-            IsEncrypted = isEncrypted;
-            EncryptionKey = encryptionKey;
-        }
+        public string Path = path;
+        public bool IsEncrypted = isEncrypted;
+        public string EncryptionKey = encryptionKey;
     }
 
     class GUIConfig
@@ -53,7 +46,7 @@ namespace GodotPCKExplorer.UI
 
         #region Main Window
 
-        public List<RecentFiles> RecentOpenedFiles { get; set; } = new();
+        public List<RecentFiles> RecentOpenedFiles { get; set; } = [];
         public bool MatchCaseFilterMainForm { get; set; } = false;
         public bool ShowConsole { get; set; } = false;
         public string SkipVersion { get; set; } = "";

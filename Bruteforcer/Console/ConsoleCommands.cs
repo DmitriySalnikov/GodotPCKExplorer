@@ -8,6 +8,7 @@ namespace PCKBruteforcer.Cmd
     public static class ConsoleCommands
     {
         static bool runWithArgs = false;
+        private static readonly string[] yesVariants = ["y", "yes", "true"];
 
         public static bool RunCommand(string[] args)
         {
@@ -17,7 +18,7 @@ namespace PCKBruteforcer.Cmd
             try
             {
                 if (args.Length > 0)
-                    if (Path.GetFullPath(args[0]) == AppContext.BaseDirectory)
+                    if (Path.GetFullPath(args[0]) == Path.GetFullPath(AppContext.BaseDirectory))
                         args = args.Skip(1).ToArray();
             }
             catch (Exception ex)
@@ -113,7 +114,7 @@ namespace PCKBruteforcer.Cmd
                                 threads = int.Parse(args[5]);
                                 if (args.Length > 6)
                                 {
-                                    inMem = new string[] { "y", "yes", "true" }.Contains(args[6].ToLower());
+                                    inMem = yesVariants.Contains(args[6].ToLower());
                                 }
                             }
                         }

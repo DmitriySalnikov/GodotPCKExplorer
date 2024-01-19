@@ -56,7 +56,7 @@ namespace Tests
         static readonly string pck_error = "Error: Couldn't load project data at path \".\". Is the .pck file missing?";
         static readonly string DefaultGodotArgs = "--headless";
 
-        readonly List<string> OriginalTestFiles = new();
+        readonly List<string> OriginalTestFiles = [];
 
         public UtilMethodsTests(int version)
         {

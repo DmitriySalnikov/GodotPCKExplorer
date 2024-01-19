@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 
@@ -34,7 +33,7 @@ namespace GodotPCKExplorer
         }
     }
 
-    public class PCKPackerRegularFile : PCKPackerFile
+    public sealed class PCKPackerRegularFile : PCKPackerFile
     {
         public string OriginalPath;
 

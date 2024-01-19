@@ -1,9 +1,9 @@
 ﻿namespace GodotPCKExplorer.GlobalShared
 {
-    public class DeferredAction : IDisposable
+    public sealed class DeferredAction : IDisposable
     {
         System.Threading.Timer? close_timer = null;
-        Action action;
+        readonly Action action;
         readonly int delay = 1000;
 
         public DeferredAction(Action action, int delay = 1000)
