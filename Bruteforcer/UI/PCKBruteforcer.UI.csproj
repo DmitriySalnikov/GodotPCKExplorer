@@ -21,6 +21,7 @@
 		<NeutralLanguage>en</NeutralLanguage>
 		<Version>1.0.0</Version>
 
+		<ApplicationIcon>icon.ico</ApplicationIcon>
 		<NoWarn>$(NoWarn);IDE1006</NoWarn>
 
 		<Platforms>AnyCPU;x64</Platforms>
@@ -32,6 +33,21 @@
 			<Aliases>ConsoleProject,</Aliases>
 		</ProjectReference>
 		<ProjectReference Include="..\PCKBruteforcer\PCKBruteforcer.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Update="Resources.Designer.cs">
+	    <DesignTime>True</DesignTime>
+	    <AutoGen>True</AutoGen>
+	    <DependentUpon>Resources.resx</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Update="Resources.resx">
+	    <Generator>ResXFileCodeGenerator</Generator>
+	    <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+	  </EmbeddedResource>
 	</ItemGroup>
 
 	<Import Project="..\..\Core\Global.Shared\Global.Shared.projitems" Label="Shared" />

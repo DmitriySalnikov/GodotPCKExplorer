@@ -22,6 +22,7 @@ namespace PCKBruteforcer.UI
         public BruteforcerMainForm()
         {
             InitializeComponent();
+            Icon = Resources.icon;
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 

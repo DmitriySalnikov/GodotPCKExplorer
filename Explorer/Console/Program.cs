@@ -1,4 +1,5 @@
 ﻿using GodotPCKExplorer.GlobalShared;
+using System.Globalization;
 
 namespace GodotPCKExplorer.Cmd
 {
@@ -22,6 +23,10 @@ namespace GodotPCKExplorer.Cmd
 
         static Program()
         {
+            // InvariantCulture for console and UI
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+
             if (!Directory.Exists(GlobalConstants.AppDataPath))
                 Directory.CreateDirectory(GlobalConstants.AppDataPath);
 
@@ -74,22 +79,21 @@ Examples of valid commands:
 
 -e	Extract content from a pack to a folder. Automatically overwrites existing files
 	-e [path to pack] [path to output folder] {[encryption key]}
-	-e C:/Game.exe ""C:/Path with Spaces""
-	-e C:/Game.pck Output_dir
+	-e C:/Game.exe ""C:/Path with Spaces"" 
+	-e C:/Game.pck Output_dir 7FDBF68B69B838194A6F1055395225BBA3F1C5689D08D71DCD620A7068F61CBA
 
 -es	Export like -e but skip existing files
 
 -p	Pack content of folder into .pck file
 	The version should be in this format: PACK_VERSION.GODOT_MINOR._MAJOR._PATCH
-	-p [path to folder] [output pack file] [version] {[alignment]} {[encryption key]} {[encryption: both|index|files]}
+	-p [path to folder] [output pack file] [version] {[encryption key]} {[encryption: both|index|files]}
 	-p ""C:/Directory with files"" C:/Game_New.pck 1.3.2.0
-	-p ""C:/Directory with files"" C:/Game_New.pck 2.4.0.1 16
-	-p ""C:/Directory with files"" C:/Game_New.pck 2.4.0.1 16 7FDBF68B69B838194A6F1055395225BBA3F1C5689D08D71DCD620A7068F61CBA files
+	-p ""C:/Directory with files"" C:/Game_New.pck 2.4.0.1
+	-p ""C:/Directory with files"" C:/Game_New.pck 2.4.0.1 7FDBF68B69B838194A6F1055395225BBA3F1C5689D08D71DCD620A7068F61CBA files
 
 -pe	Pack embedded. Equal to just -p, but embed '.pck' into target file
-	-p [path to folder] [exe to pack into] [version] {[alignment]} {[encryption key]} {[encryption: both|index|files]}
-	-p ""C:/Directory with files"" C:/Game.exe 1.3.2.0
-	-p ""C:/Directory with files"" C:/Game.exe 2.4.0.0 32
+	-pe [path to folder] [exe to pack into] [version] {[encryption key]} {[encryption: both|index|files]}
+	-pe ""C:/Directory with files"" C:/Game.exe 1.3.2.0
 
 -m	Merge pack into target file. So you can copy the '.pck' from one file to another
 	-m [path to pack] [file to merge into]

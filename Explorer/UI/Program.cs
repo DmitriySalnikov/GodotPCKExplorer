@@ -28,6 +28,7 @@ namespace GodotPCKExplorer.UI
         const int SW_SHOW = 5;
 
         static bool IsStylesInited = false;
+        static bool IsCleanupDone = false;
 
         /// <summary>
         /// The main entry point for the application.
@@ -36,10 +37,11 @@ namespace GodotPCKExplorer.UI
         static void Main(string[] args)
         {
             Init();
+            // Cleaning up on exit if closed by closing console window
+            AppDomain.CurrentDomain.ProcessExit += (s, e) => Cleanup();
 
             if (!ConsoleCommands.RunCommand(args))
             {
-                // run..
                 CMDMode = false;
 
                 mainForm = new ExplorerMainForm();
@@ -84,9 +86,14 @@ namespace GodotPCKExplorer.UI
 
         public static void Cleanup()
         {
+            if (IsCleanupDone)
+                return;
+
+            IsCleanupDone = true;
             logger.Dispose();
 
-            mainForm?.Dispose();
+            if (mainForm != null && !mainForm.IsDisposed)
+                mainForm.Dispose();
             mainForm = null;
         }
 

@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace GodotPCKExplorer.UI.Properties {
+namespace PCKBruteforcer.UI {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace GodotPCKExplorer.UI.Properties {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("GodotPCKExplorer.UI.Properties.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("PCKBruteforcer.UI.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -67,16 +67,6 @@ namespace GodotPCKExplorer.UI.Properties {
             get {
                 object obj = ResourceManager.GetObject("icon", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap pck_about_window {
-            get {
-                object obj = ResourceManager.GetObject("pck_about_window", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
             }
         }
     }
