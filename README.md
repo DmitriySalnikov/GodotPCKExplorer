@@ -17,9 +17,9 @@ Also `PCK Bruteforcer` is available as part of this project [here](Bruteforcer/)
 * `Remove` embedded PCK
 * `Split` files with embedded PCK into two separate files
 * Supports encrypted Godot 4 PCK
-* Supports only `Windows`
-* Windows, Linux and macOS are supported
 * And also all these features are available via the `console`. Just write `GodotPCKExplorer.Console.exe -h` to get help.
+* `UI` Supports only `Windows`
+* `Console` Supports `Windows`, `Linux` and `macOS`
 
 ![Main Window](Images/MainForm.png)
 ![Main Window](Images/CreatePack.png)
