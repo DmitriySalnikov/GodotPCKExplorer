@@ -7,6 +7,7 @@
 		<ApplicationIcon>icon.ico</ApplicationIcon>
 		<Nullable>enable</Nullable>
 		<RootNamespace>$(MSBuildProjectName.Replace(" ", "_").Replace("Console", "Cmd"))</RootNamespace>
+		<Platforms>AnyCPU</Platforms>
 	</PropertyGroup>
 
 	<Import Project="..\..\Core\Global.Shared\Global.Shared.projitems" Label="Shared" />

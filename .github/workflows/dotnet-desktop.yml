@@ -18,7 +18,6 @@ env:
   Bruteforcer_Project_Name: Bruteforcer\PCKBruteforcer_UI
   Solution_Path: GodotPCKExplorer.sln
   SDK_Name: net8.0-windows
-  Platform_Name: x64
 
 jobs:
   build:
@@ -56,33 +55,25 @@ jobs:
 
       - name: Build ${{env.MSBuild_Project_Name}}
         shell: powershell
-        run: msbuild ${{env.Solution_Path}} /t:${{env.MSBuild_Project_Name}} /p:Configuration=${{matrix.configuration}} /p:Platform="${{env.Platform_Name}}" /m:4
+        run: msbuild ${{env.Solution_Path}} /t:${{env.MSBuild_Project_Name}} /p:Configuration=${{matrix.configuration}} /m:4
 
       - name: Prepare artifacts
         if: matrix.configuration == 'Release'
         shell: powershell
         run: |
-          Get-ChildItem "bin/${{env.Project_Name}}/x64/${{matrix.configuration}}/" -Directory | ForEach-Object {
+          Get-ChildItem "bin/${{env.Project_Name}}/${{matrix.configuration}}/" -Directory | ForEach-Object {
              Get-ChildItem $_.FullName | Where-Object { ('.pdb', '.xml').Contains($_.Extension) } | Remove-Item -Force
           }
 
       - name: Upload build artifacts
-        if: matrix.configuration == 'Release'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{env.Artifact_Name}}
-          path: bin/${{env.Project_Name}}/x64/${{matrix.configuration}}/${{env.SDK_Name}}
-
-      - name: Upload build artifacts
-        if: matrix.configuration != 'Release'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{env.Artifact_Name}}_${{matrix.configuration}}
+          name: ${{matrix.configuration == 'Release' && env.Artifact_Name || format('{0}_{1}', env.Artifact_Name, matrix.configuration)}}
           path: bin/${{env.Project_Name}}/${{matrix.configuration}}/${{env.SDK_Name}}
 
       - name: Build ${{env.Bruteforcer_Project_Name}}
         shell: powershell
-        run: msbuild ${{env.Solution_Path}} /t:${{env.Bruteforcer_Project_Name}} /p:Configuration=${{matrix.configuration}} /p:Platform="${{env.Platform_Name}}" /m:4
+        run: msbuild ${{env.Solution_Path}} /t:${{env.Bruteforcer_Project_Name}} /p:Configuration=${{matrix.configuration}} /m:4
 
 
   tests:
