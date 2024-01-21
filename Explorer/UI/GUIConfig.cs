@@ -24,8 +24,11 @@ namespace GodotPCKExplorer.UI
         public PCKVersion PackedVersion { get; set; } = new PCKVersion(2, 4, 1, 1);
         public bool EmbedPCK { get; set; } = false;
         public string FolderPath { get; set; } = "";
+        public string PackPathPrefix { get; set; } = "";
         public bool MatchCaseFilterPackingForm { get; set; } = false;
         public uint PCKAlignment { get; set; } = 16;
+        public bool PackOnlyFiltered { get; set; } = true;
+        public bool PreviewPaths { get; set; } = false;
 
         #region Encryption
 
@@ -65,15 +68,16 @@ namespace GodotPCKExplorer.UI
             PCKVersion packedVersion,
             bool embedPCK,
             string folderPath,
+            string packPathPrefix,
             bool matchCaseFilterPackingForm,
             uint pckAlignment,
-
+            bool packOnlyFiltered,
+            bool previewPaths,
 
             bool encryptPCK,
             string encryptionKey,
             bool encryptIndex,
             bool encryptFiles,
-
 
             bool overwriteExtracted,
             bool checkMD5Extracted,
@@ -87,8 +91,11 @@ namespace GodotPCKExplorer.UI
             PackedVersion = packedVersion;
             EmbedPCK = embedPCK;
             FolderPath = folderPath;
+            PackPathPrefix = packPathPrefix;
             MatchCaseFilterPackingForm = matchCaseFilterPackingForm;
             PCKAlignment = pckAlignment;
+            PackOnlyFiltered = packOnlyFiltered;
+            PreviewPaths = previewPaths;
 
             EncryptPCK = encryptPCK;
             EncryptionKey = encryptionKey;

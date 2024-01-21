@@ -341,8 +341,8 @@ namespace GodotPCKExplorer.UI
             {
                 foreach (var f in pckReader.Files)
                 {
-                    if (string.IsNullOrEmpty(searchText.Text) ||
-                        (!string.IsNullOrEmpty(searchText.Text) && Utils.IsMatchWildCard(f.Key, searchText.Text, GUIConfig.Instance.MatchCaseFilterMainForm)))
+                    if (string.IsNullOrWhiteSpace(searchText.Text) ||
+                        (!string.IsNullOrWhiteSpace(searchText.Text) && Utils.IsMatchWildCard(f.Key, searchText.Text, GUIConfig.Instance.MatchCaseFilterMainForm)))
                     {
                         var tmpRow = new DataGridViewRow();
                         tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.FilePath });
@@ -353,6 +353,8 @@ namespace GodotPCKExplorer.UI
                     }
                 }
             }
+
+            extractFilteredToolStripMenuItem.Enabled = !string.IsNullOrWhiteSpace(searchText.Text);
         }
 
         void UpdateStatuStrip()
@@ -416,6 +418,19 @@ namespace GodotPCKExplorer.UI
             if (res == DialogResult.OK)
             {
                 ExtractFilesFromPCK(pckReader.Files.Select((f) => f.Key));
+            }
+        }
+
+        private void extractFilteredToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var res = fbd_extract_folder.ShowDialog(this);
+            if (res == DialogResult.OK)
+            {
+                var filteredRows = new List<string>();
+                foreach (DataGridViewRow i in dataGridView1.Rows)
+                    filteredRows.Add((string)i.Cells[0].Value);
+
+                ExtractFilesFromPCK(filteredRows);
             }
         }
 
@@ -645,6 +660,7 @@ namespace GodotPCKExplorer.UI
         {
             if (e.KeyCode == Keys.Enter)
             {
+                e.Handled = true;
                 e.SuppressKeyPress = true;
                 UpdateListOfPCKContent();
             }

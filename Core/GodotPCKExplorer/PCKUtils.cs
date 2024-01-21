@@ -194,6 +194,11 @@ namespace GodotPCKExplorer
             }
         }
 
+        public static string GetResFilePath(string path, string prefix)
+        {
+            return ("res://" + prefix + (path.StartsWith("res://") ? path.Replace("res://", "") : path)).Replace("\\", "/");
+        }
+
         public static List<PCKPackerRegularFile> GetListOfFilesToPack(string folder, CancellationToken? cancellationToken = null)
         {
             if (!Directory.Exists(folder))

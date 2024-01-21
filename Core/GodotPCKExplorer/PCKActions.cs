@@ -323,6 +323,7 @@ namespace GodotPCKExplorer
         /// <param name="dirPath">The directory from which the files will be recursively packed.</param>
         /// <param name="filePath">The path to the new PCK file.</param>
         /// <param name="strVer">A version of the file. Format: [pack version].[godot major].[godot minor].[godot patch] e.g. <c>2.4.1.1</c></param>
+        /// <param name="packPathPrefix">The path prefix in the pack. For example, if the prefix is <c>test_folder/</c>, then the path <c>res://icon.png</c> is converted to <c>res://test_folder/icon.png</c>.</param>
         /// <param name="alignment">The address of each file will be aligned to this value.</param>
         /// <param name="embed">If enabled and an existing <see cref="filePath"/> is specified, then the PCK will be embedded into this file.</param>
         /// <param name="encKey">The encryption key if you want to encrypt a new PCK file.</param>
@@ -330,11 +331,11 @@ namespace GodotPCKExplorer
         /// <param name="encFiles">Whether to encrypt the contents of files.</param>
         /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
         /// <returns><c>true</c> if successful</returns>
-        public static bool Pack(string dirPath, string filePath, string strVer, uint alignment = 16, bool embed = false, string? encKey = null, bool encIndex = false, bool encFiles = false, CancellationToken? cancellationToken = null)
+        public static bool Pack(string dirPath, string filePath, string strVer, string packPathPrefix = "", uint alignment = 16, bool embed = false, string? encKey = null, bool encIndex = false, bool encFiles = false, CancellationToken? cancellationToken = null)
         {
             if (Directory.Exists(dirPath))
             {
-                return Pack(PCKUtils.GetListOfFilesToPack(dirPath), filePath, strVer, alignment, embed, encKey, encIndex, encFiles, cancellationToken);
+                return Pack(PCKUtils.GetListOfFilesToPack(dirPath), filePath, strVer, packPathPrefix, alignment, embed, encKey, encIndex, encFiles, cancellationToken);
             }
             else
             {
@@ -349,6 +350,7 @@ namespace GodotPCKExplorer
         /// <param name="files">A list of files to be packed.</param>
         /// <param name="filePath">The path to the new PCK file.</param>
         /// <param name="strVer">A version of the file. Format: [pack version].[godot major].[godot minor].[godot patch] e.g. <c>2.4.1.1</c></param>
+        /// <param name="packPathPrefix">The path prefix in the pack. For example, if the prefix is <c>test_folder/</c>, then the path <c>res://icon.png</c> is converted to <c>res://test_folder/icon.png</c>.</param>
         /// <param name="alignment">The address of each file will be aligned to this value.</param>
         /// <param name="embed">If enabled and an existing <see cref="filePath"/> is specified, then the PCK will be embedded into this file.</param>
         /// <param name="encKey">The encryption key if you want to encrypt a new PCK file.</param>
@@ -356,7 +358,7 @@ namespace GodotPCKExplorer
         /// <param name="encFiles">Whether to encrypt the contents of files.</param>
         /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
         /// <returns><c>true</c> if successful</returns>
-        public static bool Pack(IEnumerable<PCKPackerFile> files, string filePath, string strVer, uint alignment = 16, bool embed = false, string? encKey = null, bool encIndex = false, bool encFiles = false, CancellationToken? cancellationToken = null)
+        public static bool Pack(IEnumerable<PCKPackerFile> files, string filePath, string strVer, string packPathPrefix = "", uint alignment = 16, bool embed = false, string? encKey = null, bool encIndex = false, bool encFiles = false, CancellationToken? cancellationToken = null)
         {
             if (!files.Any())
             {
@@ -393,7 +395,7 @@ namespace GodotPCKExplorer
                 }
             }
 
-            if (PCKPacker.PackFiles(filePath, embed, files, alignment, ver, PCKUtils.HexStringToByteArray(encKey), encIndex, encFiles, cancellationToken))
+            if (PCKPacker.PackFiles(filePath, embed, files, ver, packPathPrefix, alignment, PCKUtils.HexStringToByteArray(encKey), encIndex, encFiles, cancellationToken))
             {
                 return true;
             }

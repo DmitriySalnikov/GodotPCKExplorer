@@ -349,6 +349,7 @@ namespace GodotPCKExplorer
                     tmp_reader = new BinaryReader(mem);
                 }
 
+                List<PCKFile> tmp_files = new List<PCKFile>();
                 for (int i = 0; i < PCK_FileCount; i++)
                 {
                     int path_size = tmp_reader.ReadInt32();
@@ -369,7 +370,8 @@ namespace GodotPCKExplorer
                         PCKActions.progress?.LogProgress(op, $"{path}\nSize: {size} Flags: {flags}");
                         PCKActions.progress?.LogProgress(op, (int)(((double)i / PCK_FileCount) * 100));
                     }
-                    Files.Add(path, new PCKFile(fileReader, path, ofs, pos_of_ofs, size, md5, flags, PCK_VersionPack));
+
+                    tmp_files.Add(new PCKFile(fileReader, path, ofs, pos_of_ofs, size, md5, flags, PCK_VersionPack));
 
                     if (cancellationToken?.IsCancellationRequested ?? false)
                     {
@@ -382,6 +384,43 @@ namespace GodotPCKExplorer
                             throw new OperationCanceledException();
                     }
                 };
+
+                // In some rare cases, the PCK may contain duplicate files
+                // So it is necessary to mark them as duplicates,
+                // because those lower on the list will overwrite those higher up.
+                {
+                    Dictionary<string, int> duplicates = new Dictionary<string, int>();
+                    for (int i = tmp_files.Count - 1; i >= 0; i--)
+                    {
+                        string tmp_path = tmp_files[i].FilePath;
+                        if (!duplicates.ContainsKey(tmp_path))
+                        {
+                            duplicates.Add(tmp_path, 0);
+                        }
+                        else
+                        {
+                            duplicates[tmp_path]++;
+                        }
+
+                        if (duplicates[tmp_path] == 0)
+                        {
+                            continue;
+                        }
+
+                        string new_path = Path.ChangeExtension(tmp_path, $"duplicate_{duplicates[tmp_path]}" + Path.GetExtension(tmp_path));
+                        tmp_files[i].FilePath = new_path;
+
+                        if (logFileNamesProgress)
+                        {
+                            PCKActions.progress?.LogProgress(op, $"Duplicate file found. It will be renamed '{tmp_path}' -> '{new_path}'");
+                        }
+                    }
+
+                    foreach (PCKFile file in tmp_files)
+                    {
+                        Files.Add(file.FilePath, file);
+                    }
+                }
 
                 if (IsEncryptedIndex)
                 {

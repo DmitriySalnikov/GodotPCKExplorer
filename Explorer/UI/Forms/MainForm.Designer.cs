@@ -49,6 +49,7 @@
             exitToolStripMenuItem = new ToolStripMenuItem();
             extractToolStripMenuItem = new ToolStripMenuItem();
             extractFileToolStripMenuItem = new ToolStripMenuItem();
+            extractFilteredToolStripMenuItem = new ToolStripMenuItem();
             extractAllToolStripMenuItem = new ToolStripMenuItem();
             overwriteExported = new ToolStripMenuItem();
             checkMD5OnExportToolStripMenuItem = new ToolStripMenuItem();
@@ -212,7 +213,7 @@
             // 
             // extractToolStripMenuItem
             // 
-            extractToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { extractFileToolStripMenuItem, extractAllToolStripMenuItem, overwriteExported, checkMD5OnExportToolStripMenuItem });
+            extractToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { extractFileToolStripMenuItem, extractFilteredToolStripMenuItem, extractAllToolStripMenuItem, overwriteExported, checkMD5OnExportToolStripMenuItem });
             extractToolStripMenuItem.Name = "extractToolStripMenuItem";
             extractToolStripMenuItem.Size = new Size(55, 23);
             extractToolStripMenuItem.Text = "Extract";
@@ -223,6 +224,13 @@
             extractFileToolStripMenuItem.Size = new Size(226, 22);
             extractFileToolStripMenuItem.Text = "Extract Selected";
             extractFileToolStripMenuItem.Click += extractFileToolStripMenuItem_Click;
+            // 
+            // extractFilteredToolStripMenuItem
+            // 
+            extractFilteredToolStripMenuItem.Name = "extractFilteredToolStripMenuItem";
+            extractFilteredToolStripMenuItem.Size = new Size(226, 22);
+            extractFilteredToolStripMenuItem.Text = "Extract Filtered";
+            extractFilteredToolStripMenuItem.Click += extractFilteredToolStripMenuItem_Click;
             // 
             // extractAllToolStripMenuItem
             // 
@@ -576,6 +584,7 @@
         private ToolStripMenuItem about_toolStripMenuItem1;
         private ToolStripMenuItem checkUpdates_toolStripMenuItem1;
         private ToolStripMenuItem toolStripMenuItem_clearFilter;
+        private ToolStripMenuItem extractFilteredToolStripMenuItem;
     }
 }
 

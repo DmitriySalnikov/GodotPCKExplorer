@@ -29,7 +29,7 @@
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
-            DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(CreatePCKFile));
             dataGridView1 = new DataGridView();
             filePath = new DataGridViewTextBoxColumn();
@@ -55,11 +55,15 @@
             l_total_count = new Label();
             searchText = new TextBoxWithPlaceholder();
             toolTip1 = new ToolTip(components);
+            btn_clearFilter = new Button();
             nud_alignment = new NumericUpDown();
             label4 = new Label();
             btn_generate_key = new Button();
             cb_enable_encryption = new CheckBox();
-            btn_clearFilter = new Button();
+            cb_packFiltered = new CheckBox();
+            cb_previewPaths = new CheckBox();
+            label5 = new Label();
+            tb_prefix = new TextBox();
             ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)nud_major).BeginInit();
             ((System.ComponentModel.ISupportInitialize)nud_minor).BeginInit();
@@ -74,11 +78,11 @@
             dataGridView1.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dataGridView1.Columns.AddRange(new DataGridViewColumn[] { filePath, size });
             dataGridView1.EditMode = DataGridViewEditMode.EditProgrammatically;
-            dataGridView1.Location = new Point(0, 68);
+            dataGridView1.Location = new Point(0, 80);
             dataGridView1.Margin = new Padding(0, 3, 0, 3);
             dataGridView1.Name = "dataGridView1";
             dataGridView1.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dataGridView1.Size = new Size(850, 323);
+            dataGridView1.Size = new Size(850, 311);
             dataGridView1.TabIndex = 0;
             dataGridView1.SortCompare += dataGridView1_SortCompare;
             dataGridView1.UserDeletedRow += dataGridView1_UserDeletedRow;
@@ -93,8 +97,8 @@
             // 
             // size
             // 
-            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleRight;
-            size.DefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleRight;
+            size.DefaultCellStyle = dataGridViewCellStyle1;
             size.FillWeight = 15F;
             size.HeaderText = "Size";
             size.Name = "size";
@@ -134,7 +138,7 @@
             // 
             label1.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             label1.AutoSize = true;
-            label1.Location = new Point(165, 457);
+            label1.Location = new Point(165, 458);
             label1.Margin = new Padding(4, 0, 4, 0);
             label1.Name = "label1";
             label1.Size = new Size(369, 15);
@@ -188,12 +192,12 @@
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new Point(14, 33);
+            label2.Location = new Point(14, 62);
             label2.Margin = new Padding(4, 0, 4, 0);
             label2.Name = "label2";
-            label2.Size = new Size(397, 30);
+            label2.Size = new Size(632, 15);
             label2.TabIndex = 13;
-            label2.Text = "*You can delete files from the table by selecting them and pressing Delete.\r\nTo select several separate rows, hold Control";
+            label2.Text = "*You can delete files from the table by selecting them and pressing Delete. To select several separate rows, hold Control";
             // 
             // cb_embed
             // 
@@ -309,6 +313,19 @@
             toolTip1.SetToolTip(searchText, resources.GetString("searchText.ToolTip"));
             searchText.KeyDown += textBoxWithPlaceholder1_KeyDown;
             // 
+            // btn_clearFilter
+            // 
+            btn_clearFilter.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btn_clearFilter.Location = new Point(726, 36);
+            btn_clearFilter.Margin = new Padding(0, 0, 2, 0);
+            btn_clearFilter.Name = "btn_clearFilter";
+            btn_clearFilter.Size = new Size(19, 23);
+            btn_clearFilter.TabIndex = 29;
+            btn_clearFilter.Text = "X";
+            toolTip1.SetToolTip(btn_clearFilter, "Clear filter");
+            btn_clearFilter.UseVisualStyleBackColor = true;
+            btn_clearFilter.Click += btn_clearFilter_Click;
+            // 
             // nud_alignment
             // 
             nud_alignment.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
@@ -324,7 +341,7 @@
             // 
             label4.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             label4.AutoSize = true;
-            label4.Location = new Point(295, 429);
+            label4.Location = new Point(301, 429);
             label4.Margin = new Padding(4, 0, 4, 0);
             label4.Name = "label4";
             label4.Size = new Size(194, 15);
@@ -348,7 +365,7 @@
             cb_enable_encryption.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             cb_enable_encryption.AutoSize = true;
             cb_enable_encryption.CheckAlign = ContentAlignment.MiddleRight;
-            cb_enable_encryption.Location = new Point(529, 404);
+            cb_enable_encryption.Location = new Point(529, 402);
             cb_enable_encryption.Margin = new Padding(4, 3, 4, 3);
             cb_enable_encryption.Name = "cb_enable_encryption";
             cb_enable_encryption.Size = new Size(121, 19);
@@ -356,18 +373,54 @@
             cb_enable_encryption.Text = "Enable encryption";
             cb_enable_encryption.UseVisualStyleBackColor = true;
             // 
-            // btn_clearFilter
+            // cb_packFiltered
             // 
-            btn_clearFilter.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btn_clearFilter.Location = new Point(726, 36);
-            btn_clearFilter.Margin = new Padding(0, 0, 2, 0);
-            btn_clearFilter.Name = "btn_clearFilter";
-            btn_clearFilter.Size = new Size(19, 23);
-            btn_clearFilter.TabIndex = 29;
-            btn_clearFilter.Text = "X";
-            toolTip1.SetToolTip(btn_clearFilter, "Clear filter");
-            btn_clearFilter.UseVisualStyleBackColor = true;
-            btn_clearFilter.Click += btn_clearFilter_Click;
+            cb_packFiltered.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            cb_packFiltered.AutoSize = true;
+            cb_packFiltered.CheckAlign = ContentAlignment.MiddleRight;
+            cb_packFiltered.Location = new Point(404, 402);
+            cb_packFiltered.Margin = new Padding(4, 3, 4, 3);
+            cb_packFiltered.Name = "cb_packFiltered";
+            cb_packFiltered.Size = new Size(117, 19);
+            cb_packFiltered.TabIndex = 28;
+            cb_packFiltered.Text = "Pack only filtered";
+            cb_packFiltered.UseVisualStyleBackColor = true;
+            cb_packFiltered.CheckedChanged += cb_packFiltered_CheckedChanged;
+            // 
+            // cb_previewPaths
+            // 
+            cb_previewPaths.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            cb_previewPaths.AutoSize = true;
+            cb_previewPaths.CheckAlign = ContentAlignment.MiddleRight;
+            cb_previewPaths.Location = new Point(14, 402);
+            cb_previewPaths.Margin = new Padding(4, 3, 4, 3);
+            cb_previewPaths.Name = "cb_previewPaths";
+            cb_previewPaths.Size = new Size(99, 19);
+            cb_previewPaths.TabIndex = 28;
+            cb_previewPaths.Text = "Paths Preview";
+            cb_previewPaths.UseVisualStyleBackColor = true;
+            cb_previewPaths.CheckedChanged += cb_previewPaths_CheckedChanged;
+            // 
+            // label5
+            // 
+            label5.AutoSize = true;
+            label5.Location = new Point(14, 39);
+            label5.Margin = new Padding(4, 0, 4, 0);
+            label5.Name = "label5";
+            label5.Size = new Size(108, 15);
+            label5.TabIndex = 16;
+            label5.Text = "Path prefix in pack:";
+            // 
+            // tb_prefix
+            // 
+            tb_prefix.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            tb_prefix.Location = new Point(166, 36);
+            tb_prefix.Margin = new Padding(4, 3, 20, 3);
+            tb_prefix.Name = "tb_prefix";
+            tb_prefix.Size = new Size(265, 23);
+            tb_prefix.TabIndex = 15;
+            tb_prefix.KeyDown += tb_prefix_KeyDown;
+            tb_prefix.Leave += tb_prefix_Leave;
             // 
             // CreatePCKFile
             // 
@@ -375,6 +428,8 @@
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(850, 484);
             Controls.Add(btn_clearFilter);
+            Controls.Add(cb_previewPaths);
+            Controls.Add(cb_packFiltered);
             Controls.Add(cb_enable_encryption);
             Controls.Add(btn_generate_key);
             Controls.Add(label4);
@@ -385,7 +440,9 @@
             Controls.Add(btn_filter);
             Controls.Add(btn_refresh);
             Controls.Add(btn_browse);
+            Controls.Add(label5);
             Controls.Add(label3);
+            Controls.Add(tb_prefix);
             Controls.Add(tb_folder_path);
             Controls.Add(cb_embed);
             Controls.Add(label2);
@@ -442,5 +499,9 @@
         private DataGridViewTextBoxColumn filePath;
         private DataGridViewTextBoxColumn size;
         private Button btn_clearFilter;
+        private CheckBox cb_packFiltered;
+        private CheckBox cb_previewPaths;
+        private Label label5;
+        private TextBox tb_prefix;
     }
 }
