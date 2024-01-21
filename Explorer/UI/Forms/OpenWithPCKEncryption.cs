@@ -1,4 +1,6 @@
-﻿namespace GodotPCKExplorer.UI
+﻿using System.Diagnostics;
+
+namespace GodotPCKExplorer.UI
 {
     public partial class OpenWithPCKEncryption : Form
     {
@@ -24,6 +26,11 @@
 
             DialogResult = DialogResult.OK;
             Close();
+        }
+
+        private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            Process.Start(new ProcessStartInfo("https://github.com/DmitriySalnikov/GodotPCKExplorer/blob/master/Bruteforcer/README.md") { UseShellExecute = true });
         }
     }
 }

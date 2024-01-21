@@ -6,6 +6,7 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<ApplicationIcon>icon.ico</ApplicationIcon>
 		<RootNamespace>$(MSBuildProjectName.Replace(" ", "_").Replace("Console", "Cmd"))</RootNamespace>
+		<Platforms>AnyCPU</Platforms>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<TargetFramework>netstandard2.1</TargetFramework>
 		<Configurations>Debug;Release;Dev</Configurations>
-		<Platforms>AnyCPU;x64</Platforms>
+		<Platforms>AnyCPU</Platforms>
 		<NoWarn>$(NoWarn);IDE1006</NoWarn>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 
@@ -14,17 +14,11 @@
 			mbedTLS\**\*.pdb;
 			**\.gitignore
 		</DefaultItemExcludes>
-
-		<PlatformTarget>AnyCPU</PlatformTarget>
 		<Version>1.4.0</Version>
 		<AssemblyVersion>$(Version)</AssemblyVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|AnyCPU'">
-		<DefineConstants>$(DefineConstants);DEV_ENABLED</DefineConstants>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|x64'">
 		<DefineConstants>$(DefineConstants);DEV_ENABLED</DefineConstants>
 	</PropertyGroup>
 
