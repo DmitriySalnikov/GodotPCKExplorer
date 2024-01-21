@@ -86,14 +86,14 @@ Examples of valid commands:
 
 -p	Pack content of folder into .pck file
 	The version should be in this format: PACK_VERSION.GODOT_MINOR._MAJOR._PATCH
-	-p [path to folder] [output pack file] [version] {[encryption key]} {[encryption: both|index|files]}
+	-p [path to folder] [output pack file] [version] {[path prefix]} {[encryption key]} {[encryption: both|index|files]}
 	-p ""C:/Directory with files"" C:/Game_New.pck 1.3.2.0
 	-p ""C:/Directory with files"" C:/Game_New.pck 2.4.0.1
-	-p ""C:/Directory with files"" C:/Game_New.pck 2.4.0.1 7FDBF68B69B838194A6F1055395225BBA3F1C5689D08D71DCD620A7068F61CBA files
+	-p ""C:/Directory with files"" C:/Game_New.pck 2.4.0.1 """" 7FDBF68B69B838194A6F1055395225BBA3F1C5689D08D71DCD620A7068F61CBA files
 
 -pe	Pack embedded. Equal to just -p, but embed '.pck' into target file
-	-pe [path to folder] [exe to pack into] [version] {[encryption key]} {[encryption: both|index|files]}
-	-pe ""C:/Directory with files"" C:/Game.exe 1.3.2.0
+	-pe [path to folder] [exe to pack into] [version] {[path prefix]} {[encryption key]} {[encryption: both|index|files]}
+	-pe ""C:/Directory with files"" C:/Game.exe 1.3.2.0 ""mod_folder/""
 
 -m	Merge pack into target file. So you can copy the '.pck' from one file to another
 	-m [path to pack] [file to merge into]

@@ -222,6 +222,7 @@ namespace GodotPCKExplorer.Cmd
             string dirPath;
             string filePath;
             string strVer;
+            string prefix = "";
             string? encKey = null;
             string encType = "both";
 
@@ -235,26 +236,31 @@ namespace GodotPCKExplorer.Cmd
 
                     if (args.Length > 4)
                     {
-                        encKey = args[4];
-
-                        if (!ValidateEncryptionKey(encKey))
-                            return;
+                        prefix = args[4];
 
                         if (args.Length > 5)
                         {
-                            encType = args[5];
+                            encKey = args[5];
 
-                            if (!encyptionTypes.Contains(encType))
-                            {
-                                LogErrHelp($"Invalid encryption type: {encType}");
+                            if (!ValidateEncryptionKey(encKey))
                                 return;
+
+                            if (args.Length > 6)
+                            {
+                                encType = args[6];
+
+                                if (!encyptionTypes.Contains(encType))
+                                {
+                                    LogErrHelp($"Invalid encryption type: {encType}");
+                                    return;
+                                }
                             }
                         }
                     }
                 }
                 else
                 {
-                    LogErrHelp($"Invalid number of arguments! Expected from 4 to 5, but got {args.Length}");
+                    LogErrHelp($"Invalid number of arguments! Expected from 4 to 6, but got {args.Length}");
                     return;
                 }
             }
@@ -281,7 +287,7 @@ namespace GodotPCKExplorer.Cmd
                     break;
             }
 
-            var res = PCKActions.Pack(dirPath, filePath, strVer, 16, embed, encKey, encIndex, encFiles);
+            var res = PCKActions.Pack(dirPath, filePath, strVer, prefix, 16, embed, encKey, encIndex, encFiles);
             SetResult(res);
         }
 

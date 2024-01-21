@@ -166,25 +166,27 @@ namespace Tests
         [Test]
         public void TestExtractScanPackCommand()
         {
-            string exportTestPath = Path.Combine(binaries, "ExportTest");
+            string extractTestPath = Path.Combine(binaries, "ExtractTest");
             string testEXE = Path.Combine(binaries, Exe("Test"));
             string testPCK = Path.Combine(binaries, "Test.pck");
             string testEmbedPack = Path.Combine(binaries, Exe("TestPack"));
             string selectedFilesPck = Path.Combine(binaries, "SelecetedFiles.pck");
-            string exportTestSelectedPath = Path.Combine(binaries, "ExportTestSelected");
+            string extractTestSelectedPath = Path.Combine(binaries, "ExtractTestSelected");
             string newPckPath = Path.Combine(binaries, "out.pck");
-            string exportTestSelectedWrongPath = Path.Combine(binaries, "ExportTestSelectedWrong");
-            string overwritePath = exportTestPath + "Overwrite";
+            string extractTestSelectedWrongPath = Path.Combine(binaries, "ExtractTestSelectedWrong");
+            string overwritePath = extractTestPath + "Overwrite";
             string out_exe = Path.ChangeExtension(newPckPath, ExecutableExtension);
+            string extractTestPrefix = Path.Combine(binaries, "ExtractTestPrefix");
+            string testPrefixPCK = Path.Combine(binaries, "TestPrefix.pck");
 
             Title("Extract");
-            Assert.That(PCKActions.Extract(testPCK, exportTestPath, true), Is.True);
+            Assert.That(PCKActions.Extract(testPCK, extractTestPath, true), Is.True);
 
             Title("Extract Wrong Path");
-            Assert.That(PCKActions.Extract(Path.Combine(binaries, "WrongPath/Test.pck"), exportTestPath, true), Is.False);
+            Assert.That(PCKActions.Extract(Path.Combine(binaries, "WrongPath/Test.pck"), extractTestPath, true), Is.False);
 
             Title("Compare content with folder");
-            var list_of_files = PCKUtils.GetListOfFilesToPack(Path.GetFullPath(exportTestPath));
+            var list_of_files = PCKUtils.GetListOfFilesToPack(Path.GetFullPath(extractTestPath));
             {
                 using var pck = new PCKReader();
 
@@ -193,8 +195,6 @@ namespace Tests
 
                 foreach (var f in list_of_files)
                     Assert.That(pck.Files.ContainsKey(f.Path), Is.True);
-
-                pck.Close();
             }
 
             // select at least one file
@@ -213,9 +213,9 @@ namespace Tests
             Title("Extract only seleceted files and compare");
             var export_files = seleceted_files.Select((s) => s.Path);
             {
-                Assert.That(PCKActions.Extract(testPCK, exportTestSelectedPath, true, export_files), Is.True);
+                Assert.That(PCKActions.Extract(testPCK, extractTestSelectedPath, true, export_files), Is.True);
 
-                var exportedSelectedList = PCKUtils.GetListOfFilesToPack(exportTestSelectedPath);
+                var exportedSelectedList = PCKUtils.GetListOfFilesToPack(extractTestSelectedPath);
                 Assert.That(seleceted_files, Has.Count.EqualTo(exportedSelectedList.Count));
 
                 foreach (var f in export_files)
@@ -228,13 +228,13 @@ namespace Tests
                 for (int i = 0; i < wrong_selected.Count; i++)
                     wrong_selected[i] = wrong_selected[i] + "WrongFile";
 
-                Assert.That(PCKActions.Extract(testPCK, exportTestSelectedWrongPath, true, wrong_selected), Is.True);
-                Assert.That(Directory.Exists(exportTestSelectedWrongPath), Is.False);
+                Assert.That(PCKActions.Extract(testPCK, extractTestSelectedWrongPath, true, wrong_selected), Is.True);
+                Assert.That(Directory.Exists(extractTestSelectedWrongPath), Is.False);
             }
 
             Title("Extract empty list");
             {
-                Assert.That(PCKActions.Extract(testPCK, exportTestSelectedWrongPath, true, Array.Empty<string>()), Is.False);
+                Assert.That(PCKActions.Extract(testPCK, extractTestSelectedWrongPath, true, Array.Empty<string>()), Is.False);
             }
 
             Title("Extract without overwrite");
@@ -254,46 +254,61 @@ namespace Tests
             Title("Pack new PCK");
             string ver = GetPCKVersion(testPCK).ToString();
             {
-                Assert.That(PCKActions.Pack(exportTestPath, newPckPath, ver), Is.True);
+                Assert.That(PCKActions.Pack(extractTestPath, newPckPath, ver), Is.True);
 
                 if (OperatingSystem.IsWindows())
                 {
                     Title("Locked file");
-                    string locked_file = Path.Combine(exportTestPath, "out.lock");
+                    string locked_file = Path.Combine(extractTestPath, "out.lock");
                     using var f = new LockedFile(locked_file);
-                    Assert.That(PCKActions.Pack(exportTestPath, locked_file, ver), Is.False);
+                    Assert.That(PCKActions.Pack(extractTestPath, locked_file, ver), Is.False);
+                }
+            }
+
+            Title("Pack and Extract PCK with prefix");
+            {
+                Assert.That(PCKActions.Pack(extractTestPath, testPrefixPCK, ver, packPathPrefix: "test_prefix_like_mod_folder/"), Is.True);
+                Assert.That(PCKActions.Extract(testPrefixPCK, extractTestPrefix), Is.True);
+
+                var list_of_files_with_prefix = PCKUtils.GetListOfFilesToPack(Path.GetFullPath(extractTestPrefix));
+                {
+                    using var pck = new PCKReader();
+
+                    Assert.That(pck.OpenFile(testPrefixPCK), Is.True);
+                    Assert.That(list_of_files_with_prefix, Has.Count.EqualTo(pck.Files.Count));
+
+                    foreach (var f in list_of_files_with_prefix)
+                        Assert.That(pck.Files.ContainsKey(f.Path), Is.True);
                 }
             }
 
             Title("Wrong version and directory");
             {
-                Assert.That(PCKActions.Pack(exportTestPath, newPckPath, "1234"), Is.False);
-                Assert.That(PCKActions.Pack(exportTestPath, newPckPath, "123.33.2.1"), Is.False);
-                Assert.That(PCKActions.Pack(exportTestPath, newPckPath, "-1.0.2.1"), Is.False);
-                Assert.That(PCKActions.Pack(exportTestPath + "WrongPath", newPckPath, ver), Is.False);
+                Assert.That(PCKActions.Pack(extractTestPath, newPckPath, "1234"), Is.False);
+                Assert.That(PCKActions.Pack(extractTestPath, newPckPath, "123.33.2.1"), Is.False);
+                Assert.That(PCKActions.Pack(extractTestPath, newPckPath, "-1.0.2.1"), Is.False);
+                Assert.That(PCKActions.Pack(extractTestPath + "WrongPath", newPckPath, ver), Is.False);
             }
 
             // Compare new PCK content with alredy existing trusted list of files 'list_of_files'
             Title("Compare files to original list");
             {
                 using var pck = new PCKReader();
-                Assert.That(pck.OpenFile(testPCK), Is.True);
+                Assert.That(pck.OpenFile(newPckPath), Is.True);
                 foreach (var f in pck.Files.Keys)
                     Assert.That(list_of_files.FindIndex((l) => l.Path == f), Is.Not.EqualTo(-1));
-
-                pck.Close();
             }
 
             Title("Pack embedded");
             {
                 TUtils.CopyFile(testEXE, testEmbedPack);
-                Assert.That(PCKActions.Pack(exportTestPath, testEmbedPack, ver, embed: true), Is.True);
+                Assert.That(PCKActions.Pack(extractTestPath, testEmbedPack, ver, embed: true), Is.True);
                 Assert.That(File.Exists(Path.ChangeExtension(testEmbedPack, Exe(".old"))), Is.True);
             }
 
             Title("Pack embedded again");
             {
-                Assert.That(PCKActions.Pack(exportTestPath, testEmbedPack, ver, embed: true), Is.False);
+                Assert.That(PCKActions.Pack(extractTestPath, testEmbedPack, ver, embed: true), Is.False);
                 Assert.That(File.Exists(Path.ChangeExtension(testEmbedPack, Exe(".old"))), Is.False);
             }
 
@@ -309,8 +324,6 @@ namespace Tests
 
                 foreach (var f in pck.Files.Keys)
                     Assert.That(seleceted_files.FindIndex((l) => l.Path == f), Is.Not.EqualTo(-1));
-
-                pck.Close();
             }
 
             Title("Good run");

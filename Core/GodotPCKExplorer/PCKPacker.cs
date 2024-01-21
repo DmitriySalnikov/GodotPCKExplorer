@@ -89,18 +89,20 @@ namespace GodotPCKExplorer
         /// <param name="outPck">Output file. It can be a new or an existing file.</param>
         /// <param name="embed">If enabled and an existing <see cref="outPck"/> is specified, then the PCK will be embedded into this file.</param>
         /// <param name="files">Enumeration of <see cref="PCKPackerRegularFile"/> files to be packed.</param>
-        /// <param name="alignment">The address of each file will be aligned to this value.</param>
         /// <param name="godotVersion">PCK file version.</param>
+        /// <param name="packPathPrefix">The path prefix in the pack. For example, if the prefix is <c>test_folder/</c>, then the path <c>res://icon.png</c> is converted to <c>res://test_folder/icon.png</c>.</param>
+        /// <param name="alignment">The address of each file will be aligned to this value.</param>
         /// <param name="encKey">Specify the encryption key if you want the file to be encrypted. To specify a <see cref="string"/>, look at <seealso cref="PCKUtils.HexStringToByteArray(string?)"/></param>
         /// <param name="encrypt_index">Whether to encrypt the index (list of contents).</param>
         /// <param name="encrypt_files">Whether to encrypt the contents of files.</param>
         /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
         /// <returns><c>true</c> if successful</returns>
-        public static bool PackFiles(string outPck, bool embed, IEnumerable<PCKPackerFile> files, uint alignment, PCKVersion godotVersion, byte[]? encKey = null, bool encrypt_index = false, bool encrypt_files = false, CancellationToken? cancellationToken = null)
+        public static bool PackFiles(string outPck, bool embed, IEnumerable<PCKPackerFile> files, PCKVersion godotVersion, string packPathPrefix = "", uint alignment = 16, byte[]? encKey = null, bool encrypt_index = false, bool encrypt_files = false, CancellationToken? cancellationToken = null)
         {
             byte[]? EncryptionKey = encKey;
             bool EncryptIndex = encrypt_index;
             bool EncryptFiles = encrypt_files;
+            packPathPrefix = packPathPrefix.Replace("\\", "/");
 
             const string baseOp = "Pack files";
             var op = baseOp;
@@ -247,7 +249,8 @@ namespace GodotPCKExplorer
                             }
 
                             file_idx++;
-                            var str = Encoding.UTF8.GetBytes(file.Path).ToList();
+                            string res_file = PCKUtils.GetResFilePath(file.Path, packPathPrefix);
+                            var str = Encoding.UTF8.GetBytes(res_file).ToList();
                             var str_len = str.Count;
 
                             // Godot 4's PCK uses padding for some reason...
@@ -282,7 +285,7 @@ namespace GodotPCKExplorer
                                 file.IsEncrypted = EncryptFiles;
                                 index_writer.Write((int)(file.IsEncrypted ? 1 : 0));
 
-                                PCKActions.progress?.LogProgress(op, $"Calculated MD5: {file.Path}\n{PCKUtils.ByteArrayToHexString(file.MD5, " ")}");
+                                PCKActions.progress?.LogProgress(op, $"Calculated MD5: {res_file}\n{PCKUtils.ByteArrayToHexString(file.MD5, " ")}");
                             }
 
                             PCKActions.progress?.LogProgress(op, (int)(((double)file_idx / files.Count()) * 100));
@@ -327,7 +330,8 @@ namespace GodotPCKExplorer
                             CloseAndDeleteFile(binWriter, outPck);
                             return false;
                         }
-                        PCKActions.progress?.LogProgress(op, file.Path);
+
+                        PCKActions.progress?.LogProgress(op, PCKUtils.GetResFilePath(file.Path, packPathPrefix));
 
                         // go back to store the file's offset
                         {
