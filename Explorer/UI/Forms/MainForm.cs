@@ -14,8 +14,6 @@ namespace GodotPCKExplorer.UI
 
         public ExplorerMainForm()
         {
-            GUIConfig.Load();
-
             InitializeComponent();
             Icon = Properties.Resources.icon;
             FormBaseTitle = Text;
