@@ -35,8 +35,7 @@ namespace GodotPCKExplorer.UI
 
         private void UpdateCueBanner()
         {
-            if (!Utils.IsRunningOnMono())
-                SendMessage(this.Handle, EM_SETCUEBANNER, 0, cueBanner);
+            SendMessage(this.Handle, EM_SETCUEBANNER, 0, cueBanner);
         }
     }
 }

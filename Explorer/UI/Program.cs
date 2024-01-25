@@ -24,6 +24,11 @@ namespace GodotPCKExplorer.UI
         [DllImport("user32.dll")]
         static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
+        [DllImport("kernel32.dll")]
+        public static extern bool AllocConsole();
+        [DllImport("kernel32.dll")]
+        public static extern bool FreeConsole();
+
         const int SW_HIDE = 0;
         const int SW_SHOW = 5;
 
@@ -57,6 +62,9 @@ namespace GodotPCKExplorer.UI
             if (!Directory.Exists(GlobalConstants.AppDataPath))
                 Directory.CreateDirectory(GlobalConstants.AppDataPath);
 
+            AllocConsole();
+            ShowWindow(GetConsoleWindow(), SW_HIDE);
+
             logger = new Logger("log.txt");
         }
 
@@ -64,6 +72,13 @@ namespace GodotPCKExplorer.UI
         {
             if (!Directory.Exists(GlobalConstants.AppDataPath))
                 Directory.CreateDirectory(GlobalConstants.AppDataPath);
+
+            GUIConfig.Load();
+
+            if (GUIConfig.Instance.ShowConsole)
+                ShowConsole();
+            else
+                HideConsole();
 
             // InvariantCulture for console and UI
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
@@ -81,7 +96,6 @@ namespace GodotPCKExplorer.UI
 
             CMDMode = true;
             Log("");
-            ShowConsole();
         }
 
         public static void Cleanup()
@@ -95,6 +109,8 @@ namespace GodotPCKExplorer.UI
             if (mainForm != null && !mainForm.IsDisposed)
                 mainForm.Dispose();
             mainForm = null;
+
+            FreeConsole();
         }
 
         #region Logs
@@ -223,19 +239,17 @@ Examples of valid commands:
 
         public static void ShowConsole()
         {
-            if (!Utils.IsRunningOnMono())
-                ShowWindow(GetConsoleWindow(), SW_SHOW);
+            ShowWindow(GetConsoleWindow(), SW_SHOW);
 
+            logger.DuplicateToConsole = true;
             if (!IsConsoleVisible)
                 Log("The console is displayed. The following logs will be duplicated into it!");
-            logger.DuplicateToConsole = true;
             IsConsoleVisible = true;
         }
 
         public static void HideConsole()
         {
-            if (!Utils.IsRunningOnMono())
-                ShowWindow(GetConsoleWindow(), SW_HIDE);
+            ShowWindow(GetConsoleWindow(), SW_HIDE);
 
             if (IsConsoleVisible)
                 Log("The console is hidden. The following logs will only be written to a file!");
