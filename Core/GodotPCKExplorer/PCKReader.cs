@@ -263,7 +263,7 @@ namespace GodotPCKExplorer
                 PCK_Flags = 0;
                 PCK_FileBase = 0;
 
-                if (PCK_VersionPack == 2)
+                if (PCK_VersionPack == PCKUtils.PCK_VERSION_GODOT_4)
                 {
                     PCK_Flags = fileReader.ReadInt32(); // 20-23
                     PCK_FileBaseAddressOffset = fileReader.BaseStream.Position;

@@ -55,7 +55,7 @@ namespace GodotPCKExplorer.GlobalShared
 
             try
             {
-                string dir_name = Path.GetDirectoryName(this.saveFile) ?? "";
+                string dir_name = Path.GetDirectoryName(this.saveFile) ?? string.Empty;
                 if (!Directory.Exists(dir_name))
                     Directory.CreateDirectory(dir_name);
 
@@ -104,12 +104,20 @@ namespace GodotPCKExplorer.GlobalShared
             logWriter = null;
         }
 
+        public void Flush()
+        {
+            FastConsole.Flush();
+            flushFastConsole.Cancel();
+            timeFlushConsole = DateTime.UtcNow;
+            logWriter?.Flush();
+        }
+
         public void Write(string txt)
         {
             var isFirst = true;
             txt = string.Join(Environment.NewLine,
-                txt.Split('\n').
-                Select((t) =>
+                txt.Split(["\r\n", "\n", "\r"], StringSplitOptions.None)
+                .Select((t) =>
                 {
                     var res = $"[{DateTime.Now.ToString(CultureInfo.InvariantCulture)}]{(isFirst ? "\t" : "-\t")}{t}";
                     isFirst = false;
@@ -139,6 +147,11 @@ namespace GodotPCKExplorer.GlobalShared
                     flushFileAction?.CallDeferred();
                 }
             }
+        }
+
+        public void WriteError(string txt)
+        {
+            Write("❗ Error: " + txt);
         }
 
         public void Write(Exception ex)

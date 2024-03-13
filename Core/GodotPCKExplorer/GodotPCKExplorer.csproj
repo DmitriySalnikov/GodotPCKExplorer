@@ -14,7 +14,7 @@
 			mbedTLS\**\*.pdb;
 			**\.gitignore
 		</DefaultItemExcludes>
-		<Version>1.4.0</Version>
+		<Version>1.4.1</Version>
 		<AssemblyVersion>$(Version)</AssemblyVersion>
 	</PropertyGroup>
 
