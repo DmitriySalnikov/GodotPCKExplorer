@@ -51,7 +51,7 @@ namespace GodotPCKExplorer
 
         public override IEnumerable<ReadOnlyMemory<byte>> ReadMemoryBlocks()
         {
-            using var stream = File.Open(OriginalPath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+            using var stream = File.Open(OriginalPath, FileMode.Open, FileAccess.Read, FileShare.Read);
             foreach (var block in PCKUtils.ReadStreamAsMemoryBlocks(stream))
             {
                 yield return block;
