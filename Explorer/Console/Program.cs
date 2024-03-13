@@ -50,10 +50,7 @@ namespace GodotPCKExplorer.Cmd
 
         public static void LogHelp()
         {
-            Log("\n" + HelpText);
-        }
-
-        static readonly string HelpText = @"Godot can embed '.pck' files into other files.
+            string helpText = @"Godot can embed '.pck' files into other files.
 Therefore, GodotPCKExplorer can open both '.pck' and files with embedded 'pck'.
 Encryption is only verified with PCK for Godot 4.
 
@@ -62,12 +59,19 @@ Paths and other arguments must be without spaces or inside quotes: ""some path""
 {} - Optional arguments
 
 Examples of valid commands:
--o	Open pack file
+";
+
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
+                helpText += @"-o	Open pack file using UI
 	-o [path to pack] {[encryption key]}
 	-o C:/Game.exe
 	-o C:/Game.pck
 
--i	Show pack file info
+";
+            }
+
+            helpText += @"-i	Show pack file info
 	-i [path to pack]
 	-i C:/Game.exe
 	-i C:/Game.pck
@@ -117,5 +121,8 @@ Examples of valid commands:
 	-c C:/Game.pck 1.3.4.1
 	-c C:/Game.exe 2.4.0.2
 ";
+
+            Log("\n" + helpText);
+        }
     }
 }
