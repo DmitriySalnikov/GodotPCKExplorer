@@ -1,7 +1,6 @@
-﻿using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Reflection;
+using System.Text.Json;
 
 internal sealed class VersionCheckerGitHub : IDisposable
 {

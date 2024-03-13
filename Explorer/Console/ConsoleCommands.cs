@@ -273,18 +273,21 @@ namespace GodotPCKExplorer.Cmd
             var encIndex = false;
             var encFiles = false;
 
-            switch (encType)
+            if (encKey != null)
             {
-                case "both":
-                    encIndex = true;
-                    encFiles = true;
-                    break;
-                case "index":
-                    encIndex = true;
-                    break;
-                case "files":
-                    encFiles = true;
-                    break;
+                switch (encType)
+                {
+                    case "both":
+                        encIndex = true;
+                        encFiles = true;
+                        break;
+                    case "index":
+                        encIndex = true;
+                        break;
+                    case "files":
+                        encFiles = true;
+                        break;
+                }
             }
 
             var res = PCKActions.Pack(dirPath, filePath, strVer, prefix, 16, embed, encKey, encIndex, encFiles);

@@ -113,6 +113,15 @@ namespace GodotPCKExplorer
                 return false;
             }
 
+            if (godotVersion.PackVersion == PCKUtils.PCK_VERSION_GODOT_3)
+            {
+                if (EncryptionKey != null || EncryptIndex || EncryptFiles)
+                {
+                    PCKActions.progress?.ShowMessage("Encryption is not supported for PCK files for Godot 3 (pack version 1).", "Error", MessageType.Error);
+                    return false;
+                }
+            }
+
             if (embed)
             {
                 if (!File.Exists(outPck))
