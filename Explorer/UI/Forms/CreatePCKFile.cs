@@ -150,18 +150,36 @@
                 bool p_res = false;
                 Program.DoTaskWithProgressBar((t) =>
                 {
-                    p_res = PCKActions.Pack(
-                        GetFilesList(),
-                        file,
-                        ver.ToString(),
-                        prefix,
-                        (uint)nud_alignment.Value,
-                        cb_embed.Checked,
-                        GUIConfig.Instance.EncryptionKey,
-                        GUIConfig.Instance.EncryptIndex && cb_enable_encryption.Checked,
-                        GUIConfig.Instance.EncryptFiles && cb_enable_encryption.Checked,
-                        t
-                        );
+                    if (cb_enable_encryption.Checked)
+                    {
+                        p_res = PCKActions.Pack(
+                            GetFilesList(),
+                            file,
+                            ver.ToString(),
+                            prefix,
+                            (uint)nud_alignment.Value,
+                            cb_embed.Checked,
+                            GUIConfig.Instance.EncryptionKey,
+                            GUIConfig.Instance.EncryptIndex,
+                            GUIConfig.Instance.EncryptFiles,
+                            t
+                            );
+                    }
+                    else
+                    {
+                        p_res = PCKActions.Pack(
+                            GetFilesList(),
+                            file,
+                            ver.ToString(),
+                            prefix,
+                            (uint)nud_alignment.Value,
+                            cb_embed.Checked,
+                            null,
+                            false,
+                            false,
+                            t
+                            );
+                    }
                 }, this);
 
                 GUIConfig.Instance.PackedVersion = ver;
