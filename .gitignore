@@ -170,7 +170,7 @@ publish/
 *.azurePubxml
 # Note: Comment the next line if you want to checkin your web deploy settings,
 # but database connection strings (with potential passwords) will be unencrypted
-*.pubxml
+#*.pubxml
 *.publishproj
 
 # Microsoft Azure Web App publish settings. Comment the next line if you want to
@@ -179,6 +179,7 @@ publish/
 PublishScripts/
 
 # NuGet Packages
+.nuget/
 *.nupkg
 # The packages folder can be ignored because of Package Restore
 **/[Pp]ackages/*
@@ -338,3 +339,5 @@ ASALocalRun/
 healthchecksdb
 
 launchSettings.json
+
+.vscode/

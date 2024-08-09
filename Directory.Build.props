@@ -2,7 +2,7 @@
 	<PropertyGroup>
 		<Nullable>enable</Nullable>
 		<ProduceReferenceAssembly>False</ProduceReferenceAssembly>
-		<BaseOutputPath>$(SolutionDir)bin\$(MSBuildProjectName)\$(PlatformShortName)</BaseOutputPath>
-		<BaseIntermediateOutputPath>$(SolutionDir)obj\$(MSBuildProjectName)\$(PlatformShortName)</BaseIntermediateOutputPath>
+		<BaseOutputPath>$(MSBuildThisFileDirectory)bin\$(MSBuildProjectName)\$(PlatformShortName)</BaseOutputPath>
+		<BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)obj\$(MSBuildProjectName)\$(PlatformShortName)</BaseIntermediateOutputPath>
 	</PropertyGroup>
 </Project>

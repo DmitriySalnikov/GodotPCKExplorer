@@ -2,10 +2,23 @@
 
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
+		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<Platforms>AnyCPU</Platforms>
 	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Remove="bin\**" />
+		<Compile Remove="obj\**" />
+		<Compile Remove="publish\**" />
+		<EmbeddedResource Remove="bin\**" />
+		<EmbeddedResource Remove="obj\**" />
+		<EmbeddedResource Remove="publish\**" />
+		<None Remove="bin\**" />
+		<None Remove="obj\**" />
+		<None Remove="publish\**" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\Core\GodotPCKExplorer\GodotPCKExplorer.csproj" />

@@ -1,0 +1,48 @@
+name: "Download File with Caching"
+description: Downloads an individual file from a URL or loads it from a cache
+
+inputs:
+  url:
+    description: URL of the file to download
+    required: true
+  destination:
+    description: Path to write the downloaded file to, or to load the cached file from
+    required: true
+  cache-key:
+    description: An explicit key for a cache entry
+    required: false
+
+outputs:
+  destination:
+    description: Path of the downloaded file
+    value: ${{inputs.destination}}
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        INPUT_DESTINATION: ${{inputs.destination}}
+      run: |
+        parent_dir="$(dirname "$INPUT_DESTINATION")"
+        if ! mkdir -p "$parent_dir"; then
+          sudo mkdir -p "$parent_dir"
+          sudo chown "$USER" "$parent_dir"
+        fi
+
+    - uses: actions/cache@v4
+      with:
+        key: ${{inputs.cache-key || inputs.url}}
+        path: ${{inputs.destination}}
+
+    - shell: bash
+      env:
+        INPUT_URL: ${{inputs.url}}
+        INPUT_DESTINATION: ${{inputs.destination}}
+      run: |
+        if [ -f "$INPUT_DESTINATION" ]; then
+          echo "File $INPUT_DESTINATION has been loaded from the cache!"
+        else
+          echo "Downloading $INPUT_URL to $INPUT_DESTINATION..."
+          curl -L -o "$INPUT_DESTINATION" "$INPUT_URL"
+        fi

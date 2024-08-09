@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net8.0-windows7.0": {
+      "godotpckexplorer": {
+        "type": "Project"
+      },
+      "godotpckexplorer.console": {
+        "type": "Project",
+        "dependencies": {
+          "GodotPCKExplorer": "[1.0.0, )"
+        }
+      }
+    }
+  }
+}

@@ -2,6 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFramework>netstandard2.1</TargetFramework>
+		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 		<Configurations>Debug;Release;Dev</Configurations>
 		<Platforms>AnyCPU</Platforms>
 		<NoWarn>$(NoWarn);IDE1006</NoWarn>
@@ -14,22 +15,30 @@
 			mbedTLS\**\*.pdb;
 			**\.gitignore
 		</DefaultItemExcludes>
-		<Version>1.4.1</Version>
-		<AssemblyVersion>$(Version)</AssemblyVersion>
+		<Version>1.0.0</Version>
 	</PropertyGroup>
+
+	<Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+		<ReadLinesFromFile File="..\..\version.txt">
+			<Output TaskParameter="Lines" PropertyName="Version" />
+		</ReadLinesFromFile>
+	</Target>
+
+	<ItemGroup>
+		<Compile Remove="bin\**" />
+		<Compile Remove="obj\**" />
+		<Compile Remove="publish\**" />
+		<EmbeddedResource Remove="bin\**" />
+		<EmbeddedResource Remove="obj\**" />
+		<EmbeddedResource Remove="publish\**" />
+		<None Remove="bin\**" />
+		<None Remove="obj\**" />
+		<None Remove="publish\**" />
+	</ItemGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|AnyCPU'">
 		<DefineConstants>$(DefineConstants);DEV_ENABLED</DefineConstants>
 	</PropertyGroup>
-
-	<ItemGroup>
-	  <Compile Remove="bin\**" />
-	  <Compile Remove="obj\**" />
-	  <EmbeddedResource Remove="bin\**" />
-	  <EmbeddedResource Remove="obj\**" />
-	  <None Remove="bin\**" />
-	  <None Remove="obj\**" />
-	</ItemGroup>
 
 	<ItemGroup>
 		<None Update="mbedTLS\linux_x64\mbedTLS_AES.so">

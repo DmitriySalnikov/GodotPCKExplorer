@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net8.0": {
+      "godotpckexplorer": {
+        "type": "Project"
+      }
+    }
+  }
+}

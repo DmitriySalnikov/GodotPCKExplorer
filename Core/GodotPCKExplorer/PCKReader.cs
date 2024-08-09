@@ -457,9 +457,9 @@ namespace GodotPCKExplorer
         /// <param name="getEncryptionKey">If the Encryption Key has not been received after opening the PCK, this function will be called. This function will also be called if the previous attempt to decrypt the file failed.</param>
         /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
         /// <returns><c>true</c> if successful</returns>
-        public bool ExtractAllFiles(string folder, bool overwriteExisting = true, bool checkMD5 = true, Func<PCKReaderEncryptionKeyResult>? getEncryptionKey = null, CancellationToken? cancellationToken = null)
+        public bool ExtractAllFiles(out List<string> extractedFiles, string folder, bool overwriteExisting = true, bool checkMD5 = true, Func<PCKReaderEncryptionKeyResult>? getEncryptionKey = null, CancellationToken? cancellationToken = null)
         {
-            return ExtractFiles(Files.Keys.ToList(), folder, overwriteExisting, checkMD5, getEncryptionKey, cancellationToken);
+            return ExtractFiles(Files.Keys.ToList(), out extractedFiles, folder, overwriteExisting, checkMD5, getEncryptionKey, cancellationToken);
         }
 
         /// <summary>
@@ -472,9 +472,10 @@ namespace GodotPCKExplorer
         /// <param name="getEncryptionKey">If the Encryption Key has not been received after opening the PCK, this function will be called. This function will also be called if the previous attempt to decrypt the file failed.</param>
         /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
         /// <returns><c>true</c> if successful</returns>
-        public bool ExtractFiles(IEnumerable<string> names, string folder, bool overwriteExisting = true, bool checkMD5 = true, Func<PCKReaderEncryptionKeyResult>? getEncryptionKey = null, CancellationToken? cancellationToken = null)
+        public bool ExtractFiles(IEnumerable<string> names, out List<string> extractedFiles, string folder, bool overwriteExisting = true, bool checkMD5 = true, Func<PCKReaderEncryptionKeyResult>? getEncryptionKey = null, CancellationToken? cancellationToken = null)
         {
             var op = "Extract files";
+            extractedFiles = new List<string>();
 
             int files_count = names.Count();
 
@@ -543,12 +544,13 @@ namespace GodotPCKExplorer
                             }
                         }
 
-                        if (!Files[path].ExtractFile(basePath, overwriteExisting, encryption_key, checkMD5, cancellationToken))
+                        if (!Files[path].ExtractFile(basePath, out string extractedPath, overwriteExisting, encryption_key, checkMD5, cancellationToken))
                         {
                             ReceivedEncryptionKey = null;
                             Files[path].OnProgress -= upd;
                             return false;
                         }
+                        extractedFiles.Add(extractedPath);
 
                         Files[path].OnProgress -= upd;
                     }

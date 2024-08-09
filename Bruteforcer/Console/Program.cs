@@ -68,8 +68,9 @@ Paths and other arguments must be without spaces or inside quotes: ""some path""
 
 Examples of valid commands:
 -b	Start bruteforce
-	-b C:/Game.exe C:/Game.pck {start byte, -1 auto} {end byte, -1} {threads, -1} {load encrypted in memory}
+	-b [path to game executable] [path to pack] {start byte, -1 is auto} {end byte, -1} {threads, -1} {load encrypted in memory}
 	-b C:/Game.exe C:/Game.pck
+	-b C:/Game.exe C:/Game.pck 50535488 57535488 4 false
 ";
 
         public static bool StartBruteforce(string exe, string pck, long startAdr = -1, long endAdr = -1, int threadsCount = -1, bool inMemory = true)

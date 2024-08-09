@@ -3,6 +3,7 @@
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
 		<TargetFramework>net8.0-windows</TargetFramework>
+		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 		<UseWindowsForms>true</UseWindowsForms>
 		<EnableWindowsTargeting>true</EnableWindowsTargeting>
 		<ImplicitUsings>enable</ImplicitUsings>
@@ -18,12 +19,30 @@
 		<RepositoryUrl>https://github.com/DmitriySalnikov/GodotPCKExplorer</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<NeutralLanguage>en</NeutralLanguage>
-		<Version>1.4.1</Version>
+		<Version>1.0.0</Version>
 
 		<NoWarn>$(NoWarn);IDE1006</NoWarn>
 
 		<Platforms>AnyCPU</Platforms>
 	</PropertyGroup>
+
+	<Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+		<ReadLinesFromFile File="..\..\version.txt">
+			<Output TaskParameter="Lines" PropertyName="Version" />
+		</ReadLinesFromFile>
+	</Target>
+
+	<ItemGroup>
+		<Compile Remove="bin\**" />
+		<Compile Remove="obj\**" />
+		<Compile Remove="publish\**" />
+		<EmbeddedResource Remove="bin\**" />
+		<EmbeddedResource Remove="obj\**" />
+		<EmbeddedResource Remove="publish\**" />
+		<None Remove="bin\**" />
+		<None Remove="obj\**" />
+		<None Remove="publish\**" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<Compile Include="..\Console\ConsoleCommands.cs" Link="ConsoleCommands.cs" />

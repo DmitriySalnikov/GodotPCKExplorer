@@ -72,7 +72,7 @@ namespace GodotPCKExplorer
 
         static void LoadNativeLibs()
         {
-            var myPath = new Uri(typeof(PCKActions).Assembly.CodeBase).LocalPath;
+            var myPath = new Uri(AppContext.BaseDirectory).LocalPath;
             var myFolder = Path.GetDirectoryName(myPath);
             var platform = "NotImplemented";
             var lib = "mbedTLS_AES";
@@ -289,9 +289,11 @@ namespace GodotPCKExplorer
 
                 if (pckReader.OpenFile(filePath, getEncryptionKey: getEncKey))
                 {
+                    List<string> extractedFiles = new List<string>();
                     if (files != null)
                         return pckReader.ExtractFiles(
                             names: files,
+                            extractedFiles: out extractedFiles,
                             folder: dirPath,
                             overwriteExisting: overwriteExisting,
                             checkMD5: check_md5,
@@ -299,6 +301,7 @@ namespace GodotPCKExplorer
                             cancellationToken: cancellationToken);
                     else
                         return pckReader.ExtractAllFiles(
+                            extractedFiles: out extractedFiles,
                             folder: dirPath,
                             overwriteExisting: overwriteExisting,
                             checkMD5: check_md5,

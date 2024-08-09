@@ -3,6 +3,7 @@
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
 		<TargetFramework>net8.0-windows</TargetFramework>
+		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 		<UseWindowsForms>true</UseWindowsForms>
 		<EnableWindowsTargeting>true</EnableWindowsTargeting>
 		<ImplicitUsings>enable</ImplicitUsings>
@@ -23,6 +24,24 @@
 
 		<Platforms>AnyCPU</Platforms>
 	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Remove="bin\**" />
+		<Compile Remove="obj\**" />
+		<Compile Remove="publish\**" />
+		<EmbeddedResource Remove="bin\**" />
+		<EmbeddedResource Remove="obj\**" />
+		<EmbeddedResource Remove="publish\**" />
+		<None Remove="bin\**" />
+		<None Remove="obj\**" />
+		<None Remove="publish\**" />
+	</ItemGroup>
+
+	<Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+		<ReadLinesFromFile File="..\bruteforcer_version.txt">
+			<Output TaskParameter="Lines" PropertyName="Version" />
+		</ReadLinesFromFile>
+	</Target>
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\Core\GodotPCKExplorer\GodotPCKExplorer.csproj" />

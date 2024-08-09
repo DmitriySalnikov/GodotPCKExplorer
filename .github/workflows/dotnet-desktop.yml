@@ -12,21 +12,35 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  Artifact_Name: GodotPCKExplorer
-  Project_Name: GodotPCKExplorer.UI
-  MSBuild_Project_Name: Explorer\GodotPCKExplorer_UI
-  Bruteforcer_Project_Name: Bruteforcer\PCKBruteforcer_UI
-  Solution_Path: GodotPCKExplorer.sln
-  SDK_Name: net8.0-windows
+  ARTIFACT_PREFIX: GodotPCKExplorer
 
 jobs:
-  build:
-    name: Build ${{matrix.configuration}}
+  get_version:
+    name: Get the current version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{steps.getversion.outputs.version}}
+      artifact_name: ${{steps.getversion.outputs.artifact_name}}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          sparse-checkout: version.txt
+      - id: getversion
+        run: |
+          echo "Version: $(cat version.txt)"
+          echo "version=$(cat version.txt)" >> $GITHUB_OUTPUT
+          echo "Artifact name: ${{env.ARTIFACT_PREFIX}}_$(cat version.txt)"
+          echo "artifact_name=${{env.ARTIFACT_PREFIX}}_$(cat version.txt)" >> $GITHUB_OUTPUT
+
+  build_debug:
+    name: Build Framework
+    needs: get_version
     strategy:
       fail-fast: false
-      matrix:
-        configuration: [Debug, Release]
 
+    # For WinForms build
     runs-on: windows-latest
 
     steps:
@@ -35,45 +49,172 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
-      - name: Setup MSBuild.exe
-        uses: microsoft/setup-msbuild@v2
-
-      # Add nuget to cache
-      - name: Setup Cache
-        uses: actions/cache@v4
+      # Setup dotnet and cache
+      - uses: actions/setup-dotnet@v4
         with:
-          path: ~/.nuget/packages
-          # Look to see if there is a cache hit for the corresponding requirements file
-          key: ${{runner.os}}-nuget-${{hashFiles('**/*.csproj')}}
-          restore-keys: |
-            ${{runner.os}}-nuget
+          dotnet-version: '8.0.x'
+          #cache: true
+          #cache-dependency-path: '**/packages.lock.json'
 
-      # Restore the application to populate the obj folder with RuntimeIdentifiers
-      - name: Restore nuget packages
-        run: msbuild ${{env.Solution_Path}} /t:Restore /p:Configuration=${{matrix.configuration}}
-
-      - name: Build ${{env.MSBuild_Project_Name}}
-        shell: powershell
-        run: msbuild ${{env.Solution_Path}} /t:${{env.MSBuild_Project_Name}} /p:Configuration=${{matrix.configuration}} /m:4
+      - name: Build Explorer
+        shell: bash
+        run: |
+          dotnet build Explorer/UI/GodotPCKExplorer.UI.csproj -c Debug -o bin/Explorer
+          dotnet build Explorer/UI/GodotPCKExplorer.UI.csproj -c Release -o bin/ExplorerRel
 
       - name: Prepare artifacts
-        if: matrix.configuration == 'Release'
         shell: powershell
         run: |
-          Get-ChildItem "bin/${{env.Project_Name}}/${{matrix.configuration}}/" -Directory | ForEach-Object {
-             Get-ChildItem $_.FullName | Where-Object { ('.pdb', '.xml').Contains($_.Extension) } | Remove-Item -Force
-          }
+          Remove-Item bin/ExplorerRel/* -Recurse -Include *.exp,*.lib,*.pdb -Force
 
-      - name: Upload build artifacts
+      - name: Upload Debug artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{matrix.configuration == 'Release' && env.Artifact_Name || format('{0}_{1}', env.Artifact_Name, matrix.configuration)}}
-          path: bin/${{env.Project_Name}}/${{matrix.configuration}}/${{env.SDK_Name}}
+          name: ${{env.ARTIFACT_PREFIX}}_Debug
+          path: bin/Explorer
 
-      - name: Build ${{env.Bruteforcer_Project_Name}}
-        shell: powershell
-        run: msbuild ${{env.Solution_Path}} /t:${{env.Bruteforcer_Project_Name}} /p:Configuration=${{matrix.configuration}} /m:4
+      - name: Upload Release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{needs.get_version.outputs.artifact_name}}_dotnet-win-linux-mac
+          path: bin/ExplorerRel
+
+      - name: Build Bruteforcer
+        run: |
+          dotnet build Bruteforcer/UI/PCKBruteforcer.UI.csproj -o bin/Bruteforcer
+
+
+  publish_folder:
+    name: Publish Folder
+    needs: get_version
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Setup dotnet and cache
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Publish
+        shell: bash
+        run: |
+          dotnet publish Explorer/Console/GodotPCKExplorer.Console.csproj -p:PublishProfile=Win64   -p:PlatformTarget=x64   -o  publish/Win64
+          dotnet publish Explorer/Console/GodotPCKExplorer.Console.csproj -p:PublishProfile=Win86   -p:PlatformTarget=x86   -o  publish/Win86
+          dotnet publish Explorer/Console/GodotPCKExplorer.Console.csproj -p:PublishProfile=Linux64 -p:PlatformTarget=x64   -o  publish/Linux64
+          dotnet publish Explorer/Console/GodotPCKExplorer.Console.csproj -p:PublishProfile=Mac64   -p:PlatformTarget=x64   -o  publish/Mac64
+          dotnet publish Explorer/Console/GodotPCKExplorer.Console.csproj -p:PublishProfile=MacArm  -p:PlatformTarget=Arm64 -o  publish/MacArm
+
+      - name: Prepare artifacts
+        shell: bash
+        run: |
+          find publish/ -type f \( -name "*.exp" -o -name "*.lib" -o -name "*.pdb" \) -exec rm -f {} +
+
+          cleanup_mbedtls() {
+            echo "mbedTLS cleanup is started in $1 for $2."
+            working_dir="$1"
+            keep_dir="$2"
+            base_dir="mbedTLS"
+
+            pushd "$working_dir" > /dev/null
+
+            if [ ! -d "$base_dir/$keep_dir" ]; then
+              echo "Folder '$keep_dir' not found in '$base_dir'."
+              return 1
+            fi
+
+            for dir in "$base_dir"/*; do
+              if [ -d "$dir" ] && [ "$(basename "$dir")" != "$keep_dir" ]; then
+                echo "Removing: $dir"
+                rm -rf "$dir"
+              fi
+            done
+
+            popd > /dev/null
+            echo "mbedTLS cleanup is complete."
+            echo ""
+          }
+
+          cleanup_mbedtls "publish/Win64"   "win_x64"
+          cleanup_mbedtls "publish/Win86"   "win_x86"
+          cleanup_mbedtls "publish/Linux64" "linux_x64"
+          cleanup_mbedtls "publish/Mac64"   "mac_universal"
+          cleanup_mbedtls "publish/MacArm"  "mac_universal"
+
+      - name: Upload Win64
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{needs.get_version.outputs.artifact_name}}_console-win-64
+          path: publish/Win64
+
+      - name: Upload Win86
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{needs.get_version.outputs.artifact_name}}_console-win-86
+          path: publish/Win86
+
+      - name: Upload Linux64
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{needs.get_version.outputs.artifact_name}}_console-linux-64
+          path: publish/Linux64
+
+      - name: Upload Temp Mac64
+        uses: actions/upload-artifact@v4
+        with:
+          name: thin_mac_64
+          path: publish/Mac64
+
+      - name: Upload Temp MacArm
+        uses: actions/upload-artifact@v4
+        with:
+          name: thin_mac_arm
+          path: publish/MacArm
+
+
+  fat_mac:
+    name: Fat macOS
+    needs: 
+      - publish_folder
+      - get_version
+    strategy:
+      fail-fast: false
+    runs-on: macos-latest
+
+    steps:
+      - name: Download macOS Thin bins x64
+        uses: actions/download-artifact@v4
+        with:
+          path: publish/Mac64
+          name: thin_mac_64
+
+      - name: Download macOS Thin bins arm64
+        uses: actions/download-artifact@v4
+        with:
+          path: publish/MacArm
+          name: thin_mac_arm
+
+      - name: Combine
+        shell: bash
+        run: |
+          mkdir publish/MacUniversal
+          bin_name="${{env.ARTIFACT_PREFIX}}.Console"
+          lipo -create -output publish/MacUniversal/$bin_name publish/Mac64/$bin_name publish/MacArm/$bin_name
+          file publish/MacUniversal/$bin_name
+
+          cp -rf publish/Mac64/mbedTLS publish/MacUniversal/mbedTLS
+
+      - name: Upload MacUniversal
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{needs.get_version.outputs.artifact_name}}_console-mac-universal
+          path: publish/MacUniversal
 
 
   tests:
@@ -86,6 +227,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      # Setup dotnet and cache
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
 
       - name: Run unit tests
         shell: bash

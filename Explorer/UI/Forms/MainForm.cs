@@ -435,11 +435,13 @@ namespace GodotPCKExplorer.UI
         void ExtractFilesFromPCK(IEnumerable<string> files)
         {
             var path = pckReader.PackPath;
+            List<string> extractedFiles = [];
 
             Program.DoTaskWithProgressBar((t) =>
             {
                 pckReader.ExtractFiles(
                     names: files,
+                    extractedFiles: out extractedFiles,
                     folder: fbd_extract_folder.SelectedPath,
                     overwriteExisting: overwriteExported.Checked,
                     checkMD5: GUIConfig.Instance.CheckMD5Extracted,

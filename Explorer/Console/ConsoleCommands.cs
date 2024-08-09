@@ -479,7 +479,7 @@ namespace GodotPCKExplorer.Cmd
                     runWithArgs = true;
                     if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                     {
-                        var split = Path.GetFileName(Assembly.GetExecutingAssembly().Location).Split('.');
+                        var split = Path.GetFileName(AppContext.BaseDirectory).Split('.');
                         try
                         {
                             // !! Sync with UI !!

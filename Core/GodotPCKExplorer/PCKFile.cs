@@ -59,9 +59,10 @@ namespace GodotPCKExplorer
             get => (Flags & PCKUtils.PCK_FILE_ENCRYPTED) != 0;
         }
 
-        public bool ExtractFile(string basePath, bool overwriteExisting = true, byte[]? encKey = null, bool check_md5 = true, CancellationToken? cancellationToken = null)
+        public bool ExtractFile(string basePath, out string extractPath, bool overwriteExisting = true, byte[]? encKey = null, bool check_md5 = true, CancellationToken? cancellationToken = null)
         {
-            string path = basePath + "/" + FilePath.Replace("res://", "");
+            string path = extractPath = Path.GetFullPath(Path.Combine(basePath, FilePath.Replace("res://", "")));
+
             string dir = Path.GetDirectoryName(path);
             BinaryWriter file;
 

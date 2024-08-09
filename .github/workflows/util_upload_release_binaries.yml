@@ -1,0 +1,177 @@
+name: 📈 Upload new release
+run-name: 📈 Upload new release (${{inputs.upload_github_draft && 'draft, ' || ''}}${{inputs.upload_itch_public && 'public, ' || ''}}${{inputs.upload_itch_min_price && 'min_price' || ''}})
+
+on:
+  workflow_dispatch: 
+    inputs:
+      upload_github_draft:
+        description: Upload to GitHub draft
+        default: true
+        type: boolean
+      upload_itch_public:
+        description: Upload to Itch - Public
+        default: false
+        type: boolean
+      upload_itch_min_price:
+        description: Upload to Itch - Min Price
+        default: false
+        type: boolean
+
+# Stop the same workflow actions
+concurrency:
+  group: ${{github.workflow}}-${{github.ref}}
+  cancel-in-progress: true
+
+env:
+  ITCH_TARGET: dmitriysalnikov/godot-pck-explorer
+  MAIN_ARTIFACT_PREFIX: GodotPCKExplorer
+
+jobs:
+  get_version:
+    name: Get the current version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{steps.getversion.outputs.version}}
+      main_artifact_name: ${{steps.getversion.outputs.main_artifact_name}}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          sparse-checkout: version.txt
+      - id: getversion
+        run: |
+          echo "Version: $(cat version.txt)"
+          echo "version=$(cat version.txt)" >> $GITHUB_OUTPUT
+          echo "Artifact name: ${{env.MAIN_ARTIFACT_PREFIX}}_$(cat version.txt)"
+          echo "main_artifact_name=${{env.MAIN_ARTIFACT_PREFIX}}_$(cat version.txt)" >> $GITHUB_OUTPUT
+
+
+  upload_github_draft:
+    name: Upload GitHub draft
+    needs: get_version
+    if: inputs.upload_github_draft
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Binaries
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: dotnet-desktop.yml
+          branch: ${{github.ref_name}}
+          name: (${{env.MAIN_ARTIFACT_PREFIX}}_${{needs.get_version.outputs.version}}).*
+          name_is_regexp: true
+          search_artifacts: true
+          skip_unpack: true
+          path: publish/
+          #event: workflow_dispatch
+
+      - name: Upload Draft Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          tag_name: ${{needs.get_version.outputs.version}}
+          files: publish/${{env.MAIN_ARTIFACT_PREFIX}}*
+          generate_release_notes: true
+          append_body: true
+          fail_on_unmatched_files: true
+
+
+  upload_itch_public:
+    name: Upload to itch - Public
+    needs: get_version
+    if: inputs.upload_itch_public
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          sparse-checkout: .github
+
+      - name: Download Binaries
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: dotnet-desktop.yml
+          branch: ${{github.ref_name}}
+          name: (${{env.MAIN_ARTIFACT_PREFIX}}_${{needs.get_version.outputs.version}}).*
+          name_is_regexp: true
+          search_artifacts: true
+          # unpack for butler
+          skip_unpack: false
+          path: publish/
+          #event: workflow_dispatch
+
+      - name: Download butler
+        uses: ./.github/actions/cached-download
+        with:
+          url: https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          destination: butler.zip
+          cache-key: butler_linux
+
+      - name: Install butler
+        run: |
+          unzip butler.zip
+          chmod +x butler
+          ./butler -V
+
+      - name: Upload all packages to itch.io
+        env:
+          BUTLER_API_KEY: ${{secrets.BUTLER_CREDENTIALS}}
+        run: |
+          ls publish
+
+          for channel in $(ls publish); do
+            ./butler push \
+              --fix-permissions \
+              --userversion='${{needs.get_version.outputs.version}}' \
+              publish/$channel/ \
+              "${{env.ITCH_TARGET}}:${channel#${{needs.get_version.outputs.main_artifact_name}}_}"
+          done
+
+  upload_itch_min_price:
+    name: Upload to itch - Min price
+    needs: get_version
+    if: inputs.upload_itch_min_price
+
+    # For WinForms build
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download butler
+        uses: ./.github/actions/cached-download
+        with:
+          url: https://broth.itch.zone/butler/windows-amd64/LATEST/archive/default
+          destination: butler.zip
+          cache-key: butler_win
+
+      - name: Install butler
+        shell: bash
+        run: |
+          unzip butler.zip
+          chmod +x butler
+          ./butler -V
+
+      - name: Build Bruteforcer
+        shell: bash
+        run: |
+          dotnet build Bruteforcer/UI/PCKBruteforcer.UI.csproj -c Release -o publish/Bruteforcer
+          find publish/ -type f \( -name "*.exp" -o -name "*.lib" -o -name "*.pdb" \) -exec rm -f {} +
+
+      - name: Upload packages to itch.io
+        shell: bash
+        env:
+          BUTLER_API_KEY: ${{secrets.BUTLER_CREDENTIALS}}
+        run: |
+          ls publish/Bruteforcer/
+
+          ./butler push \
+            --fix-permissions \
+            publish/Bruteforcer/ \
+            "${{env.ITCH_TARGET}}:pck_bruteforcer_dotnet-win-linux-mac"

@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net8.0-windows7.0": {
+      "godotpckexplorer": {
+        "type": "Project"
+      },
+      "pckbruteforcer": {
+        "type": "Project",
+        "dependencies": {
+          "GodotPCKExplorer": "[1.0.0, )"
+        }
+      },
+      "pckbruteforcer.console": {
+        "type": "Project",
+        "dependencies": {
+          "PCKBruteforcer": "[1.0.0, )"
+        }
+      }
+    }
+  }
+}
