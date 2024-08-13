@@ -18,8 +18,9 @@ Also `PCK Bruteforcer` is available as part of this project [here](Bruteforcer/)
 * `Split` files with embedded PCK into two separate files
 * Supports encrypted Godot 4 PCK
 * And also all these features are available via the `console`. Just write `GodotPCKExplorer.Console.exe -h` to get help.
-* `UI` Supports only `Windows`
-* `Console` Supports `Windows`, `Linux` and `macOS`
+* This program is available in two versions:
+  * `UI`: Supports only `Windows` and requires the installation of the `.NET Desktop Runtime`
+  * `Console`: Supports `Windows`, `Linux` and `macOS`
 
 ![Main Window](Images/MainForm.png)
 ![Main Window](Images/CreatePack.png)
