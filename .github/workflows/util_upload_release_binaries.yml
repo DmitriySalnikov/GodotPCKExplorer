@@ -120,7 +120,7 @@ jobs:
         env:
           BUTLER_API_KEY: ${{secrets.BUTLER_CREDENTIALS}}
         run: |
-          ls publish
+          find publish
 
           for channel in $(ls publish); do
             ./butler push \
@@ -169,9 +169,9 @@ jobs:
         env:
           BUTLER_API_KEY: ${{secrets.BUTLER_CREDENTIALS}}
         run: |
-          ls publish/Bruteforcer/
+          find publish/Bruteforcer/
 
           ./butler push \
             --fix-permissions \
             publish/Bruteforcer/ \
-            "${{env.ITCH_TARGET}}:pck_bruteforcer_dotnet-win-linux-mac"
+            "${{env.ITCH_TARGET}}:pck_bruteforcer_dotnet-ui-console-win-linux-mac"

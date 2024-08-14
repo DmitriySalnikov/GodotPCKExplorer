@@ -76,7 +76,7 @@ jobs:
       - name: Upload Release artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{needs.get_version.outputs.artifact_name}}_dotnet-win-linux-mac
+          name: ${{needs.get_version.outputs.artifact_name}}_dotnet-ui-console-win-linux-mac
           path: bin/ExplorerRel
 
       - name: Build Bruteforcer
@@ -150,19 +150,19 @@ jobs:
       - name: Upload Win64
         uses: actions/upload-artifact@v4
         with:
-          name: ${{needs.get_version.outputs.artifact_name}}_console-win-64
+          name: ${{needs.get_version.outputs.artifact_name}}_native-console-win-64
           path: publish/Win64
 
       - name: Upload Win86
         uses: actions/upload-artifact@v4
         with:
-          name: ${{needs.get_version.outputs.artifact_name}}_console-win-86
+          name: ${{needs.get_version.outputs.artifact_name}}_native-console-win-86
           path: publish/Win86
 
       - name: Upload Linux64
         uses: actions/upload-artifact@v4
         with:
-          name: ${{needs.get_version.outputs.artifact_name}}_console-linux-64
+          name: ${{needs.get_version.outputs.artifact_name}}_native-console-linux-64
           path: publish/Linux64
 
       - name: Upload Temp Mac64
@@ -213,7 +213,7 @@ jobs:
       - name: Upload MacUniversal
         uses: actions/upload-artifact@v4
         with:
-          name: ${{needs.get_version.outputs.artifact_name}}_console-mac-universal
+          name: ${{needs.get_version.outputs.artifact_name}}_native-console-mac-universal
           path: publish/MacUniversal
 
 
