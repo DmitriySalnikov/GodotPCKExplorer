@@ -39,7 +39,11 @@ Also `PCK Bruteforcer` is available as part of this project [here](Bruteforcer/)
 The binaries of the latest version are available on [**itch.io**](https://dmitriysalnikov.itch.io/godot-pck-explorer) or on the [**Github Releases page**](https://github.com/DmitriySalnikov/GodotPCKExplorer/releases/latest).
 
 > [!IMPORTANT]
-> Starting from version 1.4.0, `.NET 8` is required to work. Its download should be prompted when you run `.exe` files in Windows, if it has not been installed previously.
+> Starting from version 1.4.2, `native` and `dotnet` versions of the program have become available for download.
+>
+> `native` is a standalone program that does not require anything extra to run.
+>
+> `dotnet` is a program that requires `.NET 8` to work. Its download should be prompted when you run `.exe` files in Windows, if it has not been installed previously.
 >
 > The `.NET Desktop Runtime` is required to use the UI versions of the program.
 >
