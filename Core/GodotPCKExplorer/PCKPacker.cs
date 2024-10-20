@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace GodotPCKExplorer
 {
@@ -245,6 +246,16 @@ namespace GodotPCKExplorer
                         if (EncryptIndex)
                             index_writer = new BinaryWriter(new MemoryStream());
 
+                        // Multi-threaded MD5 pre-calculation
+                        if (godotVersion.PackVersion >= PCKUtils.PCK_VERSION_GODOT_4)
+                        {
+                            Parallel.ForEach(files, (f) =>
+                            {
+                                f.CalculateMD5();
+                                PCKActions.progress?.LogProgress(op, $"Calculated MD5: {f.Path}\n{PCKUtils.ByteArrayToHexString(f.MD5, " ")}");
+                            });
+                        }
+
                         op = baseOp + ", writing an index";
                         // write pck index
                         int file_idx = 0;
@@ -287,14 +298,12 @@ namespace GodotPCKExplorer
                             }
                             else
                             {
-                                file.CalculateMD5();
                                 index_writer.Write(file.MD5);
 
                                 // TODO allow to encrypt a specific files?
                                 file.IsEncrypted = EncryptFiles;
                                 index_writer.Write((int)(file.IsEncrypted ? 1 : 0));
 
-                                PCKActions.progress?.LogProgress(op, $"Calculated MD5: {res_file}\n{PCKUtils.ByteArrayToHexString(file.MD5, " ")}");
                             }
 
                             PCKActions.progress?.LogProgress(op, (int)(((double)file_idx / files.Count()) * 100));

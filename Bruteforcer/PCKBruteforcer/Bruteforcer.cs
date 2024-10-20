@@ -124,6 +124,7 @@ namespace PCKBruteforcer
             bool use_custom_output = false;
             DateTime start_time = DateTime.UtcNow;
             double max_time = TimeSpan.FromHours(999).TotalSeconds;
+            string ex_text = string.Empty;
 
             try
             {
@@ -170,8 +171,11 @@ namespace PCKBruteforcer
 
                     if (pck_reader.Files.Count > 0)
                     {
+                        // Find only encrypted files
+                        var enc_files = pck_reader.Files.Where((f) => f.Value.IsEncrypted);
+
                         // First, find small files between 5KB and 1MB in size to have enough info for validation.
-                        var files = pck_reader.Files.Where((f) => f.Value.Size >= 1024 * 5 && f.Value.Size < 1024 * 1024).OrderBy((f) => f.Value.Size);
+                        var files = enc_files.Where((f) => f.Value.Size >= 1024 * 5 && f.Value.Size < 1024 * 1024).OrderBy((f) => f.Value.Size);
                         if (files.Any())
                         {
                             pck_in_memory_file_name = files.First().Key;
@@ -180,7 +184,7 @@ namespace PCKBruteforcer
                         else
                         {
                             // Then smaller files
-                            files = pck_reader.Files.Where((f) => f.Value.Size > 512 && f.Value.Size < 1024 * 5).OrderByDescending((f) => f.Value.Size);
+                            files = enc_files.Where((f) => f.Value.Size > 512 && f.Value.Size < 1024 * 5).OrderByDescending((f) => f.Value.Size);
                             if (files.Any())
                             {
                                 pck_in_memory_file_name = files.First().Key;
@@ -189,7 +193,7 @@ namespace PCKBruteforcer
                             else
                             {
                                 // Then first larger files but not too big
-                                files = pck_reader.Files.Where((f) => f.Value.Size > 512 && f.Value.Size < 1024 * 1024 * 256).OrderBy((f) => f.Value.Size);
+                                files = enc_files.Where((f) => f.Value.Size > 512 && f.Value.Size < 1024 * 1024 * 256).OrderBy((f) => f.Value.Size);
                                 if (files.Any())
                                 {
                                     pck_in_memory_file_name = files.First().Key;
@@ -199,7 +203,7 @@ namespace PCKBruteforcer
                                 {
                                     // Any other file of any size
                                     pck_in_memory_file_name = files.First().Key;
-                                    pck_in_memory_file = pck_reader.Files.OrderBy((f) => f.Value.Size).First().Value;
+                                    pck_in_memory_file = enc_files.OrderBy((f) => f.Value.Size).First().Value;
                                 }
                             }
                         }
@@ -431,11 +435,20 @@ namespace PCKBruteforcer
                 pb_update.Dispose();
 
             }
+            catch (Exception ex)
+            {
+                ex_text = $"Exception:\n{ex.Message}";
+            }
             finally
             {
                 EnablePCKLogs();
                 if (!use_custom_output)
-                    SetOutputText("No matching key found");
+                {
+                    if (string.IsNullOrWhiteSpace(ex_text))
+                        SetOutputText("No matching key found");
+                    else
+                        SetOutputText($"{ex_text}\nNo matching key found");
+                }
 
                 Finished();
             }

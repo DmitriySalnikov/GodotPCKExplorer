@@ -33,18 +33,24 @@ jobs:
     outputs:
       version: ${{steps.getversion.outputs.version}}
       main_artifact_name: ${{steps.getversion.outputs.main_artifact_name}}
+      bf_version: ${{steps.getversion.outputs.bf_version}}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          sparse-checkout: version.txt
+          sparse-checkout: |
+            version.txt
+            Bruteforcer/bruteforcer_version.txt
       - id: getversion
         run: |
           echo "Version: $(cat version.txt)"
           echo "version=$(cat version.txt)" >> $GITHUB_OUTPUT
           echo "Artifact name: ${{env.MAIN_ARTIFACT_PREFIX}}_$(cat version.txt)"
           echo "main_artifact_name=${{env.MAIN_ARTIFACT_PREFIX}}_$(cat version.txt)" >> $GITHUB_OUTPUT
+          
+          echo "Bruteforcer version: $(cat Bruteforcer/bruteforcer_version.txt)"
+          echo "bf_version=$(cat Bruteforcer/bruteforcer_version.txt)" >> $GITHUB_OUTPUT
 
 
   upload_github_draft:
@@ -173,5 +179,6 @@ jobs:
 
           ./butler push \
             --fix-permissions \
+            --userversion='${{needs.get_version.outputs.bf_version}}' \
             publish/Bruteforcer/ \
             "${{env.ITCH_TARGET}}:pck_bruteforcer_dotnet-ui-console-win-linux-mac"

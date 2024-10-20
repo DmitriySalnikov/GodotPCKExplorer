@@ -30,19 +30,23 @@ runs:
           sudo chown "$USER" "$parent_dir"
         fi
 
-    - uses: actions/cache@v4
+    - uses: actions/cache/restore@v4
+      id: restore_cache
       with:
-        key: ${{inputs.cache-key || inputs.url}}
         path: ${{inputs.destination}}
+        key: ${{inputs.cache-key || inputs.url}}
 
     - shell: bash
+      if: ${{!steps.restore_cache.outputs.cache-hit}}
       env:
         INPUT_URL: ${{inputs.url}}
         INPUT_DESTINATION: ${{inputs.destination}}
       run: |
-        if [ -f "$INPUT_DESTINATION" ]; then
-          echo "File $INPUT_DESTINATION has been loaded from the cache!"
-        else
-          echo "Downloading $INPUT_URL to $INPUT_DESTINATION..."
-          curl -L -o "$INPUT_DESTINATION" "$INPUT_URL"
-        fi
+        echo "Downloading $INPUT_URL to $INPUT_DESTINATION..."
+        curl -L -o "$INPUT_DESTINATION" "$INPUT_URL"
+
+    - uses: actions/cache/save@v4
+      if: ${{!steps.restore_cache.outputs.cache-hit}}
+      with:
+        path: ${{inputs.destination}}
+        key: ${{inputs.cache-key || inputs.url}}

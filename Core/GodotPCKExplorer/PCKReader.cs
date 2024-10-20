@@ -32,6 +32,7 @@ namespace GodotPCKExplorer
         public long PCK_StartPosition = 0;
         public long PCK_EndPosition = 0;
         public bool PCK_Embedded = false;
+        public bool PCK_ContainsEncryptedFiles = false;
 
         public byte[]? ReceivedEncryptionKey { get; set; } = null;
 
@@ -48,7 +49,7 @@ namespace GodotPCKExplorer
         }
         public bool IsEncryptedFiles
         {
-            get => Files.Count != 0 && Files.First().Value.IsEncrypted;
+            get => PCK_ContainsEncryptedFiles;
         }
 
         ~PCKReader()
@@ -83,6 +84,7 @@ namespace GodotPCKExplorer
             PCK_StartPosition = 0;
             PCK_EndPosition = 0;
             PCK_Embedded = false;
+            PCK_ContainsEncryptedFiles = false;
 
             ReceivedEncryptionKey = null;
         }
@@ -432,12 +434,14 @@ namespace GodotPCKExplorer
                 PCKActions.progress?.LogProgress(op, 100);
                 PackPath = file_path;
                 binReader = fileReader;
+                PCK_ContainsEncryptedFiles = Files.Count != 0 && Files.Count((f) => f.Value.IsEncrypted) > 0;
                 return true;
             }
             catch (Exception ex)
             {
                 fileReader.Close();
                 binReader = null;
+                Close();
 
                 PCKActions.progress?.ShowMessage($"Can't read PCK file: {file_path}\n" + ex.Message, "Error", MessageType.Error);
                 PCKActions.progress?.Log(ex);
