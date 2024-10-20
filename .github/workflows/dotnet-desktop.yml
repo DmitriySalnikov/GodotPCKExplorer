@@ -105,11 +105,11 @@ jobs:
       - name: Publish
         shell: bash
         run: |
-          dotnet publish Explorer/Console/GodotPCKExplorer.Console.csproj -p:PublishProfile=Win64   -p:PlatformTarget=x64   -o  publish/Win64
-          dotnet publish Explorer/Console/GodotPCKExplorer.Console.csproj -p:PublishProfile=Win86   -p:PlatformTarget=x86   -o  publish/Win86
-          dotnet publish Explorer/Console/GodotPCKExplorer.Console.csproj -p:PublishProfile=Linux64 -p:PlatformTarget=x64   -o  publish/Linux64
-          dotnet publish Explorer/Console/GodotPCKExplorer.Console.csproj -p:PublishProfile=Mac64   -p:PlatformTarget=x64   -o  publish/Mac64
-          dotnet publish Explorer/Console/GodotPCKExplorer.Console.csproj -p:PublishProfile=MacArm  -p:PlatformTarget=Arm64 -o  publish/MacArm
+          dotnet publish Explorer/Console/GodotPCKExplorer.Console.csproj -p:PublishProfile=Win64   -o  publish/Win64
+          dotnet publish Explorer/Console/GodotPCKExplorer.Console.csproj -p:PublishProfile=Win86   -o  publish/Win86
+          dotnet publish Explorer/Console/GodotPCKExplorer.Console.csproj -p:PublishProfile=Linux64 -o  publish/Linux64
+          dotnet publish Explorer/Console/GodotPCKExplorer.Console.csproj -p:PublishProfile=Mac64   -o  publish/Mac64
+          dotnet publish Explorer/Console/GodotPCKExplorer.Console.csproj -p:PublishProfile=MacArm  -o  publish/MacArm
 
       - name: Prepare artifacts
         shell: bash

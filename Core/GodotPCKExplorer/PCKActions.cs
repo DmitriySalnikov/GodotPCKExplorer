@@ -101,7 +101,7 @@ namespace GodotPCKExplorer
             }
             else
             {
-                if (Environment.Is64BitOperatingSystem)
+                if (Environment.Is64BitProcess)
                     arch = "x64";
                 else
                     arch = "x86";
