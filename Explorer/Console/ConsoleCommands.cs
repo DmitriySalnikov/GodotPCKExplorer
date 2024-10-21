@@ -178,6 +178,7 @@ namespace GodotPCKExplorer.Cmd
             string filePath;
             string dirPath;
             string? encKey = null;
+            PCKExtractNoEncryptionKeyMode noKeyMode = PCKExtractNoEncryptionKeyMode.Cancel;
 
             try
             {
@@ -190,8 +191,23 @@ namespace GodotPCKExplorer.Cmd
                     {
                         encKey = args[3];
 
-                        if (!ValidateEncryptionKey(encKey))
-                            return;
+                        if (encKey == "skip" || encKey == "encrypted")
+                        {
+                            if (encKey == "skip")
+                            {
+                                noKeyMode = PCKExtractNoEncryptionKeyMode.Skip;
+                            }
+                            else
+                            {
+                                noKeyMode = PCKExtractNoEncryptionKeyMode.AsIs;
+                            }
+                            encKey = null;
+                        }
+                        else
+                        {
+                            if (!ValidateEncryptionKey(encKey))
+                                return;
+                        }
                     }
                 }
                 else
@@ -206,7 +222,7 @@ namespace GodotPCKExplorer.Cmd
                 return;
             }
 
-            var res = PCKActions.Extract(filePath, dirPath, overwriteExisting, encKey: encKey);
+            var res = PCKActions.Extract(filePath, dirPath, overwriteExisting, encKey: encKey, noKeyMode: noKeyMode);
             SetResult(res);
         }
 

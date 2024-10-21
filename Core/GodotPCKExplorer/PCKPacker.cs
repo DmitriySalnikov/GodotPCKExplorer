@@ -94,15 +94,13 @@ namespace GodotPCKExplorer
         /// <param name="packPathPrefix">The path prefix in the pack. For example, if the prefix is <c>test_folder/</c>, then the path <c>res://icon.png</c> is converted to <c>res://test_folder/icon.png</c>.</param>
         /// <param name="alignment">The address of each file will be aligned to this value.</param>
         /// <param name="encKey">Specify the encryption key if you want the file to be encrypted. To specify a <see cref="string"/>, look at <seealso cref="PCKUtils.HexStringToByteArray(string?)"/></param>
-        /// <param name="encrypt_index">Whether to encrypt the index (list of contents).</param>
-        /// <param name="encrypt_files">Whether to encrypt the contents of files.</param>
+        /// <param name="encryptIndex">Whether to encrypt the index (list of contents).</param>
+        /// <param name="encryptFiles">Whether to encrypt the contents of files.</param>
         /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
         /// <returns><c>true</c> if successful</returns>
-        public static bool PackFiles(string outPck, bool embed, IEnumerable<PCKPackerFile> files, PCKVersion godotVersion, string packPathPrefix = "", uint alignment = 16, byte[]? encKey = null, bool encrypt_index = false, bool encrypt_files = false, CancellationToken? cancellationToken = null)
+        public static bool PackFiles(string outPck, bool embed, IEnumerable<PCKPackerFile> files, PCKVersion godotVersion, string packPathPrefix = "", uint alignment = 16, byte[]? encKey = null, bool encryptIndex = false, bool encryptFiles = false, CancellationToken? cancellationToken = null)
         {
             byte[]? EncryptionKey = encKey;
-            bool EncryptIndex = encrypt_index;
-            bool EncryptFiles = encrypt_files;
             packPathPrefix = packPathPrefix.Replace("\\", "/");
 
             const string baseOp = "Pack files";
@@ -116,7 +114,7 @@ namespace GodotPCKExplorer
 
             if (godotVersion.PackVersion == PCKUtils.PCK_VERSION_GODOT_3)
             {
-                if (EncryptionKey != null || EncryptIndex || EncryptFiles)
+                if (EncryptionKey != null || encryptIndex || encryptFiles)
                 {
                     PCKActions.progress?.ShowMessage("Encryption is not supported for PCK files for Godot 3 (pack version 1).", "Error", MessageType.Error);
                     return false;
@@ -144,7 +142,7 @@ namespace GodotPCKExplorer
 
             if (EncryptionKey == null)
             {
-                if (EncryptIndex || EncryptFiles)
+                if (encryptIndex || encryptFiles)
                 {
                     PCKActions.progress?.ShowMessage("The encryption key is not specified, although the encryption mode is activated.", "Error", MessageType.Error);
                     return false;
@@ -156,11 +154,11 @@ namespace GodotPCKExplorer
                 PCKActions.progress?.LogProgress(op, "Starting.");
                 PCKActions.progress?.LogProgress(op, $"Version: {godotVersion}");
                 PCKActions.progress?.LogProgress(op, $"Alignment: {alignment}");
-                if (EncryptIndex || EncryptFiles)
+                if (encryptIndex || encryptFiles)
                 {
                     PCKActions.progress?.LogProgress(op, $"Encryption key: {PCKUtils.ByteArrayToHexString(EncryptionKey)}");
-                    PCKActions.progress?.LogProgress(op, $"Encrypt Index: {EncryptIndex}");
-                    PCKActions.progress?.LogProgress(op, $"Encrypt Files: {EncryptFiles}");
+                    PCKActions.progress?.LogProgress(op, $"Encrypt Index: {encryptIndex}");
+                    PCKActions.progress?.LogProgress(op, $"Encrypt Files: {encryptFiles}");
                 }
 
                 // delete if not embbeding
@@ -227,7 +225,7 @@ namespace GodotPCKExplorer
 
                     if (godotVersion.PackVersion == PCKUtils.PCK_VERSION_GODOT_4)
                     {
-                        binWriter.Write((int)(EncryptIndex ? 1 : 0));
+                        binWriter.Write((int)(encryptIndex ? 1 : 0));
                         file_base_address = binWriter.BaseStream.Position;
                         binWriter.Write((long)0);
                     }
@@ -243,7 +241,7 @@ namespace GodotPCKExplorer
                     long total_size = 0;
 
                     {
-                        if (EncryptIndex)
+                        if (encryptIndex)
                             index_writer = new BinaryWriter(new MemoryStream());
 
                         // Multi-threaded MD5 pre-calculation
@@ -301,7 +299,7 @@ namespace GodotPCKExplorer
                                 index_writer.Write(file.MD5);
 
                                 // TODO allow to encrypt a specific files?
-                                file.IsEncrypted = EncryptFiles;
+                                file.IsEncrypted = encryptFiles;
                                 index_writer.Write((int)(file.IsEncrypted ? 1 : 0));
 
                             }
@@ -309,7 +307,7 @@ namespace GodotPCKExplorer
                             PCKActions.progress?.LogProgress(op, (int)(((double)file_idx / files.Count()) * 100));
                         };
 
-                        if (EncryptIndex)
+                        if (encryptIndex)
                         {
                             // Later it will be encrypted and the data size will be aligned to 16 + encrypted header
                             PCKUtils.AddPadding(binWriter, PCKUtils.AlignAddress(index_writer.BaseStream.Length, mbedTLS.CHUNK_SIZE) + ENCRYPTED_HEADER_SIZE);
@@ -324,7 +322,7 @@ namespace GodotPCKExplorer
                     offset = PCKUtils.AlignAddress(offset, alignment);
 
                     // end of index
-                    PCKUtils.AddPadding(binWriter, offset - binWriter.BaseStream.Position, EncryptIndex); // fill random bytes between index and files
+                    PCKUtils.AddPadding(binWriter, offset - binWriter.BaseStream.Position, encryptIndex); // fill random bytes between index and files
 
                     long file_base = offset;
                     if (godotVersion.PackVersion == PCKUtils.PCK_VERSION_GODOT_4)
@@ -404,7 +402,7 @@ namespace GodotPCKExplorer
 
                         // get offset of the next file and add some padding
                         offset = PCKUtils.AlignAddress(offset + actual_file_size, alignment);
-                        PCKUtils.AddPadding(binWriter, offset - binWriter.BaseStream.Position, EncryptFiles); // fill random bytes between files
+                        PCKUtils.AddPadding(binWriter, offset - binWriter.BaseStream.Position, encryptFiles); // fill random bytes between files
 
                         count += 1;
                     };
@@ -412,7 +410,7 @@ namespace GodotPCKExplorer
                     // TODO add PCK validation
 
                     // If the index is encrypted, then it must be written after all other operations in order to properly handle file offsets
-                    if (EncryptIndex)
+                    if (encryptIndex)
                     {
                         // Move to start of index
                         long pos = binWriter.BaseStream.Position;

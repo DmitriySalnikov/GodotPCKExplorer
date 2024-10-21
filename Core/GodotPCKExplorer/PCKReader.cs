@@ -15,6 +15,22 @@ namespace GodotPCKExplorer
         public bool IsCancelled;
     }
 
+    public enum PCKExtractNoEncryptionKeyMode
+    {
+        /// <summary>
+        /// Cancel the extraction when encrypted data is encountered
+        /// </summary>
+        Cancel,
+        /// <summary>
+        /// Skip encrypted files
+        /// </summary>
+        Skip,
+        /// <summary>
+        /// Extract as is, without decryption
+        /// </summary>
+        AsIs
+    }
+
     public sealed class PCKReader : IDisposable
     {
         BinaryReader? binReader = null;
@@ -124,6 +140,9 @@ namespace GodotPCKExplorer
             if (key == null)
             {
                 var errStr = "The Encryption Key is null.";
+                PCKActions.progress?.LogProgress(operation, errStr);
+                return null;
+                /*
                 if (disableExceptions)
                 {
                     PCKActions.progress?.LogProgress(operation, errStr);
@@ -131,6 +150,7 @@ namespace GodotPCKExplorer
                 }
                 else
                     throw new ArgumentNullException(errStr);
+                */
             }
 
             if (key.Length != 256 / 8)
@@ -461,9 +481,9 @@ namespace GodotPCKExplorer
         /// <param name="getEncryptionKey">If the Encryption Key has not been received after opening the PCK, this function will be called. This function will also be called if the previous attempt to decrypt the file failed.</param>
         /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
         /// <returns><c>true</c> if successful</returns>
-        public bool ExtractAllFiles(out List<string> extractedFiles, string folder, bool overwriteExisting = true, bool checkMD5 = true, Func<PCKReaderEncryptionKeyResult>? getEncryptionKey = null, CancellationToken? cancellationToken = null)
+        public bool ExtractAllFiles(out List<string> extractedFiles, out List<string> failedFiles, string folder, bool overwriteExisting = true, bool checkMD5 = true, Func<PCKReaderEncryptionKeyResult>? getEncryptionKey = null, PCKExtractNoEncryptionKeyMode noKeyMode = PCKExtractNoEncryptionKeyMode.Cancel, CancellationToken? cancellationToken = null)
         {
-            return ExtractFiles(Files.Keys.ToList(), out extractedFiles, folder, overwriteExisting, checkMD5, getEncryptionKey, cancellationToken);
+            return ExtractFiles(Files.Keys.ToList(), out extractedFiles, out failedFiles, folder, overwriteExisting, checkMD5, getEncryptionKey, noKeyMode, cancellationToken);
         }
 
         /// <summary>
@@ -476,10 +496,11 @@ namespace GodotPCKExplorer
         /// <param name="getEncryptionKey">If the Encryption Key has not been received after opening the PCK, this function will be called. This function will also be called if the previous attempt to decrypt the file failed.</param>
         /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
         /// <returns><c>true</c> if successful</returns>
-        public bool ExtractFiles(IEnumerable<string> names, out List<string> extractedFiles, string folder, bool overwriteExisting = true, bool checkMD5 = true, Func<PCKReaderEncryptionKeyResult>? getEncryptionKey = null, CancellationToken? cancellationToken = null)
+        public bool ExtractFiles(IEnumerable<string> names, out List<string> extractedFiles, out List<string> failedFiles, string folder, bool overwriteExisting = true, bool checkMD5 = true, Func<PCKReaderEncryptionKeyResult>? getEncryptionKey = null, PCKExtractNoEncryptionKeyMode noKeyMode = PCKExtractNoEncryptionKeyMode.Cancel, CancellationToken? cancellationToken = null)
         {
             var op = "Extract files";
             extractedFiles = new List<string>();
+            failedFiles = new List<string>();
 
             int files_count = names.Count();
 
@@ -496,10 +517,53 @@ namespace GodotPCKExplorer
 
                 string basePath = folder;
                 byte[]? encryption_key = null;
+                bool skip_key = false;
 
                 int count = 0;
                 double one_file_in_progress_line = 1.0 / files_count;
 
+                if (IsEncryptedFiles)
+                {
+                    if (encryption_key == null && !skip_key)
+                    {
+                        if (ReceivedEncryptionKey == null)
+                        {
+                            // Throw Exception on error or return null
+                            encryption_key = TryGetEncryptionKey(op, getEncryptionKey);
+
+                            if (encryption_key == null)
+                            {
+                                ReceivedEncryptionKey = null;
+
+                                switch (noKeyMode)
+                                {
+                                    case PCKExtractNoEncryptionKeyMode.Cancel:
+                                        // Add all of the following files as failed
+                                        failedFiles.AddRange(names.Skip(count));
+                                        PCKActions.progress?.ShowMessage("No Encryption Key received.\nNo further work with PCK is possible.", "Error", MessageType.Error, PCKMessageBoxButtons.OK);
+                                        return false;
+                                    case PCKExtractNoEncryptionKeyMode.Skip:
+                                        PCKActions.progress?.LogProgress(op, "No Encryption Key received. All encrypted files will be skipped.");
+                                        skip_key = true;
+                                        break;
+                                    case PCKExtractNoEncryptionKeyMode.AsIs:
+                                        PCKActions.progress?.LogProgress(op, "No Encryption Key received. All encrypted files will be extracted without decryption.");
+                                        skip_key = true;
+                                        break;
+                                    default:
+                                        throw new NotImplementedException("Invalid 'no key' mode!");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            PCKActions.progress?.LogProgress(op, $"A cached Encryption Key is used: {PCKUtils.ByteArrayToHexString(ReceivedEncryptionKey)}.");
+                            encryption_key = ReceivedEncryptionKey;
+                        }
+                    }
+                }
+
+                // TODO Multithreading would greatly speed up extraction.
                 foreach (var path in names)
                 {
                     if (cancellationToken?.IsCancellationRequested ?? false)
@@ -516,47 +580,61 @@ namespace GodotPCKExplorer
                             continue;
                         }
 
-                        PCKActions.progress?.LogProgress(op, Files[path].FilePath);
+                        PCKFile file = Files[path];
+                        PCKActions.progress?.LogProgress(op, file.FilePath);
 
                         void upd(int p)
                         {
                             PCKActions.progress?.LogProgress(op, (int)(((double)count / files_count * 100) + (p * one_file_in_progress_line)));
                         }
-                        Files[path].OnProgress += upd;
+                        file.OnProgress += upd;
 
-                        if (Files[path].IsEncrypted)
+                        if (file.ExtractFile(basePath, out string extractedPath, out bool skippedExisted, overwriteExisting, encryption_key, noKeyMode, cancellationToken))
                         {
-                            if (encryption_key == null)
+                            if (checkMD5 && !skippedExisted)
                             {
-                                if (ReceivedEncryptionKey == null)
+                                if (file.CheckMD5(extractedPath))
                                 {
-                                    // Throw Exception on error or return null
-                                    encryption_key = TryGetEncryptionKey(op, getEncryptionKey);
-
-                                    if (encryption_key == null)
-                                    {
-                                        ReceivedEncryptionKey = null;
-                                        PCKActions.progress?.LogProgress(op, "No Encryption Key received. No further work with PCK is possible.");
-                                        return false;
-                                    }
+                                    extractedFiles.Add(extractedPath);
                                 }
                                 else
                                 {
-                                    PCKActions.progress?.LogProgress(op, $"A cached Encryption Key is used: {PCKUtils.ByteArrayToHexString(ReceivedEncryptionKey)}.");
-                                    encryption_key = ReceivedEncryptionKey;
+                                    try
+                                    {
+                                        File.Delete(extractedPath);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        PCKActions.progress?.LogProgress(op, $"Failed to delete a file with an incorrect MD5: {ex.Message}");
+                                    }
+
+                                    failedFiles.AddRange(names.Skip(count));
+                                    ReceivedEncryptionKey = null;
+                                    file.OnProgress -= upd;
+                                    return false;
                                 }
+                            }
+                            else
+                            {
+                                extractedFiles.Add(extractedPath);
+                            }
+                        }
+                        else
+                        {
+                            if (!file.IsEncrypted || (file.IsEncrypted && noKeyMode == PCKExtractNoEncryptionKeyMode.Cancel))
+                            {
+                                failedFiles.AddRange(names.Skip(count));
+                                ReceivedEncryptionKey = null;
+                                file.OnProgress -= upd;
+                                return false;
+                            }
+                            else
+                            {
+                                failedFiles.Add(path);
                             }
                         }
 
-                        if (!Files[path].ExtractFile(basePath, out string extractedPath, overwriteExisting, encryption_key, checkMD5, cancellationToken))
-                        {
-                            ReceivedEncryptionKey = null;
-                            Files[path].OnProgress -= upd;
-                            return false;
-                        }
-                        extractedFiles.Add(extractedPath);
-
-                        Files[path].OnProgress -= upd;
+                        file.OnProgress -= upd;
                     }
 
                     count++;

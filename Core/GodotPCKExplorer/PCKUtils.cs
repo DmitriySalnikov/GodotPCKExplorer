@@ -31,6 +31,9 @@ namespace GodotPCKExplorer
         public const int BUFFER_MAX_SIZE = 1024 * 1024;
         public const int UnknownProgressStatus = -1234;
 
+        public const string PathPrefixRes = "res://";
+        public const string PathPrefixUser = "user://";
+
         static readonly Random rng = new Random();
 
         public static string ByteArrayToHexString(byte[]? data, string sepChar = "")
@@ -196,7 +199,17 @@ namespace GodotPCKExplorer
 
         public static string GetResFilePath(string path, string prefix)
         {
-            return ("res://" + prefix + (path.StartsWith("res://") ? path.Replace("res://", "") : path)).Replace("\\", "/");
+            bool is_user = path.StartsWith(PathPrefixUser);
+            const string custom_user_folder = "@@user@@/";
+            var base_path = path.Replace(PathPrefixRes, "").Replace(PathPrefixUser, "").Replace("\\", "/");
+            if (base_path.StartsWith(custom_user_folder) || is_user)
+            {
+                return PathPrefixUser + base_path.Replace(custom_user_folder, "");
+            }
+            else
+            {
+                return (PathPrefixRes + prefix + base_path).Replace("\\", "/");
+            }
         }
 
         public static List<PCKPackerRegularFile> GetListOfFilesToPack(string folder, CancellationToken? cancellationToken = null)

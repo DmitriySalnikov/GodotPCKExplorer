@@ -10,6 +10,8 @@ namespace GodotPCKExplorer
         [ThreadStatic]
         static byte[]? temp_encryption_buffer;
 
+        public static int EncryptionHeaderSize = 16 + sizeof(long) + 16;
+
         public BinaryReader? Stream;
         public byte[] Key;
 
@@ -28,6 +30,7 @@ namespace GodotPCKExplorer
             Key = key;
             start_position = Stream.BaseStream.Position;
 
+            // Update EncryptionHeaderSize if needed
             MD5 = binReader.ReadBytes(16);
             DataSize = binReader.ReadInt64();
             StartIV = binReader.ReadBytes(mbedTLS.CHUNK_SIZE);

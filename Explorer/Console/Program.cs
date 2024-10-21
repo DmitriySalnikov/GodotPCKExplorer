@@ -82,11 +82,14 @@ Examples of valid commands:
 	-l C:/Game.pck
 
 -e	Extract content from a pack to a folder. Automatically overwrites existing files
+	Instead of the key, you can specify ""skip"" or ""encrypted"" to skip or extract files without decryption, respectively
 	-e [path to pack] [path to output folder] {[encryption key]}
 	-e C:/Game.exe ""C:/Path with Spaces"" 
 	-e C:/Game.pck Output_dir 7FDBF68B69B838194A6F1055395225BBA3F1C5689D08D71DCD620A7068F61CBA
+	-e C:/Game.pck Output_dir skip
+	-e C:/Game.pck Output_dir encrypted
 
--es	Export like -e but skip existing files
+-es	Extract like -e but skip existing files
 
 -p	Pack content of folder into .pck file
 	The version should be in this format: PACK_VERSION.GODOT_MINOR._MAJOR._PATCH

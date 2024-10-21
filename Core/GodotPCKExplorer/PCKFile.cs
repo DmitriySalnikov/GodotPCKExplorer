@@ -59,23 +59,48 @@ namespace GodotPCKExplorer
             get => (Flags & PCKUtils.PCK_FILE_ENCRYPTED) != 0;
         }
 
-        public bool ExtractFile(string basePath, out string extractPath, bool overwriteExisting = true, byte[]? encKey = null, bool check_md5 = true, CancellationToken? cancellationToken = null)
+        public bool ExtractFile(string basePath, out string extractPath, out bool skippedExisted, bool overwriteExisting = true, byte[]? encKey = null, PCKExtractNoEncryptionKeyMode noKeyMode = PCKExtractNoEncryptionKeyMode.Cancel, CancellationToken? cancellationToken = null)
         {
-            string path = extractPath = Path.GetFullPath(Path.Combine(basePath, FilePath.Replace("res://", "")));
+            // TODO add tests for user
+            // TODO add tests for skipped
+            // TODO add tests for as is
+            string path = extractPath = Path.GetFullPath(Path.Combine(basePath, FilePath.Replace(PCKUtils.PathPrefixRes, "").Replace(PCKUtils.PathPrefixUser, "@@user@@/")));
+            string op = "Extracting file";
 
+            skippedExisted = false;
             string dir = Path.GetDirectoryName(path);
             BinaryWriter file;
 
+            if (File.Exists(path) && !overwriteExisting)
+            {
+                skippedExisted = true;
+                return true;
+            }
+
+            if (IsEncrypted && encKey == null)
+            {
+                switch (noKeyMode)
+                {
+                    case PCKExtractNoEncryptionKeyMode.Cancel:
+                        PCKActions.progress?.ShowMessage($"Failed to extract the packed file.\nThe file is encrypted, but the decryption key was not specified.", "Error", MessageType.Error);
+                        return false;
+                    case PCKExtractNoEncryptionKeyMode.Skip:
+                        PCKActions.progress?.LogProgress(op, $"The file is encrypted, but it will be skipped according to the settings.");
+                        return false;
+                    case PCKExtractNoEncryptionKeyMode.AsIs:
+                        // Rename file to mark it as encrypted
+                        path = extractPath = Path.ChangeExtension(path, Path.GetExtension(path) + ".encrypted");
+                        if (File.Exists(path) && !overwriteExisting)
+                        {
+                            skippedExisted = true;
+                            return true;
+                        }
+                        break;
+                }
+            }
+
             try
             {
-                if (File.Exists(path))
-                {
-                    if (!overwriteExisting)
-                        return true;
-
-                    File.Delete(path);
-                }
-
                 Directory.CreateDirectory(dir);
                 file = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read));
             }
@@ -94,16 +119,47 @@ namespace GodotPCKExplorer
                     BinaryReader tmp_reader = reader;
 
                     long to_write = Size;
+
+                    bool write_raw_file()
+                    {
+                        while (to_write > 0)
+                        {
+                            var read = tmp_reader.ReadBytes(Math.Min(PCKUtils.BUFFER_MAX_SIZE, (int)to_write));
+                            file.Write(read);
+                            to_write -= read.Length;
+
+                            OnProgress?.Invoke(100 - (int)((double)to_write / Size * 100));
+
+                            if (cancellationToken?.IsCancellationRequested ?? false)
+                                return false;
+                        }
+                        return true;
+                    }
+
                     if (IsEncrypted)
                     {
                         if (encKey == null)
                         {
-                            PCKActions.progress?.ShowMessage($"Failed to extract the packed file.\nThe PCK file is encrypted, but the decryption key was not specified.", "Error", MessageType.Error);
-                            return false;
-                        }
+                            if (noKeyMode == PCKExtractNoEncryptionKeyMode.AsIs)
+                            {
+                                PCKActions.progress?.LogProgress(op, $"The file is encrypted, but it will be extracted without decryption according to the settings.");
 
-                        using (var r = new PCKEncryptedReader(reader, encKey))
+                                // Read encryption header, add combine actual size and header
+                                long pos = reader.BaseStream.Position;
+                                using (var r = new PCKEncryptedReader(reader, new byte[0]))
+                                {
+                                    to_write = PCKEncryptedReader.EncryptionHeaderSize + r.DataSizeEncoded;
+                                }
+                                reader.BaseStream.Seek(pos, SeekOrigin.Begin);
+
+                                write_raw_file();
+                                OnProgress?.Invoke(100);
+                                return false;
+                            }
+                        }
+                        else
                         {
+                            using var r = new PCKEncryptedReader(reader, encKey);
                             foreach (var chunk in r.ReadEncryptedBlocks())
                             {
                                 file.Write(chunk.Span);
@@ -119,31 +175,11 @@ namespace GodotPCKExplorer
                     }
                     else
                     {
-                        while (to_write > 0)
-                        {
-                            var read = tmp_reader.ReadBytes(Math.Min(PCKUtils.BUFFER_MAX_SIZE, (int)to_write));
-                            file.Write(read);
-                            to_write -= read.Length;
-
-                            OnProgress?.Invoke(100 - (int)((double)to_write / Size * 100));
-
-                            if (cancellationToken?.IsCancellationRequested ?? false)
-                                return false;
-                        }
-
+                        if (!write_raw_file())
+                            return false;
                         OnProgress?.Invoke(100);
                     }
                     file.Close();
-
-                    if (check_md5 && PackVersion > 1)
-                    {
-                        var exp_md5 = PCKUtils.GetFileMD5(path);
-                        if (!exp_md5.SequenceEqual(MD5))
-                        {
-                            PCKActions.progress?.ShowMessage($"The MD5 of the exported file is not equal to the MD5 specified in the PCK.\n{PCKUtils.ByteArrayToHexString(MD5, " ")} != {PCKUtils.ByteArrayToHexString(exp_md5, " ")}", "Error", MessageType.Error);
-                            return false;
-                        }
-                    }
                 }
             }
             catch (Exception ex)
@@ -167,6 +203,20 @@ namespace GodotPCKExplorer
                 file.Close();
             }
 
+            return true;
+        }
+
+        public bool CheckMD5(string path)
+        {
+            if (PackVersion > 1)
+            {
+                var exp_md5 = PCKUtils.GetFileMD5(path);
+                if (!exp_md5.SequenceEqual(MD5))
+                {
+                    PCKActions.progress?.ShowMessage($"The MD5 of the exported file is not equal to the MD5 specified in the PCK.\n{PCKUtils.ByteArrayToHexString(MD5, " ")} != {PCKUtils.ByteArrayToHexString(exp_md5, " ")}", "Error", MessageType.Error);
+                    return false;
+                }
+            }
             return true;
         }
     }

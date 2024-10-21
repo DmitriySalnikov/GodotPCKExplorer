@@ -9,6 +9,7 @@ namespace GodotPCKExplorer.UI
         readonly Font MatchCaseNormal;
         readonly Font MatchCaseStrikeout;
         readonly VersionCheckerGitHub versionCheckerGitHub = new("DmitriySalnikov", "GodotPCKExplorer", GlobalConstants.ProjectName, ShowMessageBoxForVersionCheck);
+        readonly List<ToolStripMenuItem> noEncKeyModeMenus = [];
 
         long TotalOpenedSize = 0;
 
@@ -24,8 +25,12 @@ namespace GodotPCKExplorer.UI
             overwriteExported.Checked = GUIConfig.Instance.OverwriteExtracted;
             checkMD5OnExportToolStripMenuItem.Checked = GUIConfig.Instance.CheckMD5Extracted;
 
-            showConsoleToolStripMenuItem.Checked = GUIConfig.Instance.ShowConsole;
+            noEncKeyModeMenus.Add(ifNoEncKeyMode_Cancel);
+            noEncKeyModeMenus.Add(ifNoEncKeyMode_Skip);
+            noEncKeyModeMenus.Add(ifNoEncKeyMode_AsIs);
+            UpdateIfNoEncKeyModeMenus();
 
+            showConsoleToolStripMenuItem.Checked = GUIConfig.Instance.ShowConsole;
             UpdateRecentList();
 
             UpdateShellReigstrationButton();
@@ -209,6 +214,22 @@ namespace GodotPCKExplorer.UI
             return res;
         }
 
+        void UpdateIfNoEncKeyModeMenus()
+        {
+            for (int i = 0; i < noEncKeyModeMenus.Count; i++)
+            {
+                var menu = noEncKeyModeMenus[i];
+                if (i == (int)GUIConfig.Instance.IfNoEncryptionKeyMode)
+                {
+                    menu.Checked = true;
+                }
+                else
+                {
+                    menu.Checked = false;
+                }
+            }
+        }
+
         void UpdateRecentList(string? path = null, bool remove = false, bool isEncrypted = false, bool updateKey = false, string? encryptionKey = null)
         {
             if (path != null)
@@ -335,6 +356,7 @@ namespace GodotPCKExplorer.UI
         public void UpdateListOfPCKContent()
         {
             dataGridView1.Rows.Clear();
+            dataGridView1.Columns["encrypted"].Visible = pckReader.IsEncryptedFiles;
             if (pckReader.IsOpened)
             {
                 foreach (var f in pckReader.Files)
@@ -346,6 +368,7 @@ namespace GodotPCKExplorer.UI
                         tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.FilePath });
                         tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.Offset, Tag = PCKUtils.ByteArrayToHexString(f.Value.MD5, "") });
                         tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = Utils.SizeSuffix(f.Value.Size), Tag = f.Value.Size });
+                        tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.IsEncrypted ? "*" : string.Empty, Tag = f.Value.IsEncrypted });
 
                         dataGridView1.Rows.Add(tmpRow);
                     }
@@ -436,18 +459,40 @@ namespace GodotPCKExplorer.UI
         {
             var path = pckReader.PackPath;
             List<string> extractedFiles = [];
+            List<string> failedFiles = [];
 
+            bool extract_result = false;
             Program.DoTaskWithProgressBar((t) =>
             {
-                pckReader.ExtractFiles(
+                extract_result = pckReader.ExtractFiles(
                     names: files,
                     extractedFiles: out extractedFiles,
+                    failedFiles: out failedFiles,
                     folder: fbd_extract_folder.SelectedPath,
                     overwriteExisting: overwriteExported.Checked,
                     checkMD5: GUIConfig.Instance.CheckMD5Extracted,
                     getEncryptionKey: () => InvokeRequired ? Invoke(() => GetEncryptionKey(path)) : GetEncryptionKey(path),
+                    noKeyMode: GUIConfig.Instance.IfNoEncryptionKeyMode,
                     cancellationToken: t);
             }, this);
+
+            if (failedFiles.Count > 0)
+            {
+                string failed = "Failed";
+                if (extract_result)
+                {
+                    switch (GUIConfig.Instance.IfNoEncryptionKeyMode)
+                    {
+                        case PCKExtractNoEncryptionKeyMode.Skip:
+                            failed = "Skipped";
+                            break;
+                        case PCKExtractNoEncryptionKeyMode.AsIs:
+                            failed = "Extracted As Is";
+                            break;
+                    }
+                }
+                Program.ShowMessage($"Not all files have been extracted.\nExtracted: {extractedFiles.Count}\n{failed}: {failedFiles.Count}", "Extraction result", MessageType.Info);
+            }
 
             UpdateRecentList(path, false, pckReader.IsEncrypted, true, PCKUtils.ByteArrayToHexString(pckReader.ReceivedEncryptionKey));
         }
@@ -562,9 +607,22 @@ namespace GodotPCKExplorer.UI
 
         private void checkMD5OnExportToolStripMenuItem_Click(object? sender, EventArgs e)
         {
-
             GUIConfig.Instance.CheckMD5Extracted = checkMD5OnExportToolStripMenuItem.Checked;
             GUIConfig.Instance.Save();
+        }
+
+        private void ifNoEncKeyMode_Shared_Click(object sender, EventArgs e)
+        {
+            var idx = noEncKeyModeMenus.IndexOf((ToolStripMenuItem)sender);
+            if (idx != -1)
+            {
+                GUIConfig.Instance.IfNoEncryptionKeyMode = (PCKExtractNoEncryptionKeyMode)idx;
+                UpdateIfNoEncKeyModeMenus();
+            }
+            else
+            {
+                throw new NotImplementedException("Invalid mode index!");
+            }
         }
 
         private void ripPackFromFileToolStripMenuItem_Click(object? sender, EventArgs e)
@@ -679,7 +737,7 @@ namespace GodotPCKExplorer.UI
 
         private void dataGridView1_CellMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Right)
+            if (e.Button == MouseButtons.Right && e.RowIndex >= 0)
             {
                 if (dataGridView1.SelectedRows.Count <= 1)
                 {

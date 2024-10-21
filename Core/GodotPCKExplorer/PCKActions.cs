@@ -273,7 +273,7 @@ namespace GodotPCKExplorer
         /// <param name="encKey">The encryption key, if the PCK is encrypted.</param>
         /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
         /// <returns><c>true</c> if successful</returns>
-        public static bool Extract(string filePath, string dirPath, bool overwriteExisting = true, IEnumerable<string>? files = null, bool check_md5 = true, string? encKey = null, CancellationToken? cancellationToken = null)
+        public static bool Extract(string filePath, string dirPath, bool overwriteExisting = true, IEnumerable<string>? files = null, bool check_md5 = true, string? encKey = null, PCKExtractNoEncryptionKeyMode noKeyMode = PCKExtractNoEncryptionKeyMode.Cancel, CancellationToken? cancellationToken = null)
         {
             progress?.Log("Extract PCK started");
             progress?.Log($"Input file: {filePath}");
@@ -289,23 +289,28 @@ namespace GodotPCKExplorer
 
                 if (pckReader.OpenFile(filePath, getEncryptionKey: getEncKey))
                 {
-                    List<string> extractedFiles = new List<string>();
+                    List<string> extractedFiles;
+                    List<string> failedFiles;
                     if (files != null)
                         return pckReader.ExtractFiles(
                             names: files,
                             extractedFiles: out extractedFiles,
+                            failedFiles: out failedFiles,
                             folder: dirPath,
                             overwriteExisting: overwriteExisting,
                             checkMD5: check_md5,
                             getEncryptionKey: getEncKey,
+                            noKeyMode: noKeyMode,
                             cancellationToken: cancellationToken);
                     else
                         return pckReader.ExtractAllFiles(
                             extractedFiles: out extractedFiles,
+                            failedFiles: out failedFiles,
                             folder: dirPath,
                             overwriteExisting: overwriteExisting,
                             checkMD5: check_md5,
                             getEncryptionKey: getEncKey,
+                            noKeyMode: noKeyMode,
                             cancellationToken: cancellationToken);
                 }
                 else

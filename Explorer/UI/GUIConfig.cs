@@ -43,8 +43,9 @@ namespace GodotPCKExplorer.UI
 
         #region Extract
 
-        public bool OverwriteExtracted { get; set; } = true;
+        public bool OverwriteExtracted { get; set; } = false;
         public bool CheckMD5Extracted { get; set; } = true;
+        public PCKExtractNoEncryptionKeyMode IfNoEncryptionKeyMode { get; set; } = PCKExtractNoEncryptionKeyMode.Cancel;
 
         #endregion
 
@@ -81,6 +82,7 @@ namespace GodotPCKExplorer.UI
 
             bool overwriteExtracted,
             bool checkMD5Extracted,
+            PCKExtractNoEncryptionKeyMode ifNoEncryptionKeyMode,
 
             List<RecentFiles> recentOpenedFiles,
             bool matchCaseFilterMainForm,
@@ -104,6 +106,7 @@ namespace GodotPCKExplorer.UI
 
             OverwriteExtracted = overwriteExtracted;
             CheckMD5Extracted = checkMD5Extracted;
+            IfNoEncryptionKeyMode = ifNoEncryptionKeyMode;
 
             RecentOpenedFiles = recentOpenedFiles;
             MatchCaseFilterMainForm = matchCaseFilterMainForm;

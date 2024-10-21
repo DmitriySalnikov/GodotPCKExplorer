@@ -31,6 +31,7 @@
             components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ExplorerMainForm));
             DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
             menuStrip1 = new MenuStrip();
             fileToolStripMenuItem = new ToolStripMenuItem();
             openFileToolStripMenuItem = new ToolStripMenuItem();
@@ -53,6 +54,10 @@
             extractAllToolStripMenuItem = new ToolStripMenuItem();
             overwriteExported = new ToolStripMenuItem();
             checkMD5OnExportToolStripMenuItem = new ToolStripMenuItem();
+            toolStripMenuItem1 = new ToolStripMenuItem();
+            ifNoEncKeyMode_Cancel = new ToolStripMenuItem();
+            ifNoEncKeyMode_Skip = new ToolStripMenuItem();
+            ifNoEncKeyMode_AsIs = new ToolStripMenuItem();
             integrationToolStripMenuItem = new ToolStripMenuItem();
             registerProgram_ToolStripMenuItem = new ToolStripMenuItem();
             showConsoleToolStripMenuItem = new ToolStripMenuItem();
@@ -66,9 +71,6 @@
             ofd_open_pack = new OpenFileDialog();
             fbd_extract_folder = new FolderBrowserDialog();
             dataGridView1 = new DataGridView();
-            path = new DataGridViewTextBoxColumn();
-            offset = new DataGridViewTextBoxColumn();
-            size = new DataGridViewTextBoxColumn();
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
             tssl_selected_size = new ToolStripStatusLabel();
@@ -89,6 +91,10 @@
             ofd_merge_pck = new OpenFileDialog();
             ofd_merge_target = new OpenFileDialog();
             ofd_change_version = new OpenFileDialog();
+            path = new DataGridViewTextBoxColumn();
+            offset = new DataGridViewTextBoxColumn();
+            size = new DataGridViewTextBoxColumn();
+            encrypted = new DataGridViewTextBoxColumn();
             menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
             statusStrip1.SuspendLayout();
@@ -213,7 +219,7 @@
             // 
             // extractToolStripMenuItem
             // 
-            extractToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { extractFileToolStripMenuItem, extractFilteredToolStripMenuItem, extractAllToolStripMenuItem, overwriteExported, checkMD5OnExportToolStripMenuItem });
+            extractToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { extractFileToolStripMenuItem, extractFilteredToolStripMenuItem, extractAllToolStripMenuItem, overwriteExported, checkMD5OnExportToolStripMenuItem, toolStripMenuItem1 });
             extractToolStripMenuItem.Name = "extractToolStripMenuItem";
             extractToolStripMenuItem.Size = new Size(55, 23);
             extractToolStripMenuItem.Text = "Extract";
@@ -221,21 +227,21 @@
             // extractFileToolStripMenuItem
             // 
             extractFileToolStripMenuItem.Name = "extractFileToolStripMenuItem";
-            extractFileToolStripMenuItem.Size = new Size(226, 22);
+            extractFileToolStripMenuItem.Size = new Size(245, 22);
             extractFileToolStripMenuItem.Text = "Extract Selected";
             extractFileToolStripMenuItem.Click += extractFileToolStripMenuItem_Click;
             // 
             // extractFilteredToolStripMenuItem
             // 
             extractFilteredToolStripMenuItem.Name = "extractFilteredToolStripMenuItem";
-            extractFilteredToolStripMenuItem.Size = new Size(226, 22);
+            extractFilteredToolStripMenuItem.Size = new Size(245, 22);
             extractFilteredToolStripMenuItem.Text = "Extract Filtered";
             extractFilteredToolStripMenuItem.Click += extractFilteredToolStripMenuItem_Click;
             // 
             // extractAllToolStripMenuItem
             // 
             extractAllToolStripMenuItem.Name = "extractAllToolStripMenuItem";
-            extractAllToolStripMenuItem.Size = new Size(226, 22);
+            extractAllToolStripMenuItem.Size = new Size(245, 22);
             extractAllToolStripMenuItem.Text = "Extract All";
             extractAllToolStripMenuItem.Click += extractAllToolStripMenuItem_Click;
             // 
@@ -243,7 +249,7 @@
             // 
             overwriteExported.CheckOnClick = true;
             overwriteExported.Name = "overwriteExported";
-            overwriteExported.Size = new Size(226, 22);
+            overwriteExported.Size = new Size(245, 22);
             overwriteExported.Text = "Overwrite exported files?";
             overwriteExported.Click += overwriteExported_Click;
             // 
@@ -251,10 +257,38 @@
             // 
             checkMD5OnExportToolStripMenuItem.CheckOnClick = true;
             checkMD5OnExportToolStripMenuItem.Name = "checkMD5OnExportToolStripMenuItem";
-            checkMD5OnExportToolStripMenuItem.Size = new Size(226, 22);
+            checkMD5OnExportToolStripMenuItem.Size = new Size(245, 22);
             checkMD5OnExportToolStripMenuItem.Text = "Check MD5 when exporting?";
             checkMD5OnExportToolStripMenuItem.ToolTipText = "Only for Godot 4+";
             checkMD5OnExportToolStripMenuItem.Click += checkMD5OnExportToolStripMenuItem_Click;
+            // 
+            // toolStripMenuItem1
+            // 
+            toolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { ifNoEncKeyMode_Cancel, ifNoEncKeyMode_Skip, ifNoEncKeyMode_AsIs });
+            toolStripMenuItem1.Name = "toolStripMenuItem1";
+            toolStripMenuItem1.Size = new Size(245, 22);
+            toolStripMenuItem1.Text = "If no encryption key is specified?";
+            // 
+            // ifNoEncKeyMode_Cancel
+            // 
+            ifNoEncKeyMode_Cancel.Name = "ifNoEncKeyMode_Cancel";
+            ifNoEncKeyMode_Cancel.Size = new Size(176, 22);
+            ifNoEncKeyMode_Cancel.Text = "Cancel extraction";
+            ifNoEncKeyMode_Cancel.Click += ifNoEncKeyMode_Shared_Click;
+            // 
+            // ifNoEncKeyMode_Skip
+            // 
+            ifNoEncKeyMode_Skip.Name = "ifNoEncKeyMode_Skip";
+            ifNoEncKeyMode_Skip.Size = new Size(176, 22);
+            ifNoEncKeyMode_Skip.Text = "Skip encrypted files";
+            ifNoEncKeyMode_Skip.Click += ifNoEncKeyMode_Shared_Click;
+            // 
+            // ifNoEncKeyMode_AsIs
+            // 
+            ifNoEncKeyMode_AsIs.Name = "ifNoEncKeyMode_AsIs";
+            ifNoEncKeyMode_AsIs.Size = new Size(176, 22);
+            ifNoEncKeyMode_AsIs.Text = "Extract as is";
+            ifNoEncKeyMode_AsIs.Click += ifNoEncKeyMode_Shared_Click;
             // 
             // integrationToolStripMenuItem
             // 
@@ -351,7 +385,7 @@
             dataGridView1.AllowUserToResizeRows = false;
             dataGridView1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dataGridView1.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridView1.Columns.AddRange(new DataGridViewColumn[] { path, offset, size });
+            dataGridView1.Columns.AddRange(new DataGridViewColumn[] { path, offset, size, encrypted });
             dataGridView1.EditMode = DataGridViewEditMode.EditProgrammatically;
             dataGridView1.Location = new Point(0, 31);
             dataGridView1.Margin = new Padding(4, 0, 4, 0);
@@ -362,30 +396,6 @@
             dataGridView1.TabIndex = 2;
             dataGridView1.CellMouseClick += dataGridView1_CellMouseClick;
             dataGridView1.SortCompare += dataGridView1_SortCompare;
-            // 
-            // path
-            // 
-            path.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
-            path.FillWeight = 70F;
-            path.HeaderText = "Path";
-            path.Name = "path";
-            path.ReadOnly = true;
-            // 
-            // offset
-            // 
-            offset.FillWeight = 13F;
-            offset.HeaderText = "Offset";
-            offset.Name = "offset";
-            offset.ReadOnly = true;
-            // 
-            // size
-            // 
-            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleRight;
-            size.DefaultCellStyle = dataGridViewCellStyle1;
-            size.FillWeight = 13F;
-            size.HeaderText = "Size";
-            size.Name = "size";
-            size.ReadOnly = true;
             // 
             // statusStrip1
             // 
@@ -498,6 +508,43 @@
             // 
             ofd_change_version.Title = "Select the file containing .pck";
             // 
+            // path
+            // 
+            path.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            path.FillWeight = 70F;
+            path.HeaderText = "Path";
+            path.Name = "path";
+            path.ReadOnly = true;
+            // 
+            // offset
+            // 
+            offset.FillWeight = 13F;
+            offset.HeaderText = "Offset";
+            offset.Name = "offset";
+            offset.ReadOnly = true;
+            // 
+            // size
+            // 
+            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleRight;
+            size.DefaultCellStyle = dataGridViewCellStyle1;
+            size.FillWeight = 13F;
+            size.HeaderText = "Size";
+            size.Name = "size";
+            size.ReadOnly = true;
+            // 
+            // encrypted
+            // 
+            encrypted.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle2.Font = new Font("Microsoft Sans Serif", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 204);
+            encrypted.DefaultCellStyle = dataGridViewCellStyle2;
+            encrypted.HeaderText = "Encrypted";
+            encrypted.MaxInputLength = 1;
+            encrypted.MinimumWidth = 30;
+            encrypted.Name = "encrypted";
+            encrypted.ReadOnly = true;
+            encrypted.Width = 30;
+            // 
             // ExplorerMainForm
             // 
             AllowDrop = true;
@@ -540,9 +587,6 @@
         private ToolStripMenuItem closeFileToolStripMenuItem;
         private ToolStripSeparator toolStripSeparator1;
         private ToolStripSeparator toolStripSeparator2;
-        private DataGridViewTextBoxColumn path;
-        private DataGridViewTextBoxColumn offset;
-        private DataGridViewTextBoxColumn size;
         private ToolStripMenuItem integrationToolStripMenuItem;
         private ToolStripMenuItem registerProgram_ToolStripMenuItem;
         private StatusStrip statusStrip1;
@@ -585,6 +629,14 @@
         private ToolStripMenuItem checkUpdates_toolStripMenuItem1;
         private ToolStripMenuItem toolStripMenuItem_clearFilter;
         private ToolStripMenuItem extractFilteredToolStripMenuItem;
+        private ToolStripMenuItem toolStripMenuItem1;
+        private ToolStripMenuItem ifNoEncKeyMode_Cancel;
+        private ToolStripMenuItem ifNoEncKeyMode_Skip;
+        private ToolStripMenuItem ifNoEncKeyMode_AsIs;
+        private DataGridViewTextBoxColumn path;
+        private DataGridViewTextBoxColumn offset;
+        private DataGridViewTextBoxColumn size;
+        private DataGridViewTextBoxColumn encrypted;
     }
 }
 
