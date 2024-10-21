@@ -277,7 +277,7 @@ namespace GodotPCKExplorer
 
                 try
                 {
-                    files.Add(new PCKPackerRegularFile(f, f.Replace(basePath + Path.DirectorySeparatorChar, "res://").Replace("\\", "/")));
+                    files.Add(new PCKPackerRegularFile(f, GetResFilePath(f.Replace(basePath + Path.DirectorySeparatorChar, ""), "")));
                     PCKActions.progress?.LogProgress(op, f);
                     PCKActions.progress?.LogProgress(op, files.Count, "Found files: ");
                 }

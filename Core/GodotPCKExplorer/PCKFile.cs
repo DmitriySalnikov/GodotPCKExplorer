@@ -61,9 +61,6 @@ namespace GodotPCKExplorer
 
         public bool ExtractFile(string basePath, out string extractPath, out bool skippedExisted, bool overwriteExisting = true, byte[]? encKey = null, PCKExtractNoEncryptionKeyMode noKeyMode = PCKExtractNoEncryptionKeyMode.Cancel, CancellationToken? cancellationToken = null)
         {
-            // TODO add tests for user
-            // TODO add tests for skipped
-            // TODO add tests for as is
             string path = extractPath = Path.GetFullPath(Path.Combine(basePath, FilePath.Replace(PCKUtils.PathPrefixRes, "").Replace(PCKUtils.PathPrefixUser, "@@user@@/")));
             string op = "Extracting file";
 

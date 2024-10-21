@@ -67,6 +67,10 @@ namespace GodotPCKExplorer
         {
             get => PCK_ContainsEncryptedFiles;
         }
+        public BinaryReader? ReaderStream
+        {
+            get => binReader;
+        }
 
         ~PCKReader()
         {

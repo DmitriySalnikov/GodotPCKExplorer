@@ -178,6 +178,8 @@ namespace Tests
             string out_exe = Path.ChangeExtension(newPckPath, ExecutableExtension);
             string extractTestPrefix = Path.Combine(binaries, "ExtractTestPrefix");
             string testPrefixPCK = Path.Combine(binaries, "TestPrefix.pck");
+            string extractTestUserPck = Path.Combine(binaries, "TestUser.pck");
+            string extractTestUserPath = Path.Combine(binaries, "ExtractUser");
 
             Title("Extract");
             Assert.That(PCKActions.Extract(testPCK, extractTestPath, true), Is.True);
@@ -200,7 +202,7 @@ namespace Tests
             // select at least one file
             var rnd = new Random();
             var first = false;
-            var seleceted_files = list_of_files.Where((f) =>
+            var seleceted_files = list_of_files.Where(f =>
             {
                 if (!first)
                 {
@@ -324,6 +326,46 @@ namespace Tests
 
                 foreach (var f in pck.Files.Keys)
                     Assert.That(seleceted_files.FindIndex((l) => l.Path == f), Is.Not.EqualTo(-1));
+            }
+
+            Title("Pack and Extract PCK with User dir");
+            {
+                var user_test_file = "test.empty";
+                var user_test_file_dir_path = Path.Combine(extractTestPath, "@@user@@", user_test_file).Replace("\\", "/");
+
+                var user_test_wrong_file = "test2.empty";
+                var user_test_wrong_file_local_path = Path.Combine("somefolder", "@@user@@", user_test_wrong_file).Replace("\\", "/");
+                var user_test_wrong_file_dir_path = Path.Combine(extractTestPath, user_test_wrong_file_local_path).Replace("\\", "/");
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(user_test_file_dir_path)!);
+                    Directory.CreateDirectory(Path.GetDirectoryName(user_test_wrong_file_dir_path)!);
+                    using var f = File.Create(user_test_file_dir_path);
+                    using var f2 = File.Create(user_test_wrong_file_dir_path);
+                }
+                Assert.That(PCKActions.Pack(extractTestPath, extractTestUserPck, ver), Is.True);
+                Assert.That(PCKActions.Extract(extractTestUserPck, extractTestUserPath), Is.True);
+
+                var list_of_files_user = PCKUtils.GetListOfFilesToPack(Path.GetFullPath(extractTestUserPath));
+                {
+                    using var pck = new PCKReader();
+
+                    Assert.That(pck.OpenFile(extractTestUserPck), Is.True);
+                    Assert.That(list_of_files_user, Has.Count.EqualTo(pck.Files.Count));
+
+                    Assert.That(list_of_files_user.Find(i => i.Path == PCKUtils.PathPrefixUser + user_test_file) != null, Is.True);
+                    Assert.That(pck.Files.ContainsKey(PCKUtils.PathPrefixUser + user_test_file), Is.True);
+
+
+                    // only @@user@@ in root allowed
+                    Assert.That(list_of_files_user.Find(i => i.Path == PCKUtils.PathPrefixUser + user_test_wrong_file) != null, Is.False);
+                    Assert.That(pck.Files.ContainsKey(PCKUtils.PathPrefixUser + user_test_wrong_file), Is.False);
+                    // check for wrong files in res://somefolder/@@user@@
+                    Assert.That(list_of_files_user.Find(i => i.Path == PCKUtils.PathPrefixRes + user_test_wrong_file_local_path) != null, Is.True);
+                    Assert.That(pck.Files.ContainsKey(PCKUtils.PathPrefixRes + user_test_wrong_file_local_path), Is.True);
+
+                    foreach (var f in list_of_files_user)
+                        Assert.That(pck.Files.ContainsKey(f.Path), Is.True);
+                }
             }
 
             Title("Good run");
@@ -633,6 +675,13 @@ namespace Tests
             TUtils.CopyFile(Path.Combine(binaries, Exe("Test")), exe_ripped);
             TUtils.CopyFile(Path.Combine(binaries, Exe("Test")), exe_new_wrong_key);
 
+            string[] original_files = null!;
+            {
+                using var pckReader = new PCKReader();
+                pckReader.OpenFile(pck, getEncryptionKey: () => new PCKReaderEncryptionKeyResult() { Key = enc_key });
+                original_files = [.. pckReader.Files.Select(f => f.Value.FilePath).Order()];
+            }
+
             Title("PCK info");
             Assert.That(PCKActions.PrintInfo(pck, true, enc_key), Is.True);
             Title("PCK info wrong");
@@ -662,6 +711,30 @@ namespace Tests
             Assert.That(PCKActions.Extract(pck_new_files, extracted, true, encKey: enc_key), Is.True);
             Title("Extract PCK. Encrypted only files");
             Assert.That(PCKActions.Extract(pck_new_files, extracted, true), Is.False);
+            Title("Extract PCK no Key skip");
+            Assert.That(PCKActions.Extract(pck_new_files, extracted + "Skip", true, encKey: "", noKeyMode: PCKExtractNoEncryptionKeyMode.Skip), Is.True);
+            Assert.That(Directory.Exists(extracted + "Skip"), Is.False); // If the files are not extracted, the folder is not created
+            Title("Extract PCK no Key encrypted");
+            Assert.That(PCKActions.Extract(pck_new_files, extracted + "Encrypted", true, encKey: "", noKeyMode: PCKExtractNoEncryptionKeyMode.AsIs), Is.True);
+            // AsIs creates .encrypted copies
+            Assert.That(PCKUtils.GetListOfFilesToPack(extracted + "Encrypted").Select(f => f.Path).Order().SequenceEqual(original_files.Select(f => f + ".encrypted")), Is.True);
+            // Test MD5 for all files
+            var new_md5s = PCKUtils.GetListOfFilesToPack(extracted + "Encrypted").OrderBy(f => f.Path).Select(f => { f.CalculateMD5(); return PCKUtils.ByteArrayToHexString(f.MD5); }).ToArray();
+            string[] orig_md5s;
+            {
+                PCKFile[] ordered_files = null!;
+                using var pckReader = new PCKReader();
+                pckReader.OpenFile(pck_new_files, getEncryptionKey: () => new PCKReaderEncryptionKeyResult() { Key = enc_key });
+                ordered_files = [.. pckReader.Files.Select(f => f.Value).OrderBy(f => f.FilePath)];
+
+                orig_md5s = ordered_files.Select(f =>
+                {
+                    pckReader.ReaderStream!.BaseStream.Seek(f.Offset, SeekOrigin.Begin);
+                    using var enc_file = new PCKEncryptedReader(pckReader.ReaderStream!, []);
+                    return PCKUtils.ByteArrayToHexString(PCKUtils.GetStreamMD5(pckReader.ReaderStream!.BaseStream, f.Offset, f.Offset + PCKEncryptedReader.EncryptionHeaderSize + enc_file.DataSizeEncoded));
+                }).ToArray();
+            }
+            Assert.That(new_md5s.SequenceEqual(orig_md5s), Is.True);
 
             Title("PCK good test runs");
 
