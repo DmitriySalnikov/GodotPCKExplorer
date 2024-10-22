@@ -67,6 +67,7 @@ namespace GodotPCKExplorer
         {
             OriginalFile = o_file;
             Size = o_file.Size;
+            IsEncrypted = o_file.IsEncrypted;
         }
 
         public override void CalculateMD5()
@@ -133,7 +134,7 @@ namespace GodotPCKExplorer
                 return false;
             }
 
-            bool encryptFiles = files.Any(f => f.IsEncrypted);
+            bool encryptFiles = files.Any(f => f is PCKPackerRegularFile && f.IsEncrypted);
 
             if (godotVersion.PackVersion == PCKUtils.PCK_VERSION_GODOT_3)
             {

@@ -27,6 +27,22 @@ namespace Tests
             }
         }
 
+        public static void WaitForFileUnlock(string file, double waitForSec)
+        {
+            while (waitForSec > 0)
+            {
+                try
+                {
+                    var fileInfo = new FileInfo(file);
+                    using var w = fileInfo.OpenWrite();
+                    break;
+                }
+                catch { }
+                Thread.Sleep(100);
+                waitForSec -= 0.1;
+            }
+        }
+
         public static void FixPermissions(string path)
         {
             try

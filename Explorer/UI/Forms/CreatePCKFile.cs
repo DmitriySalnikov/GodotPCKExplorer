@@ -45,8 +45,8 @@ namespace GodotPCKExplorer.UI
                 stylePCKFileSize.Alignment = DataGridViewContentAlignment.MiddleRight;
             }
 
-            tb_folder_path.Text = GUIConfig.Instance.PackFolderPath;
-            tb_prefix.Text = GUIConfig.Instance.PackPathPrefix;
+            tb_folder_path.Text = currentSelectedDir = GUIConfig.Instance.PackFolderPath;
+            tb_prefix.Text = currentSelectedPrefix = GUIConfig.Instance.PackPathPrefix;
 
             MatchCaseNormal = btn_match_case.Font;
             MatchCaseStrikeout = new Font(btn_match_case.Font, FontStyle.Strikeout);
@@ -267,6 +267,12 @@ namespace GodotPCKExplorer.UI
             if (res == DialogResult.OK)
             {
                 bool p_res = false;
+
+                // TODO temp. Encrypt every real file if needed
+                foreach (var f in filesToPack)
+                    if (f.Value is PCKPackerRegularFile rf)
+                        rf.IsEncrypted = cb_enable_encryption.Checked && GUIConfig.Instance.PackEncryptFiles;
+
                 Program.DoTaskWithProgressBar((t) =>
                 {
                     if (cb_enable_encryption.Checked)

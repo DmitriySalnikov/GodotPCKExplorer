@@ -152,6 +152,45 @@ namespace Tests
         }
         */
 
+        void CompareRealFilesAndPCK(string folder, string origPck, string newPck, bool compareMD5Raw, string? encKey = null, Func<string, string>? realFileNameChange = null)
+        {
+            string[] original_files = null!;
+            {
+                using var pckReader = new PCKReader();
+                pckReader.OpenFile(origPck, getEncryptionKey: () => new PCKReaderEncryptionKeyResult() { Key = encKey });
+                original_files = [.. pckReader.Files.Select(f => f.Value.FilePath).Order()];
+            }
+
+            // Compare all names
+            Assert.That(PCKUtils.GetListOfFilesToPack(folder).Select(f => f.Path).Order().SequenceEqual(original_files.Select(f => realFileNameChange == null ? f : realFileNameChange(f))), Is.True);
+
+            if (GodotVersion < 4)
+                return;
+
+            // Test MD5 for all files
+            var new_md5s = PCKUtils.GetListOfFilesToPack(folder).OrderBy(f => f.Path).Select(f => { f.CalculateMD5(); return PCKUtils.ByteArrayToHexString(f.MD5); }).ToArray();
+            string[] orig_md5s;
+            {
+                PCKReaderFile[] ordered_files = null!;
+                using var pckReader = new PCKReader();
+                pckReader.OpenFile(newPck, getEncryptionKey: () => new PCKReaderEncryptionKeyResult() { Key = encKey });
+                ordered_files = [.. pckReader.Files.Select(f => f.Value).OrderBy(f => f.FilePath)];
+
+                if (compareMD5Raw)
+                {
+                    orig_md5s = ordered_files.Select(f =>
+                    {
+                        return PCKUtils.ByteArrayToHexString(PCKUtils.GetStreamMD5(pckReader.ReaderStream!.BaseStream, f.Offset, f.Offset + f.ActualSize));
+                    }).ToArray();
+                }
+                else
+                {
+                    orig_md5s = ordered_files.Select(f => PCKUtils.ByteArrayToHexString(f.MD5)).ToArray();
+                }
+            }
+            Assert.That(new_md5s.SequenceEqual(orig_md5s), Is.True);
+        }
+
         [Test]
         public void TestInfoCommand()
         {
@@ -161,6 +200,82 @@ namespace Tests
             Assert.That(PCKActions.PrintInfo(Path.Combine(binaries, Exe("TestEmbedded")), true), Is.True);
             Title("Wrong path");
             Assert.That(PCKActions.PrintInfo(Path.Combine(binaries, "WrongPath/Test.pck")), Is.False);
+        }
+
+        [Test]
+        public void TestPatchingCommand()
+        {
+            TestPatchingCommandBody(false);
+        }
+
+        public void TestPatchingCommandBody(bool encrypted)
+        {
+            string extractTestPath = Path.Combine(binaries, "ExtractTest");
+            string testEXE = Path.Combine(binaries, Exe("Test"));
+            string testPCK = Path.Combine(binaries, "Test.pck");
+            string extractCheckPatch = Path.Combine(binaries, "ExtractCheckPatch");
+            string patchFolder = Path.Combine(binaries, "justForPatch");
+            string checkPatchPck = Path.Combine(binaries, "TestCheckPatch.pck");
+
+            var rnd = new Random();
+            string ver = GetPCKVersion(testPCK).ToString();
+            string encKey = encrypted ? "7FDBF68B69B838194A6F1055395225BBA3F1C5689D08D71DCD620A7068F61CBA" : "";
+            string wrong_encKey = encrypted ? "8FDBF68B69B838194A6F1055395225BBA3F1C5689D08D71DCD620A7068F61CBA" : "";
+
+            Title("Extract");
+            Assert.That(PCKActions.Extract(testPCK, extractTestPath, true), Is.True);
+            Assert.That(PCKActions.Extract(testPCK, extractCheckPatch, true), Is.True);
+
+            Title("Check Patched Prefixed Files");
+            {
+                var files = PCKUtils.GetListOfFilesToPack(extractCheckPatch);
+                var rndFile = files[rnd.Next(files.Count)];
+                var filePath = rndFile.OriginalPath;
+
+                using (var file = File.Open(filePath, FileMode.Create, FileAccess.Write, FileShare.Write))
+                {
+                    var bytes = new byte[256];
+                    rnd.NextBytes(bytes);
+                    file.Write(bytes);
+                }
+                Directory.CreateDirectory(patchFolder);
+                File.Copy(filePath, Path.Combine(patchFolder, Path.GetFileName(filePath)));
+                var prefix = (Path.GetDirectoryName(filePath) ?? "").Replace(extractCheckPatch, "").TrimStart(Path.DirectorySeparatorChar);
+                if (!string.IsNullOrWhiteSpace(prefix))
+                    prefix += Path.DirectorySeparatorChar;
+
+                // pack with prefix from another folder
+                Assert.That(PCKActions.Pack(patchFolder, checkPatchPck, ver, pckToPatch: testPCK, packPathPrefix: prefix, encKey: encKey, encFiles: encrypted), Is.True);
+                CompareRealFilesAndPCK(extractCheckPatch, testPCK, checkPatchPck, false, encKey: encKey);
+
+                // Same PCK
+                Assert.That(PCKActions.Pack(patchFolder, testPCK, ver, pckToPatch: testPCK), Is.False);
+
+                if (encrypted)
+                {
+                    using var pck = new PCKReader();
+                    Assert.That(pck.OpenFile(checkPatchPck), Is.True);
+                    Assert.That(pck.Files.Count(f => f.Value.IsEncrypted), Is.EqualTo(1));
+                }
+
+                // test MD5 of not touched PCK files
+                string[] getMd5s(string md5PCK)
+                {
+                    PCKReaderFile[] ordered_files = null!;
+                    using var pckReader = new PCKReader();
+                    pckReader.OpenFile(md5PCK, getEncryptionKey: () => new PCKReaderEncryptionKeyResult() { Key = encKey });
+                    ordered_files = [.. pckReader.Files.Where(f => f.Value.FilePath != rndFile.Path).Select(f => f.Value).OrderBy(f => f.FilePath)];
+
+                    return ordered_files.Select(f =>
+                    {
+                        return PCKUtils.ByteArrayToHexString(PCKUtils.GetStreamMD5(pckReader.ReaderStream!.BaseStream, f.Offset, f.Offset + f.ActualSize));
+                    }).ToArray();
+                }
+
+                string[] orig_md5s = getMd5s(testPCK);
+                string[] new_md5s = getMd5s(checkPatchPck);
+                Assert.That(new_md5s.SequenceEqual(orig_md5s), Is.True);
+            }
         }
 
         [Test]
@@ -474,11 +589,14 @@ namespace Tests
         public void TestRipPCK()
         {
             string new_exe = Path.Combine(binaries, Exe("TestRip"));
+            string new_exe_remove = Path.Combine(binaries, Exe("TestRipRemove"));
             string new_exe_old = Path.Combine(binaries, Exe("TestRip.old"));
+            string new_exe_remove_old = Path.Combine(binaries, Exe("TestRipRemove.old"));
             string new_pck = Path.Combine(binaries, "TestRip.pck");
             string locked_exe_str = Path.Combine(binaries, Exe("TestLockedRip"));
 
             TUtils.CopyFile(Path.Combine(binaries, Exe("TestEmbedded")), new_exe);
+            TUtils.CopyFile(Path.Combine(binaries, Exe("TestEmbedded")), new_exe_remove);
 
             Title("Rip embedded");
             Assert.That(PCKActions.Rip(new_exe, new_pck), Is.True);
@@ -500,11 +618,14 @@ namespace Tests
             Title("Rip PCK from exe");
             {
                 Assert.That(PCKActions.Rip(new_exe, null, true), Is.True);
+                Assert.That(PCKActions.Remove(new_exe_remove, true), Is.True);
                 Assert.That(File.Exists(new_exe_old), Is.False);
+                Assert.That(File.Exists(new_exe_remove_old), Is.False);
             }
 
             Title("Rip PCK from PCK");
             Assert.That(PCKActions.Rip(new_pck, null, true), Is.False);
+            Assert.That(PCKActions.Remove(new_exe_remove, true), Is.False);
 
             Title("Good run");
             using (var r = new RunGodotWithOutput(new_exe, DefaultGodotArgs))
@@ -715,25 +836,11 @@ namespace Tests
             Assert.That(PCKActions.Extract(pck_new_files, extracted + "Skip", true, encKey: "", noKeyMode: PCKExtractNoEncryptionKeyMode.Skip), Is.True);
             Assert.That(Directory.Exists(extracted + "Skip"), Is.False); // If the files are not extracted, the folder is not created
             Title("Extract PCK no Key encrypted");
-            // TODO move to func!!!
             Assert.That(PCKActions.Extract(pck_new_files, extracted + "Encrypted", true, encKey: "", noKeyMode: PCKExtractNoEncryptionKeyMode.AsIs), Is.True);
-            // AsIs creates .encrypted copies
-            Assert.That(PCKUtils.GetListOfFilesToPack(extracted + "Encrypted").Select(f => f.Path).Order().SequenceEqual(original_files.Select(f => f + ".encrypted")), Is.True);
-            // Test MD5 for all files
-            var new_md5s = PCKUtils.GetListOfFilesToPack(extracted + "Encrypted").OrderBy(f => f.Path).Select(f => { f.CalculateMD5(); return PCKUtils.ByteArrayToHexString(f.MD5); }).ToArray();
-            string[] orig_md5s;
-            {
-                PCKReaderFile[] ordered_files = null!;
-                using var pckReader = new PCKReader();
-                pckReader.OpenFile(pck_new_files, getEncryptionKey: () => new PCKReaderEncryptionKeyResult() { Key = enc_key });
-                ordered_files = [.. pckReader.Files.Select(f => f.Value).OrderBy(f => f.FilePath)];
+            CompareRealFilesAndPCK(extracted + "Encrypted", pck, pck_new_files, true, enc_key, f => f + ".encrypted");
 
-                orig_md5s = ordered_files.Select(f =>
-                {
-                    return PCKUtils.ByteArrayToHexString(PCKUtils.GetStreamMD5(pckReader.ReaderStream!.BaseStream, f.Offset, f.Offset + f.ActualSize));
-                }).ToArray();
-            }
-            Assert.That(new_md5s.SequenceEqual(orig_md5s), Is.True);
+            Title("Patching");
+            TestPatchingCommandBody(true);
 
             Title("PCK good test runs");
 

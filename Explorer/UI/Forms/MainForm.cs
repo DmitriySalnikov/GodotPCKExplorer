@@ -11,10 +11,16 @@ namespace GodotPCKExplorer.UI
         readonly VersionCheckerGitHub versionCheckerGitHub = new("DmitriySalnikov", "GodotPCKExplorer", GlobalConstants.ProjectName, ShowMessageBoxForVersionCheck);
         readonly List<ToolStripMenuItem> noEncKeyModeMenus = [];
 
+        string onLoadOpenPCKFile = "";
+        string? onLoadOpenPCKFileEncKey = null;
+
         long TotalOpenedSize = 0;
 
-        public ExplorerMainForm()
+        public ExplorerMainForm(string openFile = "", string? encKey = null)
         {
+            onLoadOpenPCKFile = openFile;
+            onLoadOpenPCKFileEncKey = encKey;
+
             InitializeComponent();
             Icon = Properties.Resources.icon;
             FormBaseTitle = Text;
@@ -415,6 +421,16 @@ namespace GodotPCKExplorer.UI
                 tsmi_match_case_filter.Font = MatchCaseStrikeout;
         }
 
+        private void ExplorerMainForm_Shown(object sender, EventArgs e)
+        {
+            if (!string.IsNullOrWhiteSpace(onLoadOpenPCKFile))
+            {
+                OpenFile(onLoadOpenPCKFile, onLoadOpenPCKFileEncKey);
+                onLoadOpenPCKFile = "";
+                onLoadOpenPCKFileEncKey = null;
+            }
+        }
+
         private void exitToolStripMenuItem_Click(object? sender, EventArgs e)
         {
             Close();
@@ -690,8 +706,7 @@ namespace GodotPCKExplorer.UI
 
                 if (ofd_merge_target.ShowDialog(this) == DialogResult.OK)
                 {
-                    Program.DoTaskWithProgressBar((t) => PCKActions.Merge(ofd_merge_pck.FileName, ofd_merge_target.FileName, cancellationToken: t),
-                        this);
+                    Program.DoTaskWithProgressBar((t) => PCKActions.Merge(ofd_merge_pck.FileName, ofd_merge_target.FileName, cancellationToken: t), this);
                 }
             }
         }
@@ -700,8 +715,7 @@ namespace GodotPCKExplorer.UI
         {
             if (ofd_remove_pck_from_exe.ShowDialog(this) == DialogResult.OK)
             {
-                Program.DoTaskWithProgressBar((t) => PCKActions.Rip(ofd_remove_pck_from_exe.FileName, cancellationToken: t),
-                        this);
+                Program.DoTaskWithProgressBar((t) => PCKActions.Remove(ofd_remove_pck_from_exe.FileName, cancellationToken: t), this);
             }
         }
 
@@ -709,8 +723,7 @@ namespace GodotPCKExplorer.UI
         {
             if (ofd_split_in_place.ShowDialog(this) == DialogResult.OK)
             {
-                Program.DoTaskWithProgressBar((t) => PCKActions.Split(ofd_split_in_place.FileName, null, false, cancellationToken: t),
-                        this);
+                Program.DoTaskWithProgressBar((t) => PCKActions.Split(ofd_split_in_place.FileName, null, false, cancellationToken: t), this);
             }
         }
 

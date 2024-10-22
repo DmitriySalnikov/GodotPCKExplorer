@@ -71,6 +71,10 @@
             ofd_open_pack = new OpenFileDialog();
             fbd_extract_folder = new FolderBrowserDialog();
             dataGridView1 = new DataGridView();
+            path = new DataGridViewTextBoxColumn();
+            offset = new DataGridViewTextBoxColumn();
+            size = new DataGridViewTextBoxColumn();
+            encrypted = new DataGridViewTextBoxColumn();
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
             tssl_selected_size = new ToolStripStatusLabel();
@@ -91,10 +95,6 @@
             ofd_merge_pck = new OpenFileDialog();
             ofd_merge_target = new OpenFileDialog();
             ofd_change_version = new OpenFileDialog();
-            path = new DataGridViewTextBoxColumn();
-            offset = new DataGridViewTextBoxColumn();
-            size = new DataGridViewTextBoxColumn();
-            encrypted = new DataGridViewTextBoxColumn();
             menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
             statusStrip1.SuspendLayout();
@@ -397,6 +397,43 @@
             dataGridView1.CellMouseClick += dataGridView1_CellMouseClick;
             dataGridView1.SortCompare += dataGridView1_SortCompare;
             // 
+            // path
+            // 
+            path.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            path.FillWeight = 70F;
+            path.HeaderText = "Path";
+            path.Name = "path";
+            path.ReadOnly = true;
+            // 
+            // offset
+            // 
+            offset.FillWeight = 13F;
+            offset.HeaderText = "Offset";
+            offset.Name = "offset";
+            offset.ReadOnly = true;
+            // 
+            // size
+            // 
+            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleRight;
+            size.DefaultCellStyle = dataGridViewCellStyle1;
+            size.FillWeight = 13F;
+            size.HeaderText = "Size";
+            size.Name = "size";
+            size.ReadOnly = true;
+            // 
+            // encrypted
+            // 
+            encrypted.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle2.Font = new Font("Microsoft Sans Serif", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 204);
+            encrypted.DefaultCellStyle = dataGridViewCellStyle2;
+            encrypted.HeaderText = "Encrypted";
+            encrypted.MaxInputLength = 1;
+            encrypted.MinimumWidth = 30;
+            encrypted.Name = "encrypted";
+            encrypted.ReadOnly = true;
+            encrypted.Width = 30;
+            // 
             // statusStrip1
             // 
             statusStrip1.Items.AddRange(new ToolStripItem[] { toolStripStatusLabel1, tssl_selected_size, tssl_version_and_stats });
@@ -508,43 +545,6 @@
             // 
             ofd_change_version.Title = "Select the file containing .pck";
             // 
-            // path
-            // 
-            path.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
-            path.FillWeight = 70F;
-            path.HeaderText = "Path";
-            path.Name = "path";
-            path.ReadOnly = true;
-            // 
-            // offset
-            // 
-            offset.FillWeight = 13F;
-            offset.HeaderText = "Offset";
-            offset.Name = "offset";
-            offset.ReadOnly = true;
-            // 
-            // size
-            // 
-            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleRight;
-            size.DefaultCellStyle = dataGridViewCellStyle1;
-            size.FillWeight = 13F;
-            size.HeaderText = "Size";
-            size.Name = "size";
-            size.ReadOnly = true;
-            // 
-            // encrypted
-            // 
-            encrypted.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
-            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle2.Font = new Font("Microsoft Sans Serif", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 204);
-            encrypted.DefaultCellStyle = dataGridViewCellStyle2;
-            encrypted.HeaderText = "Encrypted";
-            encrypted.MaxInputLength = 1;
-            encrypted.MinimumWidth = 30;
-            encrypted.Name = "encrypted";
-            encrypted.ReadOnly = true;
-            encrypted.Width = 30;
-            // 
             // ExplorerMainForm
             // 
             AllowDrop = true;
@@ -560,6 +560,7 @@
             Name = "ExplorerMainForm";
             Text = "Godot PCK Explorer";
             FormClosing += Form1_FormClosing;
+            Shown += ExplorerMainForm_Shown;
             DragDrop += Form1_DragDrop;
             DragEnter += Form1_DragEnter;
             menuStrip1.ResumeLayout(false);

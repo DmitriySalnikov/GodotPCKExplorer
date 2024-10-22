@@ -329,9 +329,10 @@ namespace GodotPCKExplorer
         /// Pack the files into a new PCK file.
         /// </summary>
         /// <param name="dirPath">The directory from which the files will be recursively packed.</param>
-        /// <param name="filePath">The path to the new PCK file.</param>
+        /// <param name="outFilePath">The path to the new PCK file.</param>
         /// <param name="strVer">A version of the file. Format: [pack version].[godot major].[godot minor].[godot patch] e.g. <c>2.4.1.1</c></param>
-        /// <param name="packPathPrefix">The path prefix in the pack. For example, if the prefix is <c>test_folder/</c>, then the path <c>res://icon.png</c> is converted to <c>res://test_folder/icon.png</c>.</param>
+        /// <param name="pckToPatch">The path to the PCK file that will be used to create the patched PCK.</param>
+        /// <param name="packPathPrefix">The path prefix in the pack. For example, if the prefix is <c>test_folder/</c>, then the path <c>res://icon.png</c> is converted to <c>res://test_folder/icon.png</c>. Not applied to files from <see cref="pckToPatch"/></param>
         /// <param name="alignment">The address of each file will be aligned to this value.</param>
         /// <param name="embed">If enabled and an existing <see cref="filePath"/> is specified, then the PCK will be embedded into this file.</param>
         /// <param name="encKey">The encryption key if you want to encrypt a new PCK file.</param>
@@ -339,14 +340,47 @@ namespace GodotPCKExplorer
         /// <param name="encFiles">Whether to encrypt the contents of files.</param>
         /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
         /// <returns><c>true</c> if successful</returns>
-        public static bool Pack(string dirPath, string filePath, string strVer, string packPathPrefix = "", uint alignment = 16, bool embed = false, string? encKey = null, bool encIndex = false, bool encFiles = false, CancellationToken? cancellationToken = null)
+        public static bool Pack(string dirPath, string outFilePath, string strVer, string pckToPatch = "", string packPathPrefix = "", uint alignment = 16, bool embed = false, string? encKey = null, bool encIndex = false, bool encFiles = false, CancellationToken? cancellationToken = null)
         {
             if (Directory.Exists(dirPath))
             {
-                var files = PCKUtils.GetListOfFilesToPack(dirPath, packPathPrefix, cancellationToken);
+                if (outFilePath == pckToPatch)
+                {
+                    progress?.ShowMessage($"The path to the new file cannot be equal to the patch file", "Error", MessageType.Error);
+                    return false;
+                }
+
+                using var pckReader = new PCKReader();
+                PCKReaderEncryptionKeyResult getEncKey()
+                {
+                    return new PCKReaderEncryptionKeyResult() { Key = encKey ?? "" };
+                };
+
+                Dictionary<string, PCKPackerFile> files = new Dictionary<string, PCKPackerFile>();
+                if (!string.IsNullOrWhiteSpace(pckToPatch))
+                {
+                    if (pckReader.OpenFile(pckToPatch, getEncryptionKey: getEncKey, cancellationToken: cancellationToken))
+                    {
+                        // fill with original pck files
+                        foreach (var f in pckReader.Files)
+                            files[f.Key] = new PCKPackerPCKFile(f.Value);
+                    }
+                    else
+                    {
+                        progress?.ShowMessage($"The file that needs to be patched could not be opened.", "Error", MessageType.Error);
+                        return false;
+                    }
+                }
+
+                var scanFiles = PCKUtils.GetListOfFilesToPack(dirPath, packPathPrefix, cancellationToken);
                 if (encFiles)
-                    files.ForEach(f => f.IsEncrypted = true);
-                return Pack(files, filePath, strVer, alignment, embed, encKey, encIndex, cancellationToken);
+                    scanFiles.ForEach(f => f.IsEncrypted = true);
+
+                // add new files or replace the originals from pck
+                foreach (var f in scanFiles)
+                    files[f.Path] = f;
+
+                return Pack(files.Values, outFilePath, strVer, alignment, embed, encKey, encIndex, cancellationToken);
             }
             else
             {
@@ -358,8 +392,8 @@ namespace GodotPCKExplorer
         /// <summary>
         /// Pack the files into a new PCK file.
         /// </summary>
-        /// <param name="files">A list of files to be packed. Must be in a valid "res://" or "user://" format.</param>
-        /// <param name="filePath">The path to the new PCK file.</param>
+        /// <param name="files">A list of files to be packed. Must be in a valid "res://" or "user://" format. See <see cref="PCKPackerPCKFile"/> to copy files from another PCK file.</param>
+        /// <param name="outFilePath">The path to the new PCK file.</param>
         /// <param name="strVer">A version of the file. Format: [pack version].[godot major].[godot minor].[godot patch] e.g. <c>2.4.1.1</c></param>
         /// <param name="alignment">The address of each file will be aligned to this value.</param>
         /// <param name="embed">If enabled and an existing <see cref="filePath"/> is specified, then the PCK will be embedded into this file.</param>
@@ -367,7 +401,7 @@ namespace GodotPCKExplorer
         /// <param name="encIndex">Whether to encrypt the index (list of contents).</param>
         /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
         /// <returns><c>true</c> if successful</returns>
-        public static bool Pack(IEnumerable<PCKPackerFile> files, string filePath, string strVer, uint alignment = 16, bool embed = false, string? encKey = null, bool encIndex = false, CancellationToken? cancellationToken = null)
+        public static bool Pack(IEnumerable<PCKPackerFile> files, string outFilePath, string strVer, uint alignment = 16, bool embed = false, string? encKey = null, bool encIndex = false, CancellationToken? cancellationToken = null)
         {
             if (!files.Any())
             {
@@ -376,7 +410,7 @@ namespace GodotPCKExplorer
             }
 
             progress?.Log("Pack PCK started");
-            progress?.Log($"Output file: {filePath}");
+            progress?.Log($"Output file: {outFilePath}");
 
             var ver = new PCKVersion(strVer);
 
@@ -387,14 +421,14 @@ namespace GodotPCKExplorer
             }
 
             // create backup
-            var oldPCKFile = Path.ChangeExtension(filePath, "old" + Path.GetExtension(filePath));
+            var oldPCKFile = Path.ChangeExtension(outFilePath, "old" + Path.GetExtension(outFilePath));
             if (embed)
             {
                 try
                 {
                     if (File.Exists(oldPCKFile))
                         File.Delete(oldPCKFile);
-                    File.Copy(filePath, oldPCKFile);
+                    File.Copy(outFilePath, oldPCKFile);
                 }
                 catch (Exception ex)
                 {
@@ -404,7 +438,7 @@ namespace GodotPCKExplorer
                 }
             }
 
-            if (PCKPacker.PackFiles(filePath, embed, files, ver, alignment, PCKUtils.HexStringToByteArray(encKey), encIndex, cancellationToken))
+            if (PCKPacker.PackFiles(outFilePath, embed, files, ver, alignment, PCKUtils.HexStringToByteArray(encKey), encIndex, cancellationToken))
             {
                 return true;
             }
@@ -415,9 +449,9 @@ namespace GodotPCKExplorer
                     // restore backup
                     try
                     {
-                        if (File.Exists(filePath))
-                            File.Delete(filePath);
-                        File.Move(oldPCKFile, filePath);
+                        if (File.Exists(outFilePath))
+                            File.Delete(outFilePath);
+                        File.Move(oldPCKFile, outFilePath);
                     }
                     catch (Exception ex)
                     {
@@ -566,6 +600,19 @@ namespace GodotPCKExplorer
         }
 
         /// <summary>
+        /// Remove the PCK part from the file.
+        /// </summary>
+        /// <param name="exeFile">EXE or any other file that contains PCK inside.</param>
+        /// <param name="removeBackup">Whether to delete the backup if the operation completes successfully.</param>
+        /// <param name="showMessage">Whether to show messages when operations are completed successfully.</param>
+        /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
+        /// <returns><c>true</c> if successful</returns>
+        public static bool Remove(string exeFile, bool removeBackup = false, bool showMessage = true, CancellationToken? cancellationToken = null)
+        {
+            return Rip(exeFile, null, removeBackup, showMessage, cancellationToken);
+        }
+
+        /// <summary>
         /// Merge an existing PCK with an EXE or any other file.
         /// </summary>
         /// <param name="pckFile">Path to the PCK file.</param>
@@ -706,7 +753,7 @@ namespace GodotPCKExplorer
                 var pckName = Path.ChangeExtension(name, ".pck");
                 if (Rip(name, pckName, false, false, cancellationToken))
                 {
-                    if (Rip(name, null, removeBackup, false, cancellationToken))
+                    if (Remove(name, removeBackup, false, cancellationToken))
                     {
                         progress?.ShowMessage($"Split finished. Original file: \"{exeFile}\".\nNew files: \"{name}\" and \"{pckName}\"", "Progress", MessageType.Info);
                         return true;

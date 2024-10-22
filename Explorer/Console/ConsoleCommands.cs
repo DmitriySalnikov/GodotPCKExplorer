@@ -306,7 +306,7 @@ namespace GodotPCKExplorer.Cmd
                 }
             }
 
-            var res = PCKActions.Pack(dirPath, filePath, strVer, prefix, 16, embed, encKey, encIndex, encFiles);
+            var res = PCKActions.Pack(dirPath, filePath, strVer, pckToPatch: "", packPathPrefix: prefix, alignment: 16, embed: embed, encKey: encKey, encIndex: encIndex, encFiles: encFiles);
             SetResult(res);
         }
 

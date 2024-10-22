@@ -291,9 +291,7 @@ Examples of valid commands:
         {
             if (mainForm == null)
             {
-                mainForm = new ExplorerMainForm();
-                mainForm.OpenFile(path, encKey);
-
+                mainForm = new ExplorerMainForm(path, encKey);
                 Application.Run(mainForm);
             }
             else

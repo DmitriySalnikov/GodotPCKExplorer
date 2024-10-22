@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Security.Cryptography;
 
 namespace Tests
 {
@@ -7,6 +6,7 @@ namespace Tests
     {
         readonly Process process;
         readonly Timer timer;
+        readonly string fileName;
         readonly string pwd;
         readonly string uid;
         readonly string uid_file;
@@ -15,6 +15,7 @@ namespace Tests
         {
             byte[] bytes = new byte[16];
             Random.Shared.NextBytes(bytes);
+            fileName = name;
             uid = Convert.ToHexString(bytes).Replace("-", "");
             pwd = Path.GetDirectoryName(name) ?? "";
             uid_file = Path.Combine(pwd, uid);
@@ -61,6 +62,8 @@ namespace Tests
                 var p = Process.Start("taskkill", $"/F /PID {process.Id}");
                 p.WaitForExit();
                 process.Kill();
+
+                TUtils.WaitForFileUnlock(fileName, 4);
             }
         }
 
