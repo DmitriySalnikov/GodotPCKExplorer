@@ -29,11 +29,10 @@
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
-            DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(CreatePCKFile));
+            DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
             dataGridView1 = new DataGridView();
-            filePath = new DataGridViewTextBoxColumn();
-            size = new DataGridViewTextBoxColumn();
             btn_create = new Button();
             l_total_size = new Label();
             sfd_save_pack = new SaveFileDialog();
@@ -64,6 +63,14 @@
             cb_previewPaths = new CheckBox();
             label5 = new Label();
             tb_prefix = new TextBox();
+            label6 = new Label();
+            tb_patch_target = new TextBox();
+            cb_enable_patching = new CheckBox();
+            btn_browse_patch_target = new Button();
+            ofd_patch_target = new OpenFileDialog();
+            filePath = new DataGridViewTextBoxColumn();
+            size = new DataGridViewTextBoxColumn();
+            patch = new DataGridViewTextBoxColumn();
             ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)nud_major).BeginInit();
             ((System.ComponentModel.ISupportInitialize)nud_minor).BeginInit();
@@ -76,39 +83,22 @@
             dataGridView1.AllowUserToAddRows = false;
             dataGridView1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dataGridView1.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridView1.Columns.AddRange(new DataGridViewColumn[] { filePath, size });
+            dataGridView1.Columns.AddRange(new DataGridViewColumn[] { filePath, size, patch });
             dataGridView1.EditMode = DataGridViewEditMode.EditProgrammatically;
-            dataGridView1.Location = new Point(0, 80);
+            dataGridView1.Location = new Point(0, 138);
             dataGridView1.Margin = new Padding(0, 3, 0, 3);
             dataGridView1.Name = "dataGridView1";
             dataGridView1.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dataGridView1.Size = new Size(850, 311);
+            dataGridView1.Size = new Size(850, 307);
             dataGridView1.TabIndex = 0;
             dataGridView1.SortCompare += dataGridView1_SortCompare;
             dataGridView1.UserDeletedRow += dataGridView1_UserDeletedRow;
-            // 
-            // filePath
-            // 
-            filePath.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
-            filePath.FillWeight = 85F;
-            filePath.HeaderText = "File Path";
-            filePath.Name = "filePath";
-            filePath.ReadOnly = true;
-            // 
-            // size
-            // 
-            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleRight;
-            size.DefaultCellStyle = dataGridViewCellStyle1;
-            size.FillWeight = 15F;
-            size.HeaderText = "Size";
-            size.Name = "size";
-            size.ReadOnly = true;
             // 
             // btn_create
             // 
             btn_create.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             btn_create.Font = new Font("Microsoft Sans Serif", 12F);
-            btn_create.Location = new Point(760, 398);
+            btn_create.Location = new Point(760, 452);
             btn_create.Margin = new Padding(4, 3, 4, 3);
             btn_create.Name = "btn_create";
             btn_create.Size = new Size(88, 79);
@@ -121,7 +111,7 @@
             // 
             l_total_size.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             l_total_size.AutoSize = true;
-            l_total_size.Location = new Point(14, 459);
+            l_total_size.Location = new Point(14, 513);
             l_total_size.Margin = new Padding(4, 0, 4, 0);
             l_total_size.Name = "l_total_size";
             l_total_size.Size = new Size(55, 15);
@@ -138,7 +128,7 @@
             // 
             label1.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             label1.AutoSize = true;
-            label1.Location = new Point(165, 458);
+            label1.Location = new Point(165, 512);
             label1.Margin = new Padding(4, 0, 4, 0);
             label1.Name = "label1";
             label1.Size = new Size(369, 15);
@@ -148,7 +138,7 @@
             // nud_major
             // 
             nud_major.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            nud_major.Location = new Point(605, 454);
+            nud_major.Location = new Point(605, 508);
             nud_major.Margin = new Padding(4, 3, 4, 3);
             nud_major.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
             nud_major.Name = "nud_major";
@@ -159,7 +149,7 @@
             // nud_minor
             // 
             nud_minor.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            nud_minor.Location = new Point(657, 454);
+            nud_minor.Location = new Point(657, 508);
             nud_minor.Margin = new Padding(4, 3, 4, 3);
             nud_minor.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
             nud_minor.Name = "nud_minor";
@@ -169,7 +159,7 @@
             // nud_revision
             // 
             nud_revision.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            nud_revision.Location = new Point(708, 454);
+            nud_revision.Location = new Point(708, 508);
             nud_revision.Margin = new Padding(4, 3, 4, 3);
             nud_revision.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
             nud_revision.Name = "nud_revision";
@@ -181,7 +171,7 @@
             cb_ver.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             cb_ver.FormattingEnabled = true;
             cb_ver.Items.AddRange(new object[] { "1", "2" });
-            cb_ver.Location = new Point(553, 454);
+            cb_ver.Location = new Point(553, 508);
             cb_ver.Margin = new Padding(4, 3, 4, 3);
             cb_ver.MaxLength = 2;
             cb_ver.Name = "cb_ver";
@@ -192,7 +182,7 @@
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new Point(14, 62);
+            label2.Location = new Point(14, 120);
             label2.Margin = new Padding(4, 0, 4, 0);
             label2.Name = "label2";
             label2.Size = new Size(632, 15);
@@ -204,7 +194,7 @@
             cb_embed.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             cb_embed.AutoSize = true;
             cb_embed.CheckAlign = ContentAlignment.MiddleRight;
-            cb_embed.Location = new Point(561, 429);
+            cb_embed.Location = new Point(561, 483);
             cb_embed.Margin = new Padding(4, 3, 4, 3);
             cb_embed.Name = "cb_embed";
             cb_embed.Size = new Size(191, 19);
@@ -294,7 +284,7 @@
             // 
             l_total_count.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             l_total_count.AutoSize = true;
-            l_total_count.Location = new Point(14, 433);
+            l_total_count.Location = new Point(14, 487);
             l_total_count.Margin = new Padding(4, 0, 4, 0);
             l_total_count.Name = "l_total_count";
             l_total_count.Size = new Size(66, 15);
@@ -329,7 +319,7 @@
             // nud_alignment
             // 
             nud_alignment.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            nud_alignment.Location = new Point(503, 427);
+            nud_alignment.Location = new Point(503, 481);
             nud_alignment.Margin = new Padding(4, 3, 4, 3);
             nud_alignment.Maximum = new decimal(new int[] { 512, 0, 0, 0 });
             nud_alignment.Name = "nud_alignment";
@@ -341,7 +331,7 @@
             // 
             label4.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             label4.AutoSize = true;
-            label4.Location = new Point(301, 429);
+            label4.Location = new Point(301, 483);
             label4.Margin = new Padding(4, 0, 4, 0);
             label4.Name = "label4";
             label4.Size = new Size(194, 15);
@@ -351,7 +341,7 @@
             // btn_generate_key
             // 
             btn_generate_key.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btn_generate_key.Location = new Point(657, 398);
+            btn_generate_key.Location = new Point(657, 452);
             btn_generate_key.Margin = new Padding(4, 3, 4, 3);
             btn_generate_key.Name = "btn_generate_key";
             btn_generate_key.Size = new Size(96, 27);
@@ -365,7 +355,7 @@
             cb_enable_encryption.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             cb_enable_encryption.AutoSize = true;
             cb_enable_encryption.CheckAlign = ContentAlignment.MiddleRight;
-            cb_enable_encryption.Location = new Point(529, 402);
+            cb_enable_encryption.Location = new Point(529, 456);
             cb_enable_encryption.Margin = new Padding(4, 3, 4, 3);
             cb_enable_encryption.Name = "cb_enable_encryption";
             cb_enable_encryption.Size = new Size(121, 19);
@@ -378,7 +368,7 @@
             cb_packFiltered.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             cb_packFiltered.AutoSize = true;
             cb_packFiltered.CheckAlign = ContentAlignment.MiddleRight;
-            cb_packFiltered.Location = new Point(404, 402);
+            cb_packFiltered.Location = new Point(404, 456);
             cb_packFiltered.Margin = new Padding(4, 3, 4, 3);
             cb_packFiltered.Name = "cb_packFiltered";
             cb_packFiltered.Size = new Size(117, 19);
@@ -392,12 +382,12 @@
             cb_previewPaths.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             cb_previewPaths.AutoSize = true;
             cb_previewPaths.CheckAlign = ContentAlignment.MiddleRight;
-            cb_previewPaths.Location = new Point(14, 402);
+            cb_previewPaths.Location = new Point(14, 456);
             cb_previewPaths.Margin = new Padding(4, 3, 4, 3);
             cb_previewPaths.Name = "cb_previewPaths";
             cb_previewPaths.Size = new Size(99, 19);
             cb_previewPaths.TabIndex = 28;
-            cb_previewPaths.Text = "Paths Preview";
+            cb_previewPaths.Text = "Preview paths";
             cb_previewPaths.UseVisualStyleBackColor = true;
             cb_previewPaths.CheckedChanged += cb_previewPaths_CheckedChanged;
             // 
@@ -422,11 +412,91 @@
             tb_prefix.KeyDown += tb_prefix_KeyDown;
             tb_prefix.Leave += tb_prefix_Leave;
             // 
+            // label6
+            // 
+            label6.AutoSize = true;
+            label6.Location = new Point(14, 68);
+            label6.Margin = new Padding(4, 0, 4, 0);
+            label6.Name = "label6";
+            label6.Size = new Size(57, 15);
+            label6.TabIndex = 31;
+            label6.Text = "Patching:";
+            // 
+            // tb_patch_target
+            // 
+            tb_patch_target.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            tb_patch_target.Location = new Point(165, 94);
+            tb_patch_target.Margin = new Padding(4, 3, 4, 3);
+            tb_patch_target.Name = "tb_patch_target";
+            tb_patch_target.ReadOnly = true;
+            tb_patch_target.Size = new Size(480, 23);
+            tb_patch_target.TabIndex = 33;
+            // 
+            // cb_enable_patching
+            // 
+            cb_enable_patching.AutoSize = true;
+            cb_enable_patching.CheckAlign = ContentAlignment.MiddleRight;
+            cb_enable_patching.Location = new Point(14, 97);
+            cb_enable_patching.Margin = new Padding(4, 3, 4, 3);
+            cb_enable_patching.Name = "cb_enable_patching";
+            cb_enable_patching.Size = new Size(118, 19);
+            cb_enable_patching.TabIndex = 34;
+            cb_enable_patching.Text = "Enabled patching";
+            cb_enable_patching.UseVisualStyleBackColor = true;
+            cb_enable_patching.CheckedChanged += cb_enable_patching_CheckedChanged;
+            // 
+            // btn_browse_patch_target
+            // 
+            btn_browse_patch_target.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btn_browse_patch_target.Location = new Point(657, 94);
+            btn_browse_patch_target.Margin = new Padding(4, 3, 4, 3);
+            btn_browse_patch_target.Name = "btn_browse_patch_target";
+            btn_browse_patch_target.Size = new Size(88, 23);
+            btn_browse_patch_target.TabIndex = 17;
+            btn_browse_patch_target.Text = "Browse...";
+            btn_browse_patch_target.UseVisualStyleBackColor = true;
+            btn_browse_patch_target.Click += btn_browse_patch_target_Click;
+            // 
+            // ofd_patch_target
+            // 
+            ofd_patch_target.Title = "Select the file containing .pck";
+            // 
+            // filePath
+            // 
+            filePath.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            filePath.FillWeight = 85F;
+            filePath.HeaderText = "File Path";
+            filePath.Name = "filePath";
+            filePath.ReadOnly = true;
+            // 
+            // size
+            // 
+            size.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleRight;
+            size.DefaultCellStyle = dataGridViewCellStyle1;
+            size.HeaderText = "Size";
+            size.Name = "size";
+            size.ReadOnly = true;
+            size.Width = 52;
+            // 
+            // patch
+            // 
+            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle2.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point, 204);
+            patch.DefaultCellStyle = dataGridViewCellStyle2;
+            patch.HeaderText = "Patch";
+            patch.MinimumWidth = 30;
+            patch.Name = "patch";
+            patch.Width = 30;
+            // 
             // CreatePCKFile
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(850, 484);
+            ClientSize = new Size(850, 538);
+            Controls.Add(cb_enable_patching);
+            Controls.Add(tb_patch_target);
+            Controls.Add(label6);
             Controls.Add(btn_clearFilter);
             Controls.Add(cb_previewPaths);
             Controls.Add(cb_packFiltered);
@@ -439,6 +509,7 @@
             Controls.Add(searchText);
             Controls.Add(btn_filter);
             Controls.Add(btn_refresh);
+            Controls.Add(btn_browse_patch_target);
             Controls.Add(btn_browse);
             Controls.Add(label5);
             Controls.Add(label3);
@@ -455,10 +526,11 @@
             Controls.Add(btn_create);
             Controls.Add(dataGridView1);
             Margin = new Padding(4, 3, 4, 3);
-            MinimumSize = new Size(866, 489);
+            MinimumSize = new Size(866, 300);
             Name = "CreatePCKFile";
             StartPosition = FormStartPosition.CenterParent;
             Text = "Pack or Embed folder";
+            FormClosed += CreatePCKFile_FormClosed;
             ((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
             ((System.ComponentModel.ISupportInitialize)nud_major).EndInit();
             ((System.ComponentModel.ISupportInitialize)nud_minor).EndInit();
@@ -496,12 +568,18 @@
         private Label label4;
         private Button btn_generate_key;
         private CheckBox cb_enable_encryption;
-        private DataGridViewTextBoxColumn filePath;
-        private DataGridViewTextBoxColumn size;
         private Button btn_clearFilter;
         private CheckBox cb_packFiltered;
         private CheckBox cb_previewPaths;
         private Label label5;
         private TextBox tb_prefix;
+        private Label label6;
+        private TextBox tb_patch_target;
+        private CheckBox cb_enable_patching;
+        private Button btn_browse_patch_target;
+        private OpenFileDialog ofd_patch_target;
+        private DataGridViewTextBoxColumn filePath;
+        private DataGridViewTextBoxColumn size;
+        private DataGridViewTextBoxColumn patch;
     }
 }

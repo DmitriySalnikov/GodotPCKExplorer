@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Security.Cryptography;
 
 namespace Tests
 {
@@ -55,6 +56,10 @@ namespace Tests
             }
             else
             {
+                // Sometimes the process does not stop instantly
+                // Kill it manually
+                var p = Process.Start("taskkill", $"/F /PID {process.Id}");
+                p.WaitForExit();
                 process.Kill();
             }
         }

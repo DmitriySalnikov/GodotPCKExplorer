@@ -709,12 +709,13 @@ namespace Tests
 
             Title("Extract PCK. Encrypted only files");
             Assert.That(PCKActions.Extract(pck_new_files, extracted, true, encKey: enc_key), Is.True);
-            Title("Extract PCK. Encrypted only files");
+            Title("Extract PCK. Encrypted only files. Wrong key");
             Assert.That(PCKActions.Extract(pck_new_files, extracted, true), Is.False);
             Title("Extract PCK no Key skip");
             Assert.That(PCKActions.Extract(pck_new_files, extracted + "Skip", true, encKey: "", noKeyMode: PCKExtractNoEncryptionKeyMode.Skip), Is.True);
             Assert.That(Directory.Exists(extracted + "Skip"), Is.False); // If the files are not extracted, the folder is not created
             Title("Extract PCK no Key encrypted");
+            // TODO move to func!!!
             Assert.That(PCKActions.Extract(pck_new_files, extracted + "Encrypted", true, encKey: "", noKeyMode: PCKExtractNoEncryptionKeyMode.AsIs), Is.True);
             // AsIs creates .encrypted copies
             Assert.That(PCKUtils.GetListOfFilesToPack(extracted + "Encrypted").Select(f => f.Path).Order().SequenceEqual(original_files.Select(f => f + ".encrypted")), Is.True);
@@ -722,16 +723,14 @@ namespace Tests
             var new_md5s = PCKUtils.GetListOfFilesToPack(extracted + "Encrypted").OrderBy(f => f.Path).Select(f => { f.CalculateMD5(); return PCKUtils.ByteArrayToHexString(f.MD5); }).ToArray();
             string[] orig_md5s;
             {
-                PCKFile[] ordered_files = null!;
+                PCKReaderFile[] ordered_files = null!;
                 using var pckReader = new PCKReader();
                 pckReader.OpenFile(pck_new_files, getEncryptionKey: () => new PCKReaderEncryptionKeyResult() { Key = enc_key });
                 ordered_files = [.. pckReader.Files.Select(f => f.Value).OrderBy(f => f.FilePath)];
 
                 orig_md5s = ordered_files.Select(f =>
                 {
-                    pckReader.ReaderStream!.BaseStream.Seek(f.Offset, SeekOrigin.Begin);
-                    using var enc_file = new PCKEncryptedReader(pckReader.ReaderStream!, []);
-                    return PCKUtils.ByteArrayToHexString(PCKUtils.GetStreamMD5(pckReader.ReaderStream!.BaseStream, f.Offset, f.Offset + PCKEncryptedReader.EncryptionHeaderSize + enc_file.DataSizeEncoded));
+                    return PCKUtils.ByteArrayToHexString(PCKUtils.GetStreamMD5(pckReader.ReaderStream!.BaseStream, f.Offset, f.Offset + f.ActualSize));
                 }).ToArray();
             }
             Assert.That(new_md5s.SequenceEqual(orig_md5s), Is.True);
@@ -761,6 +760,8 @@ namespace Tests
                 Assert.That(r.IsSuccess(), Is.False);
         }
     }
+
+    // TODO tests for patching
 
     public class MyFixtureData
     {

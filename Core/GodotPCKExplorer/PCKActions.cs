@@ -343,7 +343,10 @@ namespace GodotPCKExplorer
         {
             if (Directory.Exists(dirPath))
             {
-                return Pack(PCKUtils.GetListOfFilesToPack(dirPath), filePath, strVer, packPathPrefix, alignment, embed, encKey, encIndex, encFiles, cancellationToken);
+                var files = PCKUtils.GetListOfFilesToPack(dirPath, packPathPrefix, cancellationToken);
+                if (encFiles)
+                    files.ForEach(f => f.IsEncrypted = true);
+                return Pack(files, filePath, strVer, alignment, embed, encKey, encIndex, cancellationToken);
             }
             else
             {
@@ -355,18 +358,16 @@ namespace GodotPCKExplorer
         /// <summary>
         /// Pack the files into a new PCK file.
         /// </summary>
-        /// <param name="files">A list of files to be packed.</param>
+        /// <param name="files">A list of files to be packed. Must be in a valid "res://" or "user://" format.</param>
         /// <param name="filePath">The path to the new PCK file.</param>
         /// <param name="strVer">A version of the file. Format: [pack version].[godot major].[godot minor].[godot patch] e.g. <c>2.4.1.1</c></param>
-        /// <param name="packPathPrefix">The path prefix in the pack. For example, if the prefix is <c>test_folder/</c>, then the path <c>res://icon.png</c> is converted to <c>res://test_folder/icon.png</c>.</param>
         /// <param name="alignment">The address of each file will be aligned to this value.</param>
         /// <param name="embed">If enabled and an existing <see cref="filePath"/> is specified, then the PCK will be embedded into this file.</param>
         /// <param name="encKey">The encryption key if you want to encrypt a new PCK file.</param>
         /// <param name="encIndex">Whether to encrypt the index (list of contents).</param>
-        /// <param name="encFiles">Whether to encrypt the contents of files.</param>
         /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
         /// <returns><c>true</c> if successful</returns>
-        public static bool Pack(IEnumerable<PCKPackerFile> files, string filePath, string strVer, string packPathPrefix = "", uint alignment = 16, bool embed = false, string? encKey = null, bool encIndex = false, bool encFiles = false, CancellationToken? cancellationToken = null)
+        public static bool Pack(IEnumerable<PCKPackerFile> files, string filePath, string strVer, uint alignment = 16, bool embed = false, string? encKey = null, bool encIndex = false, CancellationToken? cancellationToken = null)
         {
             if (!files.Any())
             {
@@ -403,7 +404,7 @@ namespace GodotPCKExplorer
                 }
             }
 
-            if (PCKPacker.PackFiles(filePath, embed, files, ver, packPathPrefix, alignment, PCKUtils.HexStringToByteArray(encKey), encIndex, encFiles, cancellationToken))
+            if (PCKPacker.PackFiles(filePath, embed, files, ver, alignment, PCKUtils.HexStringToByteArray(encKey), encIndex, cancellationToken))
             {
                 return true;
             }

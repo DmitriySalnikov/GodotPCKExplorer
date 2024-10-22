@@ -41,7 +41,6 @@ namespace GodotPCKExplorer
         public PCKPackerRegularFile(string o_path, string path) : base(path)
         {
             OriginalPath = o_path;
-            Path = path;
             Size = new FileInfo(o_path).Length;
         }
 
@@ -60,12 +59,36 @@ namespace GodotPCKExplorer
         }
     }
 
+    public sealed class PCKPackerPCKFile : PCKPackerFile
+    {
+        public PCKReaderFile OriginalFile;
+
+        public PCKPackerPCKFile(PCKReaderFile o_file) : base(o_file.FilePath)
+        {
+            OriginalFile = o_file;
+            Size = o_file.Size;
+        }
+
+        public override void CalculateMD5()
+        {
+            MD5 = OriginalFile.MD5;
+        }
+
+        public override IEnumerable<ReadOnlyMemory<byte>> ReadMemoryBlocks()
+        {
+            foreach (var block in OriginalFile.ReadMemoryBlocks())
+            {
+                yield return block;
+            }
+        }
+    }
+
     public static class PCKPacker
     {
         // 16 bytes for MD5
         // 8 bytes for size of data
         // 16 bytes for IV
-        const int ENCRYPTED_HEADER_SIZE = 16 + 8 + mbedTLS.CHUNK_SIZE;
+        internal const int ENCRYPTED_HEADER_SIZE = 16 + 8 + mbedTLS.CHUNK_SIZE;
 
         [ThreadStatic]
         static byte[]? temp_encryption_output_buffer;
@@ -89,19 +112,17 @@ namespace GodotPCKExplorer
         /// </summary>
         /// <param name="outPck">Output file. It can be a new or an existing file.</param>
         /// <param name="embed">If enabled and an existing <see cref="outPck"/> is specified, then the PCK will be embedded into this file.</param>
-        /// <param name="files">Enumeration of <see cref="PCKPackerRegularFile"/> files to be packed.</param>
+        /// <param name="files">Enumeration of <see cref="PCKPackerRegularFile"/> files to be packed. Must be in a valid "res://" or "user://" format.</param>
         /// <param name="godotVersion">PCK file version.</param>
-        /// <param name="packPathPrefix">The path prefix in the pack. For example, if the prefix is <c>test_folder/</c>, then the path <c>res://icon.png</c> is converted to <c>res://test_folder/icon.png</c>.</param>
         /// <param name="alignment">The address of each file will be aligned to this value.</param>
         /// <param name="encKey">Specify the encryption key if you want the file to be encrypted. To specify a <see cref="string"/>, look at <seealso cref="PCKUtils.HexStringToByteArray(string?)"/></param>
         /// <param name="encryptIndex">Whether to encrypt the index (list of contents).</param>
-        /// <param name="encryptFiles">Whether to encrypt the contents of files.</param>
         /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
         /// <returns><c>true</c> if successful</returns>
-        public static bool PackFiles(string outPck, bool embed, IEnumerable<PCKPackerFile> files, PCKVersion godotVersion, string packPathPrefix = "", uint alignment = 16, byte[]? encKey = null, bool encryptIndex = false, bool encryptFiles = false, CancellationToken? cancellationToken = null)
+        public static bool PackFiles(string outPck, bool embed, IEnumerable<PCKPackerFile> files, PCKVersion godotVersion, uint alignment = 16, byte[]? encKey = null, bool encryptIndex = false, CancellationToken? cancellationToken = null)
         {
+            var start_time = DateTime.UtcNow;
             byte[]? EncryptionKey = encKey;
-            packPathPrefix = packPathPrefix.Replace("\\", "/");
 
             const string baseOp = "Pack files";
             var op = baseOp;
@@ -111,6 +132,8 @@ namespace GodotPCKExplorer
                 PCKActions.progress?.ShowMessage("Incorrect version is specified!", "Error", MessageType.Error);
                 return false;
             }
+
+            bool encryptFiles = files.Any(f => f.IsEncrypted);
 
             if (godotVersion.PackVersion == PCKUtils.PCK_VERSION_GODOT_3)
             {
@@ -267,8 +290,7 @@ namespace GodotPCKExplorer
                             }
 
                             file_idx++;
-                            string res_file = PCKUtils.GetResFilePath(file.Path, packPathPrefix);
-                            var str = Encoding.UTF8.GetBytes(res_file).ToList();
+                            var str = Encoding.UTF8.GetBytes(file.Path).ToList();
                             var str_len = str.Count;
 
                             // Godot 4's PCK uses padding for some reason...
@@ -297,11 +319,7 @@ namespace GodotPCKExplorer
                             else
                             {
                                 index_writer.Write(file.MD5);
-
-                                // TODO allow to encrypt a specific files?
-                                file.IsEncrypted = encryptFiles;
                                 index_writer.Write((int)(file.IsEncrypted ? 1 : 0));
-
                             }
 
                             PCKActions.progress?.LogProgress(op, (int)(((double)file_idx / files.Count()) * 100));
@@ -347,7 +365,7 @@ namespace GodotPCKExplorer
                             return false;
                         }
 
-                        PCKActions.progress?.LogProgress(op, PCKUtils.GetResFilePath(file.Path, packPathPrefix));
+                        PCKActions.progress?.LogProgress(op, file.Path);
 
                         // go back to store the file's offset
                         {
@@ -367,7 +385,15 @@ namespace GodotPCKExplorer
                         }
 
                         long actual_file_size = file.Size;
-                        if (file.IsEncrypted)
+                        bool ignore_encryption = false;
+
+                        if (file is PCKPackerPCKFile pck_file)
+                        {
+                            actual_file_size = pck_file.OriginalFile.ActualSize;
+                            ignore_encryption = true; // Ignore any encryption for PCKFiles
+                        }
+
+                        if (file.IsEncrypted && !ignore_encryption)
                         {
                             var result_size = PackStreamEncrypted(binWriter, file.Size, file.ReadMemoryBlocks(), EncryptionKey ?? throw new NullReferenceException(nameof(EncryptionKey)), file.MD5 ?? throw new NullReferenceException(nameof(file.MD5)), () =>
                             {
@@ -447,7 +473,7 @@ namespace GodotPCKExplorer
                 }
 
                 binWriter.Close();
-                PCKActions.progress?.Log("Pack complete!");
+                PCKActions.progress?.Log($"Pack complete! Time spent: {(DateTime.UtcNow - start_time).TotalSeconds:F2}s.");
                 return true;
             }
             catch (Exception ex)

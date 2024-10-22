@@ -14,7 +14,7 @@ namespace PCKBruteforcer
 
         public double ReportUpdateInterval = 0.25;
 
-        struct StartData(string exe, string pck, bool encIndex, long startPos, long endPos, CancellationTokenSource ct, int threadIdx, string? testFileName, PCKFile? testFile, MemoryStream? memStr)
+        struct StartData(string exe, string pck, bool encIndex, long startPos, long endPos, CancellationTokenSource ct, int threadIdx, string? testFileName, PCKReaderFile? testFile, MemoryStream? memStr)
         {
             public string exe = exe;
             public string pck = pck;
@@ -25,7 +25,7 @@ namespace PCKBruteforcer
             public Action<int, long>? reportProgress = null;
             public int threadIdx = threadIdx;
             public string? testFileName = testFileName;
-            public PCKFile? testFile = testFile;
+            public PCKReaderFile? testFile = testFile;
             public MemoryStream? memStr = memStr;
         }
 
@@ -136,7 +136,7 @@ namespace PCKBruteforcer
                 }
 
                 string? pck_in_memory_file_name = null;
-                PCKFile? pck_in_memory_file = null;
+                PCKReaderFile? pck_in_memory_file = null;
                 long pck_StartPosition;
                 bool pck_encIndex;
                 bool pck_embeded;
@@ -236,14 +236,12 @@ namespace PCKBruteforcer
                     if (inMemory)
                     {
                         using var fileReader = new BinaryReader(File.Open(pck, FileMode.Open, FileAccess.Read, FileShare.Read));
-                        fileReader.BaseStream.Position = pck_in_memory_file.Offset;
-
                         // Read encrypted header
-                        using var encReader = new PCKEncryptedReader(fileReader, []);
+                        using var encReader = new PCKEncryptedFileReader(fileReader, [], pck_in_memory_file.Offset);
                         // Restore position to header start
                         fileReader.BaseStream.Position = pck_in_memory_file.Offset;
 
-                        encMemChunk = new byte[(int)encReader.DataSizeEncoded + encReader.HeaderSize];
+                        encMemChunk = new byte[(int)encReader.TotalFileSize];
                         fileReader.Read(encMemChunk, 0, encMemChunk.Length);
                     }
                 }
@@ -549,10 +547,10 @@ namespace PCKBruteforcer
                         DisablePCKLogs();
                         br.BaseStream.Position = args.memStr != null ? 0 : args.testFile.Offset;
                         long fileSize = 0;
-                        using (var r = new PCKEncryptedReader(br, bytes))
+                        using (var r = new PCKEncryptedFileReader(br, bytes))
                         {
                             memFile.BaseStream.Position = 0;
-                            foreach (var chunk in r.ReadEncryptedBlocks())
+                            foreach (var chunk in r.ReadDencryptedBlocks())
                             {
                                 fileSize += chunk.Length;
                                 memFile.Write(chunk.Span);

@@ -75,7 +75,7 @@ namespace GodotPCKExplorer.UI
 
             GUIConfig.Load();
 
-            if (GUIConfig.Instance.ShowConsole)
+            if (GUIConfig.Instance.MainFormShowConsole)
                 ShowConsole();
             else
                 HideConsole();
@@ -130,21 +130,20 @@ namespace GodotPCKExplorer.UI
 
                 prev_progress_percent = number;
                 prev_progress_time = DateTime.UtcNow;
-            }
 
-            // Always update ProgressBar
-            if (progressBar != null && progressBar.Created)
-            {
-                if (progressBar.InvokeRequired)
+                if (progressBar != null && progressBar.Created)
                 {
-                    progressBar.BeginInvoke(new Action(() =>
+                    if (progressBar.InvokeRequired)
+                    {
+                        progressBar.BeginInvoke(new Action(() =>
+                        {
+                            progressBar.ReportProgress(operation, number, customPrefix);
+                        }));
+                    }
+                    else
                     {
                         progressBar.ReportProgress(operation, number, customPrefix);
-                    }));
-                }
-                else
-                {
-                    progressBar.ReportProgress(operation, number, customPrefix);
+                    }
                 }
             }
         }

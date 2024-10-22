@@ -34,7 +34,7 @@ namespace GodotPCKExplorer
     public sealed class PCKReader : IDisposable
     {
         BinaryReader? binReader = null;
-        public Dictionary<string, PCKFile> Files = new Dictionary<string, PCKFile>();
+        public Dictionary<string, PCKReaderFile> Files = new Dictionary<string, PCKReaderFile>();
         public string PackPath = "";
 
         public int PCK_FileCount = -1;
@@ -334,9 +334,9 @@ namespace GodotPCKExplorer
                 {
                     // Index should be read as a single buffer here
                     var mem = new MemoryStream();
-                    using (var reader = new PCKEncryptedReader(fileReader, encryption_key ?? throw new NullReferenceException(nameof(encryption_key))))
+                    using (var reader = new PCKEncryptedFileReader(fileReader, encryption_key ?? throw new NullReferenceException(nameof(encryption_key))))
                     {
-                        foreach (var chunk in reader.ReadEncryptedBlocks())
+                        foreach (var chunk in reader.ReadDencryptedBlocks())
                         {
                             mem.Write(chunk.Span);
 
@@ -375,7 +375,7 @@ namespace GodotPCKExplorer
                     tmp_reader = new BinaryReader(mem);
                 }
 
-                List<PCKFile> tmp_files = new List<PCKFile>();
+                List<PCKReaderFile> tmp_files = new List<PCKReaderFile>();
                 for (int i = 0; i < PCK_FileCount; i++)
                 {
                     int path_size = tmp_reader.ReadInt32();
@@ -397,7 +397,7 @@ namespace GodotPCKExplorer
                         PCKActions.progress?.LogProgress(op, (int)(((double)i / PCK_FileCount) * 100));
                     }
 
-                    tmp_files.Add(new PCKFile(fileReader, path, ofs, pos_of_ofs, size, md5, flags, PCK_VersionPack));
+                    tmp_files.Add(new PCKReaderFile(fileReader, path, ofs, pos_of_ofs, size, md5, flags, PCK_VersionPack));
 
                     if (cancellationToken?.IsCancellationRequested ?? false)
                     {
@@ -442,7 +442,7 @@ namespace GodotPCKExplorer
                         }
                     }
 
-                    foreach (PCKFile file in tmp_files)
+                    foreach (PCKReaderFile file in tmp_files)
                     {
                         Files.Add(file.FilePath, file);
                     }
@@ -502,6 +502,8 @@ namespace GodotPCKExplorer
         /// <returns><c>true</c> if successful</returns>
         public bool ExtractFiles(IEnumerable<string> names, out List<string> extractedFiles, out List<string> failedFiles, string folder, bool overwriteExisting = true, bool checkMD5 = true, Func<PCKReaderEncryptionKeyResult>? getEncryptionKey = null, PCKExtractNoEncryptionKeyMode noKeyMode = PCKExtractNoEncryptionKeyMode.Cancel, CancellationToken? cancellationToken = null)
         {
+            var start_time = DateTime.UtcNow;
+
             var op = "Extract files";
             extractedFiles = new List<string>();
             failedFiles = new List<string>();
@@ -584,7 +586,7 @@ namespace GodotPCKExplorer
                             continue;
                         }
 
-                        PCKFile file = Files[path];
+                        PCKReaderFile file = Files[path];
                         PCKActions.progress?.LogProgress(op, file.FilePath);
 
                         void upd(int p)
@@ -649,7 +651,7 @@ namespace GodotPCKExplorer
                 }
 
                 PCKActions.progress?.LogProgress(op, 100);
-                PCKActions.progress?.LogProgress(op, "Completed!");
+                PCKActions.progress?.LogProgress(op, "Completed!  Time spent: {(DateTime.UtcNow - start_time).TotalSeconds:F2}s.");
                 return true;
             }
             catch (Exception ex)
@@ -709,22 +711,15 @@ namespace GodotPCKExplorer
 
                 try
                 {
-                    if (size > 0)
+                    long written = 0;
+                    foreach (var block in PCKUtils.ReadStreamAsMemoryBlocks(binReader.BaseStream, PCK_StartPosition, PCK_EndPosition))
                     {
-                        binReader.BaseStream.Seek(PCK_StartPosition, SeekOrigin.Begin);
-                        long to_write = size;
+                        file.Write(block.Span);
+                        written += block.Length;
+                        PCKActions.progress?.LogProgress(op, (int)((double)written / size * 100));
 
-                        while (to_write > 0)
-                        {
-                            var read = binReader.ReadBytes(Math.Min(PCKUtils.BUFFER_MAX_SIZE, (int)to_write));
-                            file.Write(read);
-                            to_write -= read.Length;
-
-                            PCKActions.progress?.LogProgress(op, 100 - (int)((double)to_write / size * 100));
-
-                            if (cancellationToken?.IsCancellationRequested ?? false)
-                                return false;
-                        }
+                        if (cancellationToken?.IsCancellationRequested ?? false)
+                            return false;
                     }
                 }
                 catch (Exception ex)
@@ -786,6 +781,7 @@ namespace GodotPCKExplorer
 
             var op = "Merge PCK into EXE";
 
+            BinaryWriter? file = null;
             try
             {
                 PCKActions.progress?.LogProgress(op, "Started");
@@ -799,7 +795,6 @@ namespace GodotPCKExplorer
                     }
                 }
 
-                BinaryWriter file;
                 try
                 {
                     file = new BinaryWriter(File.OpenWrite(exePath));
@@ -831,31 +826,24 @@ namespace GodotPCKExplorer
 
                 try
                 {
-                    if (size > 0)
+                    long written = 0;
+                    foreach (var block in PCKUtils.ReadStreamAsMemoryBlocks(binReader.BaseStream, PCK_StartPosition, PCK_EndPosition))
                     {
-                        binReader.BaseStream.Seek(PCK_StartPosition, SeekOrigin.Begin);
-                        long to_write = size;
+                        file.Write(block.Span);
+                        written += block.Length;
+                        PCKActions.progress?.LogProgress(op, (int)((double)written / size * 100));
 
-                        while (to_write > 0)
-                        {
-                            var read = binReader.ReadBytes(Math.Min(PCKUtils.BUFFER_MAX_SIZE, (int)to_write));
-                            file.Write(read);
-                            to_write -= read.Length;
-
-                            PCKActions.progress?.LogProgress(op, 100 - (int)((double)to_write / size * 100));
-
-                            if (cancellationToken?.IsCancellationRequested ?? false)
-                                return false;
-                        }
-
-                        // Ensure embedded data ends at a 64-bit multiple
-                        long embed_end = file.BaseStream.Position - embed_start + 12;
-                        PCKUtils.AddPadding(file, embed_end % 8);
-
-                        long pck_size = file.BaseStream.Position - pck_start;
-                        file.Write((long)pck_size);
-                        file.Write((int)PCKUtils.PCK_MAGIC);
+                        if (cancellationToken?.IsCancellationRequested ?? false)
+                            return false;
                     }
+
+                    // Ensure embedded data ends at a 64-bit multiple
+                    long embed_end = file.BaseStream.Position - embed_start + 12;
+                    PCKUtils.AddPadding(file, embed_end % 8);
+
+                    long pck_size = file.BaseStream.Position - pck_start;
+                    file.Write((long)pck_size);
+                    file.Write((int)PCKUtils.PCK_MAGIC);
                 }
                 catch (Exception ex)
                 {
@@ -897,7 +885,325 @@ namespace GodotPCKExplorer
             }
             finally
             {
+                file?.Dispose();
             }
+        }
+    }
+
+    public sealed class PCKReaderFile
+    {
+        internal readonly BinaryReader StreamReader;
+        /// <summary>
+        /// The name of the file in the package hierarchy.
+        /// </summary>
+        public string FilePath;
+        /// <summary>
+        /// File offset inside the package.
+        /// </summary>
+        public long Offset;
+        /// <summary>
+        /// Required for manipulating addresses.
+        /// </summary>
+        public long PositionOfOffsetValue;
+        /// <summary>
+        /// Original file size.
+        /// </summary>
+        public long Size;
+        /// <summary>
+        /// Actual file size inside the package. Including encrypted header.
+        /// </summary>
+        public long ActualSize;
+        /// <summary>
+        /// Hash to check the correctness of the file.
+        /// </summary>
+        public byte[] MD5;
+        /// <summary>
+        /// Individual file flags.
+        /// Now only: 0 or 1 (Encrypted).
+        /// </summary>
+        public int Flags;
+        /// <summary>
+        /// Pack Version
+        /// </summary>
+        public int PackVersion;
+
+        public PCKReaderFile(BinaryReader reader, string path, long contentOffset, long positionOfOffsetValue, long size, byte[] MD5, int flags, int pack_version)
+        {
+            this.StreamReader = reader;
+            FilePath = path;
+            Offset = contentOffset;
+            PositionOfOffsetValue = positionOfOffsetValue;
+            Size = size;
+            this.MD5 = MD5;
+            Flags = flags;
+
+            PackVersion = pack_version;
+
+            if (IsEncrypted)
+            {
+                // PCKEncryptedFileReader moves the position of the stream, so it needs to be moved back
+                long pos = reader.BaseStream.Position;
+                using var er = new PCKEncryptedFileReader(this, new byte[0]);
+                reader.BaseStream.Seek(pos, SeekOrigin.Begin);
+                ActualSize = er.TotalFileSize;
+            }
+            else
+            {
+                ActualSize = size;
+            }
+        }
+
+        public delegate void VoidInt(int progress);
+        public event VoidInt? OnProgress;
+
+        public bool IsEncrypted
+        {
+            get => (Flags & PCKUtils.PCK_FILE_ENCRYPTED) != 0;
+        }
+
+        public bool ExtractFile(string basePath, out string extractPath, out bool skippedExisted, bool overwriteExisting = true, byte[]? encKey = null, PCKExtractNoEncryptionKeyMode noKeyMode = PCKExtractNoEncryptionKeyMode.Cancel, CancellationToken? cancellationToken = null)
+        {
+            string path = extractPath = Path.GetFullPath(Path.Combine(basePath, FilePath.Replace(PCKUtils.PathPrefixRes, "").Replace(PCKUtils.PathPrefixUser, "@@user@@/")));
+            string op = "Extracting file";
+
+            skippedExisted = false;
+            string dir = Path.GetDirectoryName(path);
+            BinaryWriter file;
+
+            if (File.Exists(path) && !overwriteExisting)
+            {
+                skippedExisted = true;
+                return true;
+            }
+
+            if (IsEncrypted && encKey == null)
+            {
+                switch (noKeyMode)
+                {
+                    case PCKExtractNoEncryptionKeyMode.Cancel:
+                        PCKActions.progress?.ShowMessage($"Failed to extract the packed file.\nThe file is encrypted, but the decryption key was not specified.", "Error", MessageType.Error);
+                        return false;
+                    case PCKExtractNoEncryptionKeyMode.Skip:
+                        PCKActions.progress?.LogProgress(op, $"The file is encrypted, but it will be skipped according to the settings.");
+                        return false;
+                    case PCKExtractNoEncryptionKeyMode.AsIs:
+                        // Rename file to mark it as encrypted
+                        path = extractPath = Path.ChangeExtension(path, Path.GetExtension(path) + ".encrypted");
+                        if (File.Exists(path) && !overwriteExisting)
+                        {
+                            skippedExisted = true;
+                            return true;
+                        }
+                        break;
+                }
+            }
+
+            try
+            {
+                Directory.CreateDirectory(dir);
+                file = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read));
+            }
+            catch (Exception ex)
+            {
+                PCKActions.progress?.ShowMessage(ex, MessageType.Error);
+                return false;
+            }
+
+            try
+            {
+                if (Size > 0)
+                {
+                    StreamReader.BaseStream.Seek(Offset, SeekOrigin.Begin);
+
+                    bool write_raw_file()
+                    {
+                        long written = 0;
+                        foreach (var block in ReadMemoryBlocks())
+                        {
+                            file.Write(block.Span);
+                            written += block.Length;
+                            OnProgress?.Invoke((int)((double)written / ActualSize * 100));
+
+                            if (cancellationToken?.IsCancellationRequested ?? false)
+                                return false;
+                        }
+                        return true;
+                    }
+
+                    if (IsEncrypted)
+                    {
+                        if (encKey == null)
+                        {
+                            if (noKeyMode == PCKExtractNoEncryptionKeyMode.AsIs)
+                            {
+                                PCKActions.progress?.LogProgress(op, $"The file is encrypted, but it will be extracted without decryption according to the settings.");
+
+                                write_raw_file();
+                                OnProgress?.Invoke(100);
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            using var r = new PCKEncryptedFileReader(StreamReader, encKey);
+                            long written = 0;
+                            foreach (var block in r.ReadDencryptedBlocks())
+                            {
+                                file.Write(block.Span);
+                                written += block.Length;
+                                OnProgress?.Invoke((int)((double)written / Size * 100));
+
+                                if (cancellationToken?.IsCancellationRequested ?? false)
+                                    return false;
+                            }
+                        }
+
+                        OnProgress?.Invoke(100);
+                    }
+                    else
+                    {
+                        if (!write_raw_file())
+                            return false;
+                        OnProgress?.Invoke(100);
+                    }
+                    file.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                var res = PCKActions.progress?.ShowMessage(ex, MessageType.Error, PCKMessageBoxButtons.OKCancel);
+                file.Close();
+
+                try
+                {
+                    File.Delete(path);
+                }
+                catch { }
+
+                if (res == PCKDialogResult.Cancel)
+                {
+                    return false;
+                }
+            }
+            finally
+            {
+                file.Close();
+            }
+
+            return true;
+        }
+
+        public bool CheckMD5(string path)
+        {
+            if (PackVersion > 1)
+            {
+                var exp_md5 = PCKUtils.GetFileMD5(path);
+                if (!exp_md5.SequenceEqual(MD5))
+                {
+                    PCKActions.progress?.ShowMessage($"The MD5 of the exported file is not equal to the MD5 specified in the PCK.\n{PCKUtils.ByteArrayToHexString(MD5, " ")} != {PCKUtils.ByteArrayToHexString(exp_md5, " ")}", "Error", MessageType.Error);
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Read file's memory as is
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<ReadOnlyMemory<byte>> ReadMemoryBlocks()
+        {
+            foreach (var block in PCKUtils.ReadStreamAsMemoryBlocks(StreamReader.BaseStream, Offset, Offset + ActualSize))
+            {
+                yield return block;
+            }
+        }
+    }
+
+    public sealed class PCKEncryptedFileReader : IDisposable
+    {
+        [ThreadStatic]
+        static byte[]? temp_encryption_buffer;
+
+        public BinaryReader? Stream;
+        public byte[] Key;
+
+        readonly long start_position;
+        readonly long data_start_position;
+        public byte[] MD5;
+        public long HeaderSize;
+        public long DataSize;
+        public long DataSizeEncoded;
+        public long TotalFileSize;
+        int DataSizeDelta;
+        public byte[] StartIV;
+
+        public PCKEncryptedFileReader(PCKReaderFile file, byte[] key) : this(file.StreamReader, key, file.Offset)
+        {
+
+        }
+
+        public PCKEncryptedFileReader(BinaryReader binReader, byte[] key, long startOffset = -1)
+        {
+            if (startOffset >= 0)
+                binReader.BaseStream.Seek(startOffset, SeekOrigin.Begin);
+
+            Stream = binReader;
+            Key = key;
+            start_position = Stream.BaseStream.Position;
+
+            // Update EncryptionHeaderSize if needed
+            MD5 = binReader.ReadBytes(16);
+            DataSize = binReader.ReadInt64();
+            StartIV = binReader.ReadBytes(mbedTLS.CHUNK_SIZE);
+
+            data_start_position = Stream.BaseStream.Position;
+
+            HeaderSize = (int)(data_start_position - start_position);
+            DataSizeEncoded = PCKUtils.AlignAddress(DataSize, mbedTLS.CHUNK_SIZE);
+            DataSizeDelta = (int)(DataSizeEncoded - DataSize);
+            TotalFileSize = HeaderSize + DataSizeEncoded;
+
+            if (data_start_position + DataSizeEncoded >= binReader.BaseStream.Length)
+                throw new IndexOutOfRangeException("The end of the encrypted file goes beyond the boundaries of the open PCK file.");
+        }
+
+        public IEnumerable<ReadOnlyMemory<byte>> ReadDencryptedBlocks()
+        {
+            if (Stream == null)
+            {
+                yield break;
+            }
+
+            if (PCKUtils.BUFFER_MAX_SIZE % mbedTLS.CHUNK_SIZE != 0)
+                throw new ArgumentException($"{nameof(PCKUtils.BUFFER_MAX_SIZE)} must be a multiple of {mbedTLS.CHUNK_SIZE}.");
+
+            temp_encryption_buffer ??= new byte[PCKUtils.BUFFER_MAX_SIZE];
+            var output_buffer = new Memory<byte>(temp_encryption_buffer, 0, PCKUtils.BUFFER_MAX_SIZE);
+
+            byte[] iv = StartIV.ToArray();
+
+            using var mtls = new mbedTLS();
+            mtls.set_key(Key);
+
+            foreach (var block in PCKUtils.ReadStreamAsMemoryBlocks(Stream.BaseStream, data_start_position, data_start_position + DataSizeEncoded))
+            {
+                mtls.decrypt_cfb(iv, block, output_buffer);
+                if (block.Length == PCKUtils.BUFFER_MAX_SIZE)
+                {
+                    yield return new ReadOnlyMemory<byte>(temp_encryption_buffer, 0, PCKUtils.BUFFER_MAX_SIZE);
+                }
+                else
+                {
+                    var dest_size = block.Length - DataSizeDelta;
+                    yield return new ReadOnlyMemory<byte>(temp_encryption_buffer, 0, dest_size);
+                }
+            }
+        }
+
+        public void Dispose()
+        {
+            Stream = null;
         }
     }
 }

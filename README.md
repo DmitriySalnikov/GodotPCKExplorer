@@ -23,8 +23,9 @@ Also `PCK Bruteforcer` is available as part of this project [here](Bruteforcer/)
   * `Console`: Supports `Windows`, `Linux` and `macOS`
 
 ![Main Window](Images/MainForm.png)
-![Main Window](Images/CreatePack.png)
-![Main Window](Images/ChangeVersion.png)
+![Pack Window](Images/CreatePack.png)
+![Pack Window with Patching](Images/CreatePackPatch.png)
+![Change Version Window](Images/ChangeVersion.png)
 
 ## Support
 

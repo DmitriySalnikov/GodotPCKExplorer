@@ -148,7 +148,7 @@ namespace GodotPCKExplorer
 
             temp_buffer ??= new byte[BUFFER_MAX_SIZE];
 
-            stream.Position = from;
+            stream.Seek(from, SeekOrigin.Begin);
             while (stream.Position < to)
             {
                 if (stream.Position + BUFFER_MAX_SIZE < to)
@@ -212,7 +212,7 @@ namespace GodotPCKExplorer
             }
         }
 
-        public static List<PCKPackerRegularFile> GetListOfFilesToPack(string folder, CancellationToken? cancellationToken = null)
+        public static List<PCKPackerRegularFile> GetListOfFilesToPack(string folder, string packPathPrefix = "", CancellationToken? cancellationToken = null)
         {
             if (!Directory.Exists(folder))
                 return new List<PCKPackerRegularFile>();
@@ -225,7 +225,7 @@ namespace GodotPCKExplorer
             PCKActions.progress?.LogProgress(op, $"Started scanning files in '{folder}'");
             PCKActions.progress?.LogProgress(op, PCKUtils.UnknownProgressStatus);
 
-            GetListOfFilesToPackRecursive(folder, files, ref folder, ref cancel, cancellationToken);
+            GetListOfFilesToPackRecursive(folder, files, ref folder, ref packPathPrefix, ref cancel, cancellationToken);
             if (cancel)
                 files.Clear();
             GC.Collect();
@@ -235,7 +235,7 @@ namespace GodotPCKExplorer
             return files;
         }
 
-        static void GetListOfFilesToPackRecursive(string folder, List<PCKPackerRegularFile> files, ref string basePath, ref bool cancel, CancellationToken? cancellationToken = null)
+        static void GetListOfFilesToPackRecursive(string folder, List<PCKPackerRegularFile> files, ref string basePath, ref string packPathPrefix, ref bool cancel, CancellationToken? cancellationToken = null)
         {
             const string op = "Scan folder";
             IEnumerable<string> dirEnums;
@@ -255,7 +255,7 @@ namespace GodotPCKExplorer
                 if (cancel || (cancellationToken?.IsCancellationRequested ?? false))
                     return;
 
-                GetListOfFilesToPackRecursive(d, files, ref basePath, ref cancel, cancellationToken);
+                GetListOfFilesToPackRecursive(d, files, ref basePath, ref packPathPrefix, ref cancel, cancellationToken);
             }
 
             IEnumerable<string> filesEnum;
@@ -277,7 +277,7 @@ namespace GodotPCKExplorer
 
                 try
                 {
-                    files.Add(new PCKPackerRegularFile(f, GetResFilePath(f.Replace(basePath + Path.DirectorySeparatorChar, ""), "")));
+                    files.Add(new PCKPackerRegularFile(f, GetResFilePath(f.Replace(basePath + Path.DirectorySeparatorChar, ""), packPathPrefix)));
                     PCKActions.progress?.LogProgress(op, f);
                     PCKActions.progress?.LogProgress(op, files.Count, "Found files: ");
                 }

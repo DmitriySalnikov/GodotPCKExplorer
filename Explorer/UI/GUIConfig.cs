@@ -21,21 +21,23 @@ namespace GodotPCKExplorer.UI
 
         #region Packing
 
-        public PCKVersion PackedVersion { get; set; } = new PCKVersion(2, 4, 1, 1);
-        public bool EmbedPCK { get; set; } = false;
-        public string FolderPath { get; set; } = "";
+        public PCKVersion PackVersion { get; set; } = new PCKVersion(2, 4, 1, 1);
+        public bool PackEmbedPCK { get; set; } = false;
+        public string PackFolderPath { get; set; } = "";
         public string PackPathPrefix { get; set; } = "";
         public bool MatchCaseFilterPackingForm { get; set; } = false;
-        public uint PCKAlignment { get; set; } = 16;
-        public bool PackOnlyFiltered { get; set; } = true;
-        public bool PreviewPaths { get; set; } = false;
+        public uint PackPCKAlignment { get; set; } = 16;
+        public bool PackOnlyFiltered { get; set; } = false;
+        public bool PackPreviewPaths { get; set; } = true;
+        public bool PackPatchingEnabled { get; set; } = false;
+        public string PackPatchingTarget { get; set; } = "";
 
         #region Encryption
 
-        public bool EncryptPCK { get; set; } = false;
-        public string EncryptionKey { get; set; } = "";
-        public bool EncryptIndex { get; set; } = false;
-        public bool EncryptFiles { get; set; } = false;
+        public bool PackEncryptPCK { get; set; } = false;
+        public string PackEncryptionKey { get; set; } = "";
+        public bool PackEncryptIndex { get; set; } = false;
+        public bool PackEncryptFiles { get; set; } = false;
 
         #endregion
 
@@ -43,76 +45,22 @@ namespace GodotPCKExplorer.UI
 
         #region Extract
 
-        public bool OverwriteExtracted { get; set; } = false;
-        public bool CheckMD5Extracted { get; set; } = true;
-        public PCKExtractNoEncryptionKeyMode IfNoEncryptionKeyMode { get; set; } = PCKExtractNoEncryptionKeyMode.Cancel;
+        public bool ExtractOverwrite { get; set; } = false;
+        public bool ExtractCheckMD5 { get; set; } = true;
+        public PCKExtractNoEncryptionKeyMode ExtractIfNoEncryptionKeyMode { get; set; } = PCKExtractNoEncryptionKeyMode.Cancel;
 
         #endregion
 
         #region Main Window
 
-        public List<RecentFiles> RecentOpenedFiles { get; set; } = [];
-        public bool MatchCaseFilterMainForm { get; set; } = false;
-        public bool ShowConsole { get; set; } = false;
+        public List<RecentFiles> MainFormRecentOpenedFiles { get; set; } = [];
+        public bool MainFormMatchCaseFilter { get; set; } = false;
+        public bool MainFormShowConsole { get; set; } = false;
         public string SkipVersion { get; set; } = "";
 
         #endregion
 
         #region Save/Load
-
-        GUIConfig()
-        {
-            Instance ??= this;
-        }
-
-        public GUIConfig(
-            PCKVersion packedVersion,
-            bool embedPCK,
-            string folderPath,
-            string packPathPrefix,
-            bool matchCaseFilterPackingForm,
-            uint pckAlignment,
-            bool packOnlyFiltered,
-            bool previewPaths,
-
-            bool encryptPCK,
-            string encryptionKey,
-            bool encryptIndex,
-            bool encryptFiles,
-
-            bool overwriteExtracted,
-            bool checkMD5Extracted,
-            PCKExtractNoEncryptionKeyMode ifNoEncryptionKeyMode,
-
-            List<RecentFiles> recentOpenedFiles,
-            bool matchCaseFilterMainForm,
-            bool showConsole,
-            string skipVersion
-            )
-        {
-            PackedVersion = packedVersion;
-            EmbedPCK = embedPCK;
-            FolderPath = folderPath;
-            PackPathPrefix = packPathPrefix;
-            MatchCaseFilterPackingForm = matchCaseFilterPackingForm;
-            PCKAlignment = pckAlignment;
-            PackOnlyFiltered = packOnlyFiltered;
-            PreviewPaths = previewPaths;
-
-            EncryptPCK = encryptPCK;
-            EncryptionKey = encryptionKey;
-            EncryptIndex = encryptIndex;
-            EncryptFiles = encryptFiles;
-
-            OverwriteExtracted = overwriteExtracted;
-            CheckMD5Extracted = checkMD5Extracted;
-            IfNoEncryptionKeyMode = ifNoEncryptionKeyMode;
-
-            RecentOpenedFiles = recentOpenedFiles;
-            MatchCaseFilterMainForm = matchCaseFilterMainForm;
-            ShowConsole = showConsole;
-            SkipVersion = skipVersion;
-        }
 
         [JsonIgnore]
         readonly JsonSerializerOptions serializerOptions = new() { WriteIndented = true, IncludeFields = true };

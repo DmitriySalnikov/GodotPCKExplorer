@@ -8,9 +8,9 @@ namespace GodotPCKExplorer.UI
         {
             InitializeComponent();
 
-            tb_key.Text = GUIConfig.Instance.EncryptionKey;
-            cb_encrypt_index.Checked = GUIConfig.Instance.EncryptIndex;
-            cb_encrypt_files.Checked = GUIConfig.Instance.EncryptFiles;
+            tb_key.Text = GUIConfig.Instance.PackEncryptionKey;
+            cb_encrypt_index.Checked = GUIConfig.Instance.PackEncryptIndex;
+            cb_encrypt_files.Checked = GUIConfig.Instance.PackEncryptFiles;
         }
 
         private void btn_ok_Click(object? sender, EventArgs e)
@@ -21,9 +21,9 @@ namespace GodotPCKExplorer.UI
                 return;
             }
 
-            GUIConfig.Instance.EncryptionKey = tb_key.Text;
-            GUIConfig.Instance.EncryptIndex = cb_encrypt_index.Checked;
-            GUIConfig.Instance.EncryptFiles = cb_encrypt_files.Checked;
+            GUIConfig.Instance.PackEncryptionKey = tb_key.Text;
+            GUIConfig.Instance.PackEncryptIndex = cb_encrypt_index.Checked;
+            GUIConfig.Instance.PackEncryptFiles = cb_encrypt_files.Checked;
             GUIConfig.Instance.Save();
 
             Close();

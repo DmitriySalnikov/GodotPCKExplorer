@@ -1,67 +1,132 @@
-﻿namespace GodotPCKExplorer.UI
+﻿using System.IO;
+using System.Security.Cryptography;
+
+namespace GodotPCKExplorer.UI
 {
     public partial class CreatePCKFile : Form
     {
-        Dictionary<string, PCKPackerRegularFile> filesToPack = [];
+        Dictionary<string, PCKPackerFile> filesToPack = [];
         readonly Font MatchCaseNormal;
         readonly Font MatchCaseStrikeout;
+
+        readonly List<Control> patchModeControls = [];
+
+        string currentSelectedDir = "";
+        string currentSelectedPrefix = "";
+        PCKReader pckReader = new();
+
+        DataGridViewCellStyle styleNormalFile = new DataGridViewCellStyle();
+        DataGridViewCellStyle styleRealFile = new DataGridViewCellStyle();
+        DataGridViewCellStyle stylePCKFile = new DataGridViewCellStyle();
+        DataGridViewCellStyle styleNormalFileSize = new DataGridViewCellStyle();
+        DataGridViewCellStyle styleRealFileSize = new DataGridViewCellStyle();
+        DataGridViewCellStyle stylePCKFileSize = new DataGridViewCellStyle();
 
         public CreatePCKFile()
         {
             InitializeComponent();
             Icon = Properties.Resources.icon;
 
-            tb_folder_path.Text = GUIConfig.Instance.FolderPath;
+            {
+                styleNormalFile = dataGridView1.DefaultCellStyle.Clone();
+                styleRealFile = dataGridView1.DefaultCellStyle.Clone();
+                stylePCKFile = dataGridView1.DefaultCellStyle.Clone();
+
+                styleRealFile.ForeColor = SystemColors.ControlText;
+                styleRealFile.Font = new Font(styleRealFile.Font, FontStyle.Bold);
+
+                stylePCKFile.ForeColor = SystemColors.ControlDarkDark;
+
+                styleNormalFileSize = styleNormalFile.Clone();
+                styleNormalFileSize.Alignment = DataGridViewContentAlignment.MiddleRight;
+                styleRealFileSize = styleRealFile.Clone();
+                styleRealFileSize.Alignment = DataGridViewContentAlignment.MiddleRight;
+                stylePCKFileSize = stylePCKFile.Clone();
+                stylePCKFileSize.Alignment = DataGridViewContentAlignment.MiddleRight;
+            }
+
+            tb_folder_path.Text = GUIConfig.Instance.PackFolderPath;
             tb_prefix.Text = GUIConfig.Instance.PackPathPrefix;
-            SetFolderPath(tb_folder_path.Text);
 
             MatchCaseNormal = btn_match_case.Font;
             MatchCaseStrikeout = new Font(btn_match_case.Font, FontStyle.Strikeout);
             UpdateMatchCaseFilterButton();
 
             cb_packFiltered.Checked = GUIConfig.Instance.PackOnlyFiltered;
-            cb_previewPaths.Checked = GUIConfig.Instance.PreviewPaths;
+            cb_previewPaths.Checked = GUIConfig.Instance.PackPreviewPaths;
 
-            var ver = GUIConfig.Instance.PackedVersion;
+            var ver = GUIConfig.Instance.PackVersion;
             cb_ver.SelectedItem = ver.PackVersion.ToString();
             nud_major.Value = ver.Major;
             nud_minor.Value = ver.Minor;
             nud_revision.Value = ver.Revision;
 
-            cb_embed.Checked = GUIConfig.Instance.EmbedPCK;
+            cb_embed.Checked = GUIConfig.Instance.PackEmbedPCK;
 
-            nud_alignment.Value = GUIConfig.Instance.PCKAlignment;
-            cb_enable_encryption.Checked = GUIConfig.Instance.EncryptPCK;
+            nud_alignment.Value = GUIConfig.Instance.PackPCKAlignment;
+            cb_enable_encryption.Checked = GUIConfig.Instance.PackEncryptPCK;
+
+            cb_enable_patching.Checked = GUIConfig.Instance.PackPatchingEnabled;
+            tb_patch_target.Text = GUIConfig.Instance.PackPatchingTarget;
+            patchModeControls.Add(tb_patch_target);
+            patchModeControls.Add(btn_browse_patch_target);
+            UpdatePatchModeControls();
+
+            SetFolderPath(tb_folder_path.Text);
         }
 
         public void SetFolderPath(string path)
         {
-            var filesScan = new List<PCKPackerRegularFile>();
+            currentSelectedDir = path;
+            RegenerateFilesToPackList();
+        }
 
-            if (Directory.Exists(path))
-                Program.DoTaskWithProgressBar((t) => filesScan = PCKUtils.GetListOfFilesToPack(Path.GetFullPath(path), cancellationToken: t),
-                    this);
+        void RegenerateFilesToPackList()
+        {
+            if (cb_enable_patching.Checked && !string.IsNullOrWhiteSpace(tb_patch_target.Text))
+            {
+                PCKReaderEncryptionKeyResult getEncKey()
+                {
+                    return new PCKReaderEncryptionKeyResult() { Key = GUIConfig.Instance.PackEncryptionKey ?? "" };
+                };
 
-            GC.Collect();
-
-            if (filesScan != null)
-                filesToPack = filesScan.ToDictionary((f) => f.OriginalPath);
+                if (!pckReader.OpenFile(tb_patch_target.Text, getEncryptionKey: getEncKey))
+                {
+                    Program.ShowMessage("The PCK file could not be opened.\nIf it contains encrypted data, then specify the encryption key in the \"Encryption Setting\" menu.", "Error", MessageType.Error);
+                }
+            }
             else
-                filesToPack = [];
+            {
+                pckReader.Close();
+            }
+
+            var files_scan = new List<PCKPackerRegularFile>();
+            if (Directory.Exists(currentSelectedDir))
+                Program.DoTaskWithProgressBar((t) => files_scan = PCKUtils.GetListOfFilesToPack(Path.GetFullPath(currentSelectedDir), tb_prefix.Text, cancellationToken: t), this);
+
+            filesToPack = [];
+
+            // Fill with PCK files
+            foreach (var file in pckReader.Files)
+                filesToPack[file.Key] = new PCKPackerPCKFile(file.Value);
+
+            // Replace by files from folder
+            foreach (var file in files_scan)
+                filesToPack[file.Path] = file;
 
             UpdateTableContent();
         }
 
-        IEnumerable<PCKPackerRegularFile> GetFilesList()
+        IEnumerable<PCKPackerFile> GetFilesList()
         {
             if (cb_packFiltered.Checked)
             {
-                var filteredRows = new List<PCKPackerRegularFile>();
+                var filteredRows = new List<PCKPackerFile>();
                 foreach (DataGridViewRow i in dataGridView1.Rows)
                 {
                     string file = (string)i.Cells[0].Tag;
-                    if (filesToPack.ContainsKey(file))
-                        filteredRows.Add(filesToPack[file]);
+                    if (filesToPack.TryGetValue(file, out PCKPackerFile? value))
+                        filteredRows.Add(value);
                 }
 
                 return filteredRows;
@@ -89,7 +154,28 @@
         void UpdateTableContent()
         {
             bool preview = cb_previewPaths.Checked;
-            string prefix = tb_prefix.Text;
+            bool patch_enabled = cb_enable_patching.Checked && pckReader.IsOpened;
+
+            DataGridViewCellStyle current_styleRealFile = styleNormalFile;
+            DataGridViewCellStyle current_stylePCKFile = styleNormalFile;
+
+            DataGridViewCellStyle current_styleRealFileSize = styleNormalFileSize;
+            DataGridViewCellStyle current_stylePCKFileSize = styleNormalFileSize;
+
+            if (patch_enabled)
+            {
+                current_styleRealFile = styleRealFile;
+                current_stylePCKFile = stylePCKFile;
+
+                current_styleRealFileSize = styleRealFileSize;
+                current_stylePCKFileSize = stylePCKFileSize;
+
+                dataGridView1.Columns["patch"].Visible = true;
+            }
+            else
+            {
+                dataGridView1.Columns["patch"].Visible = false;
+            }
 
             dataGridView1.Rows.Clear();
             foreach (var f in filesToPack)
@@ -97,9 +183,29 @@
                 if (string.IsNullOrWhiteSpace(searchText.Text) ||
                     (!string.IsNullOrWhiteSpace(searchText.Text) && Utils.IsMatchWildCard(f.Key, searchText.Text, GUIConfig.Instance.MatchCaseFilterPackingForm)))
                 {
+                    if (patch_enabled && !preview)
+                    {
+                        if (f.Value is not PCKPackerRegularFile)
+                            continue;
+                    }
+
                     var tmpRow = new DataGridViewRow();
-                    tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = preview ? PCKUtils.GetResFilePath(f.Value.Path, prefix) : f.Value.OriginalPath, Tag = f.Value.OriginalPath });
-                    tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = Utils.SizeSuffix(f.Value.Size), Tag = f.Value.Size });
+                    if (f.Value is PCKPackerRegularFile rf)
+                    {
+                        tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = preview ? f.Value.Path : rf.OriginalPath, Tag = rf.OriginalPath, Style = current_styleRealFile });
+                        if (pckReader.Files.TryGetValue(rf.Path, out var orig_file))
+                            tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = $"{Utils.SizeSuffix(orig_file.Size)} -> {Utils.SizeSuffix(f.Value.Size)}", Tag = f.Value.Size, Style = current_styleRealFileSize });
+                        else
+                            tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = Utils.SizeSuffix(f.Value.Size), Tag = f.Value.Size, Style = current_styleRealFileSize });
+                        tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = "*", Tag = false });
+                    }
+                    else
+                    {
+                        tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.Path, Tag = f.Value.Path, Style = current_stylePCKFile });
+                        tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = Utils.SizeSuffix(f.Value.Size), Tag = f.Value.Size, Style = current_stylePCKFileSize });
+                        tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = "", Tag = false });
+                    }
+
 
                     dataGridView1.Rows.Add(tmpRow);
                 }
@@ -113,6 +219,19 @@
                 btn_match_case.Font = MatchCaseNormal;
             else
                 btn_match_case.Font = MatchCaseStrikeout;
+        }
+
+        void UpdatePatchModeControls()
+        {
+            foreach (var c in patchModeControls)
+            {
+                c.Enabled = cb_enable_patching.Checked;
+            }
+        }
+
+        private void CreatePCKFile_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            pckReader.Close();
         }
 
         private void dataGridView1_UserDeletedRow(object? sender, DataGridViewRowEventArgs e)
@@ -156,12 +275,10 @@
                             GetFilesList(),
                             file,
                             ver.ToString(),
-                            prefix,
                             (uint)nud_alignment.Value,
                             cb_embed.Checked,
-                            GUIConfig.Instance.EncryptionKey,
-                            GUIConfig.Instance.EncryptIndex,
-                            GUIConfig.Instance.EncryptFiles,
+                            GUIConfig.Instance.PackEncryptionKey,
+                            GUIConfig.Instance.PackEncryptIndex,
                             t
                             );
                     }
@@ -171,25 +288,26 @@
                             GetFilesList(),
                             file,
                             ver.ToString(),
-                            prefix,
                             (uint)nud_alignment.Value,
                             cb_embed.Checked,
                             null,
-                            false,
                             false,
                             t
                             );
                     }
                 }, this);
 
-                GUIConfig.Instance.PackedVersion = ver;
-                GUIConfig.Instance.EmbedPCK = cb_embed.Checked;
-                GUIConfig.Instance.FolderPath = tb_folder_path.Text;
+                GUIConfig.Instance.PackVersion = ver;
+                GUIConfig.Instance.PackEmbedPCK = cb_embed.Checked;
+                GUIConfig.Instance.PackFolderPath = tb_folder_path.Text;
                 GUIConfig.Instance.PackPathPrefix = prefix;
-                GUIConfig.Instance.PCKAlignment = (uint)nud_alignment.Value;
+                GUIConfig.Instance.PackPCKAlignment = (uint)nud_alignment.Value;
                 GUIConfig.Instance.PackOnlyFiltered = cb_packFiltered.Checked;
-                GUIConfig.Instance.PreviewPaths = cb_previewPaths.Checked;
-                GUIConfig.Instance.EncryptPCK = cb_enable_encryption.Checked;
+                GUIConfig.Instance.PackPreviewPaths = cb_previewPaths.Checked;
+                GUIConfig.Instance.PackEncryptPCK = cb_enable_encryption.Checked;
+                GUIConfig.Instance.PackPatchingEnabled = cb_enable_patching.Checked;
+                GUIConfig.Instance.PackPatchingTarget = tb_patch_target.Text;
+
                 GUIConfig.Instance.Save();
             }
         }
@@ -220,7 +338,8 @@
         {
             if (e.KeyCode == Keys.Enter)
             {
-                UpdateTableContent();
+                currentSelectedPrefix = tb_prefix.Text;
+                RegenerateFilesToPackList();
                 e.Handled = true;
                 e.SuppressKeyPress = true;
             }
@@ -228,11 +347,18 @@
 
         private void tb_prefix_Leave(object sender, EventArgs e)
         {
-            UpdateTableContent();
+            if (currentSelectedPrefix != tb_prefix.Text)
+            {
+                currentSelectedPrefix = tb_prefix.Text;
+                RegenerateFilesToPackList();
+            }
         }
 
         private void btn_browse_Click(object? sender, EventArgs e)
         {
+            if (Directory.Exists(tb_folder_path.Text))
+                fbd_pack_folder.SelectedPath = tb_folder_path.Text;
+
             if (fbd_pack_folder.ShowDialog(this) == DialogResult.OK)
             {
                 tb_folder_path.Text = Path.GetFullPath(fbd_pack_folder.SelectedPath);
@@ -288,6 +414,24 @@
         private void cb_previewPaths_CheckedChanged(object sender, EventArgs e)
         {
             UpdateTableContent();
+        }
+
+        private void cb_enable_patching_CheckedChanged(object sender, EventArgs e)
+        {
+            UpdatePatchModeControls();
+            RegenerateFilesToPackList();
+        }
+
+        private void btn_browse_patch_target_Click(object sender, EventArgs e)
+        {
+            if (File.Exists(tb_patch_target.Text))
+                ofd_patch_target.FileName = tb_patch_target.Text;
+
+            if (ofd_patch_target.ShowDialog(this) == DialogResult.OK)
+            {
+                tb_patch_target.Text = Path.GetFullPath(ofd_patch_target.FileName);
+                RegenerateFilesToPackList();
+            }
         }
     }
 }

@@ -22,15 +22,15 @@ namespace GodotPCKExplorer.UI
             MatchCaseNormal = tsmi_match_case_filter.Font;
             MatchCaseStrikeout = new Font(tsmi_match_case_filter.Font, FontStyle.Strikeout);
 
-            overwriteExported.Checked = GUIConfig.Instance.OverwriteExtracted;
-            checkMD5OnExportToolStripMenuItem.Checked = GUIConfig.Instance.CheckMD5Extracted;
+            overwriteExported.Checked = GUIConfig.Instance.ExtractOverwrite;
+            checkMD5OnExportToolStripMenuItem.Checked = GUIConfig.Instance.ExtractCheckMD5;
 
             noEncKeyModeMenus.Add(ifNoEncKeyMode_Cancel);
             noEncKeyModeMenus.Add(ifNoEncKeyMode_Skip);
             noEncKeyModeMenus.Add(ifNoEncKeyMode_AsIs);
             UpdateIfNoEncKeyModeMenus();
 
-            showConsoleToolStripMenuItem.Checked = GUIConfig.Instance.ShowConsole;
+            showConsoleToolStripMenuItem.Checked = GUIConfig.Instance.MainFormShowConsole;
             UpdateRecentList();
 
             UpdateShellReigstrationButton();
@@ -151,7 +151,7 @@ namespace GodotPCKExplorer.UI
 
         static void UpdateShowConsole()
         {
-            if (GUIConfig.Instance.ShowConsole)
+            if (GUIConfig.Instance.MainFormShowConsole)
             {
                 Program.ShowConsole();
             }
@@ -200,7 +200,7 @@ namespace GodotPCKExplorer.UI
         PCKReaderEncryptionKeyResult GetEncryptionKey(string? path = null)
         {
             PCKReaderEncryptionKeyResult res = new();
-            RecentFiles? item = GUIConfig.Instance.RecentOpenedFiles.FirstOrDefault((i) => i.Path == path);
+            RecentFiles? item = GUIConfig.Instance.MainFormRecentOpenedFiles.FirstOrDefault((i) => i.Path == path);
 
             using var d = new OpenWithPCKEncryption(item?.EncryptionKey ?? "");
             var dlg_res = d.ShowDialog(this);
@@ -219,7 +219,7 @@ namespace GodotPCKExplorer.UI
             for (int i = 0; i < noEncKeyModeMenus.Count; i++)
             {
                 var menu = noEncKeyModeMenus[i];
-                if (i == (int)GUIConfig.Instance.IfNoEncryptionKeyMode)
+                if (i == (int)GUIConfig.Instance.ExtractIfNoEncryptionKeyMode)
                 {
                     menu.Checked = true;
                 }
@@ -236,7 +236,7 @@ namespace GodotPCKExplorer.UI
             {
                 if (!remove)
                 {
-                    var list = GUIConfig.Instance.RecentOpenedFiles;
+                    var list = GUIConfig.Instance.MainFormRecentOpenedFiles;
                     var item = list.FirstOrDefault((i) => i.Path == path);
 
                     // Move to top if already exists
@@ -260,7 +260,7 @@ namespace GodotPCKExplorer.UI
                 }
                 else
                 {
-                    var list = GUIConfig.Instance.RecentOpenedFiles;
+                    var list = GUIConfig.Instance.MainFormRecentOpenedFiles;
 
                     var item = list.FirstOrDefault((i) => i.Path == path);
                     if (item != null)
@@ -272,10 +272,10 @@ namespace GodotPCKExplorer.UI
 
             recentToolStripMenuItem.DropDownItems.Clear();
 
-            if (GUIConfig.Instance.RecentOpenedFiles.Count > 0)
+            if (GUIConfig.Instance.MainFormRecentOpenedFiles.Count > 0)
             {
                 recentToolStripMenuItem.Enabled = true;
-                foreach (var f in GUIConfig.Instance.RecentOpenedFiles)
+                foreach (var f in GUIConfig.Instance.MainFormRecentOpenedFiles)
                 {
                     recentToolStripMenuItem.DropDownItems.Add(
                         new ToolStripButton(f.IsEncrypted ? f.Path + " 🔑" : f.Path, null, (s, e) => OpenFile(f.Path, f.EncryptionKey)) { Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft });
@@ -362,7 +362,7 @@ namespace GodotPCKExplorer.UI
                 foreach (var f in pckReader.Files)
                 {
                     if (string.IsNullOrWhiteSpace(searchText.Text) ||
-                        (!string.IsNullOrWhiteSpace(searchText.Text) && Utils.IsMatchWildCard(f.Key, searchText.Text, GUIConfig.Instance.MatchCaseFilterMainForm)))
+                        (!string.IsNullOrWhiteSpace(searchText.Text) && Utils.IsMatchWildCard(f.Key, searchText.Text, GUIConfig.Instance.MainFormMatchCaseFilter)))
                     {
                         var tmpRow = new DataGridViewRow();
                         tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.FilePath });
@@ -409,7 +409,7 @@ namespace GodotPCKExplorer.UI
 
         void UpdateMatchCaseFilterButton()
         {
-            if (GUIConfig.Instance.MatchCaseFilterMainForm)
+            if (GUIConfig.Instance.MainFormMatchCaseFilter)
                 tsmi_match_case_filter.Font = MatchCaseNormal;
             else
                 tsmi_match_case_filter.Font = MatchCaseStrikeout;
@@ -470,9 +470,9 @@ namespace GodotPCKExplorer.UI
                     failedFiles: out failedFiles,
                     folder: fbd_extract_folder.SelectedPath,
                     overwriteExisting: overwriteExported.Checked,
-                    checkMD5: GUIConfig.Instance.CheckMD5Extracted,
+                    checkMD5: GUIConfig.Instance.ExtractCheckMD5,
                     getEncryptionKey: () => InvokeRequired ? Invoke(() => GetEncryptionKey(path)) : GetEncryptionKey(path),
-                    noKeyMode: GUIConfig.Instance.IfNoEncryptionKeyMode,
+                    noKeyMode: GUIConfig.Instance.ExtractIfNoEncryptionKeyMode,
                     cancellationToken: t);
             }, this);
 
@@ -481,7 +481,7 @@ namespace GodotPCKExplorer.UI
                 string failed = "Failed";
                 if (extract_result)
                 {
-                    switch (GUIConfig.Instance.IfNoEncryptionKeyMode)
+                    switch (GUIConfig.Instance.ExtractIfNoEncryptionKeyMode)
                     {
                         case PCKExtractNoEncryptionKeyMode.Skip:
                             failed = "Skipped";
@@ -541,7 +541,7 @@ namespace GodotPCKExplorer.UI
 
         private void showConsoleToolStripMenuItem_Click(object? sender, EventArgs e)
         {
-            GUIConfig.Instance.ShowConsole = showConsoleToolStripMenuItem.Checked;
+            GUIConfig.Instance.MainFormShowConsole = showConsoleToolStripMenuItem.Checked;
             GUIConfig.Instance.Save();
             UpdateShowConsole();
         }
@@ -601,13 +601,13 @@ namespace GodotPCKExplorer.UI
 
         private void overwriteExported_Click(object? sender, EventArgs e)
         {
-            GUIConfig.Instance.OverwriteExtracted = overwriteExported.Checked;
+            GUIConfig.Instance.ExtractOverwrite = overwriteExported.Checked;
             GUIConfig.Instance.Save();
         }
 
         private void checkMD5OnExportToolStripMenuItem_Click(object? sender, EventArgs e)
         {
-            GUIConfig.Instance.CheckMD5Extracted = checkMD5OnExportToolStripMenuItem.Checked;
+            GUIConfig.Instance.ExtractCheckMD5 = checkMD5OnExportToolStripMenuItem.Checked;
             GUIConfig.Instance.Save();
         }
 
@@ -616,7 +616,7 @@ namespace GodotPCKExplorer.UI
             var idx = noEncKeyModeMenus.IndexOf((ToolStripMenuItem)sender);
             if (idx != -1)
             {
-                GUIConfig.Instance.IfNoEncryptionKeyMode = (PCKExtractNoEncryptionKeyMode)idx;
+                GUIConfig.Instance.ExtractIfNoEncryptionKeyMode = (PCKExtractNoEncryptionKeyMode)idx;
                 UpdateIfNoEncKeyModeMenus();
             }
             else
@@ -761,7 +761,7 @@ namespace GodotPCKExplorer.UI
 
         private void tsmi_match_case_filter_Click(object? sender, EventArgs e)
         {
-            GUIConfig.Instance.MatchCaseFilterMainForm = !GUIConfig.Instance.MatchCaseFilterMainForm;
+            GUIConfig.Instance.MainFormMatchCaseFilter = !GUIConfig.Instance.MainFormMatchCaseFilter;
             GUIConfig.Instance.Save();
             UpdateMatchCaseFilterButton();
             UpdateListOfPCKContent();
