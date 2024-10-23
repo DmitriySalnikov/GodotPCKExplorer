@@ -458,7 +458,7 @@ namespace GodotPCKExplorer
                 PCKActions.progress?.LogProgress(op, 100);
                 PackPath = file_path;
                 binReader = fileReader;
-                PCK_ContainsEncryptedFiles = Files.Count != 0 && Files.Count((f) => f.Value.IsEncrypted) > 0;
+                PCK_ContainsEncryptedFiles = Files.Any((f) => f.Value.IsEncrypted);
                 return true;
             }
             catch (Exception ex)
@@ -523,14 +523,15 @@ namespace GodotPCKExplorer
 
                 string basePath = folder;
                 byte[]? encryption_key = null;
-                bool skip_key = false;
 
                 int count = 0;
                 double one_file_in_progress_line = 1.0 / files_count;
 
-                if (IsEncryptedFiles)
+                bool selected_encrypted_files = Files.Where(f => names.Contains(f.Key)).Any(f => f.Value.IsEncrypted);
+
+                if (IsEncryptedFiles && selected_encrypted_files)
                 {
-                    if (encryption_key == null && !skip_key)
+                    if (encryption_key == null)
                     {
                         if (ReceivedEncryptionKey == null)
                         {
@@ -550,11 +551,9 @@ namespace GodotPCKExplorer
                                         return false;
                                     case PCKExtractNoEncryptionKeyMode.Skip:
                                         PCKActions.progress?.LogProgress(op, "No Encryption Key received. All encrypted files will be skipped.");
-                                        skip_key = true;
                                         break;
                                     case PCKExtractNoEncryptionKeyMode.AsIs:
                                         PCKActions.progress?.LogProgress(op, "No Encryption Key received. All encrypted files will be extracted without decryption.");
-                                        skip_key = true;
                                         break;
                                     default:
                                         throw new NotImplementedException("Invalid 'no key' mode!");
@@ -1159,7 +1158,6 @@ namespace GodotPCKExplorer
                 binReader.BaseStream.Seek(startOffset, SeekOrigin.Begin);
 
             if (startOffset >= binReader.BaseStream.Length)
-                // If the PCK stream contains only an index, then this class should not be initialized.
                 return;
 
             Stream = binReader;
@@ -1167,7 +1165,6 @@ namespace GodotPCKExplorer
             start_position = Stream.BaseStream.Position;
 
             if (start_position + 16 + 8 + mbedTLS.CHUNK_SIZE >= binReader.BaseStream.Length)
-                // If the PCK stream contains only an index, then this class should not be initialized.
                 return;
 
             // Update EncryptionHeaderSize if needed
@@ -1182,7 +1179,7 @@ namespace GodotPCKExplorer
             DataSizeDelta = (int)(DataSizeEncoded - DataSize);
             TotalFileSize = HeaderSize + DataSizeEncoded;
 
-            if (data_start_position + DataSizeEncoded >= binReader.BaseStream.Length)
+            if (data_start_position + DataSizeEncoded > binReader.BaseStream.Length)
                 throw new IndexOutOfRangeException("The end of the encrypted file goes beyond the boundaries of the open PCK file.");
         }
 
