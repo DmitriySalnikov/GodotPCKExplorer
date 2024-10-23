@@ -651,7 +651,7 @@ namespace GodotPCKExplorer
                 }
 
                 PCKActions.progress?.LogProgress(op, 100);
-                PCKActions.progress?.LogProgress(op, "Completed!  Time spent: {(DateTime.UtcNow - start_time).TotalSeconds:F2}s.");
+                PCKActions.progress?.LogProgress(op, $"Completed!  Time spent: {(DateTime.UtcNow - start_time).TotalSeconds:F2}s.");
                 return true;
             }
             catch (Exception ex)
@@ -911,8 +911,31 @@ namespace GodotPCKExplorer
         public long Size;
         /// <summary>
         /// Actual file size inside the package. Including encrypted header.
+        /// This size is calculated at the first request.
         /// </summary>
-        public long ActualSize;
+        public long ActualSize
+        {
+            get
+            {
+                if (_actualSize == -2)
+                {
+                    if (IsEncrypted)
+                    {   // PCKEncryptedFileReader moves the position of the stream, so it needs to be moved back
+                        long pos = StreamReader.BaseStream.Position;
+                        using var er = new PCKEncryptedFileReader(this, new byte[0]);
+                        StreamReader.BaseStream.Seek(pos, SeekOrigin.Begin);
+                        _actualSize = er.TotalFileSize;
+                    }
+                    else
+                    {
+                        _actualSize = Size;
+                    }
+                }
+
+                return _actualSize;
+            }
+        }
+        long _actualSize = -2;
         /// <summary>
         /// Hash to check the correctness of the file.
         /// </summary>
@@ -938,19 +961,6 @@ namespace GodotPCKExplorer
             Flags = flags;
 
             PackVersion = pack_version;
-
-            if (IsEncrypted)
-            {
-                // PCKEncryptedFileReader moves the position of the stream, so it needs to be moved back
-                long pos = reader.BaseStream.Position;
-                using var er = new PCKEncryptedFileReader(this, new byte[0]);
-                reader.BaseStream.Seek(pos, SeekOrigin.Begin);
-                ActualSize = er.TotalFileSize;
-            }
-            else
-            {
-                ActualSize = size;
-            }
         }
 
         public delegate void VoidInt(int progress);
@@ -1126,17 +1136,17 @@ namespace GodotPCKExplorer
         static byte[]? temp_encryption_buffer;
 
         public BinaryReader? Stream;
-        public byte[] Key;
+        public byte[] Key = new byte[16];
 
-        readonly long start_position;
-        readonly long data_start_position;
-        public byte[] MD5;
-        public long HeaderSize;
-        public long DataSize;
-        public long DataSizeEncoded;
-        public long TotalFileSize;
-        int DataSizeDelta;
-        public byte[] StartIV;
+        readonly long start_position = -1;
+        readonly long data_start_position = -1;
+        public byte[] MD5 = new byte[16];
+        public long HeaderSize = -1;
+        public long DataSize = -1;
+        public long DataSizeEncoded = -1;
+        public long TotalFileSize = -1;
+        int DataSizeDelta = -1;
+        public byte[] StartIV = new byte[16];
 
         public PCKEncryptedFileReader(PCKReaderFile file, byte[] key) : this(file.StreamReader, key, file.Offset)
         {
@@ -1148,9 +1158,17 @@ namespace GodotPCKExplorer
             if (startOffset >= 0)
                 binReader.BaseStream.Seek(startOffset, SeekOrigin.Begin);
 
+            if (startOffset >= binReader.BaseStream.Length)
+                // If the PCK stream contains only an index, then this class should not be initialized.
+                return;
+
             Stream = binReader;
             Key = key;
             start_position = Stream.BaseStream.Position;
+
+            if (start_position + 16 + 8 + mbedTLS.CHUNK_SIZE >= binReader.BaseStream.Length)
+                // If the PCK stream contains only an index, then this class should not be initialized.
+                return;
 
             // Update EncryptionHeaderSize if needed
             MD5 = binReader.ReadBytes(16);
