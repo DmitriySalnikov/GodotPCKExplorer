@@ -58,10 +58,10 @@
             searchText = new TextBoxWithPlaceholder();
             toolTip1 = new ToolTip(components);
             btn_clearFilter = new Button();
+            cb_enable_encryption = new CheckBox();
             nud_alignment = new NumericUpDown();
             label4 = new Label();
             btn_generate_key = new Button();
-            cb_enable_encryption = new CheckBox();
             cb_packFiltered = new CheckBox();
             cb_previewPaths = new CheckBox();
             label5 = new Label();
@@ -344,6 +344,20 @@
             btn_clearFilter.UseVisualStyleBackColor = true;
             btn_clearFilter.Click += btn_clearFilter_Click;
             // 
+            // cb_enable_encryption
+            // 
+            cb_enable_encryption.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            cb_enable_encryption.AutoSize = true;
+            cb_enable_encryption.CheckAlign = ContentAlignment.MiddleRight;
+            cb_enable_encryption.Location = new Point(529, 456);
+            cb_enable_encryption.Margin = new Padding(4, 3, 4, 3);
+            cb_enable_encryption.Name = "cb_enable_encryption";
+            cb_enable_encryption.Size = new Size(121, 19);
+            cb_enable_encryption.TabIndex = 28;
+            cb_enable_encryption.Text = "Enable encryption";
+            toolTip1.SetToolTip(cb_enable_encryption, "When patching, encryption is applied only to files that will be added to the PCK, and not copied from another Pack.");
+            cb_enable_encryption.UseVisualStyleBackColor = true;
+            // 
             // nud_alignment
             // 
             nud_alignment.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
@@ -377,19 +391,6 @@
             btn_generate_key.Text = "Encryption";
             btn_generate_key.UseVisualStyleBackColor = true;
             btn_generate_key.Click += btn_generate_key_Click;
-            // 
-            // cb_enable_encryption
-            // 
-            cb_enable_encryption.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            cb_enable_encryption.AutoSize = true;
-            cb_enable_encryption.CheckAlign = ContentAlignment.MiddleRight;
-            cb_enable_encryption.Location = new Point(529, 456);
-            cb_enable_encryption.Margin = new Padding(4, 3, 4, 3);
-            cb_enable_encryption.Name = "cb_enable_encryption";
-            cb_enable_encryption.Size = new Size(121, 19);
-            cb_enable_encryption.TabIndex = 28;
-            cb_enable_encryption.Text = "Enable encryption";
-            cb_enable_encryption.UseVisualStyleBackColor = true;
             // 
             // cb_packFiltered
             // 

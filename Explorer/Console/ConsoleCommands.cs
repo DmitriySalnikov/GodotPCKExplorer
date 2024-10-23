@@ -45,8 +45,10 @@ namespace GodotPCKExplorer.Cmd
                  () => { if (args[0] == "-l") InfoPCKCommand(args, true); },
                  () => { if (args[0] == "-e") ExtractPCKCommand(args); },
                  () => { if (args[0] == "-es") ExtractSkipExistingPCKCommand(args); },
-                 () => { if (args[0] == "-p") PackPCKCommand(args, false); },
-                 () => { if (args[0] == "-pe") PackPCKCommand(args, true); },
+                 () => { if (args[0] == "-p") PackPCKCommand(args, false, false); },
+                 () => { if (args[0] == "-pe") PackPCKCommand(args, false, true); },
+                 () => { if (args[0] == "-pc") PackPCKCommand(args, true, false); },
+                 () => { if (args[0] == "-pce") PackPCKCommand(args, true, true); },
                  () => { if (args[0] == "-m") MergePCKCommand(args); },
                  () => { if (args[0] == "-r") RipPCKCommand(args); },
                  () => { if (args[0] == "-s") SplitPCKCommand(args); },
@@ -105,7 +107,15 @@ namespace GodotPCKExplorer.Cmd
             Program.ExitCode = 3;
 #endif
             Program.Log(err);
+            LogErrHelpSeparator();
             Program.LogHelp();
+        }
+
+        static void LogErrHelpSeparator()
+        {
+            Program.Log("");
+            Program.Log("-------------------------------------------------------------");
+            Program.Log("");
         }
 
         static void LogEx(Exception ex)
@@ -231,10 +241,11 @@ namespace GodotPCKExplorer.Cmd
             ExtractPCKCommand(args, false);
         }
 
-        static void PackPCKCommand(string[] args, bool embed)
+        static void PackPCKCommand(string[] args, bool patch, bool embed)
         {
             runWithArgs = true;
 
+            string patchPck = "";
             string dirPath;
             string filePath;
             string strVer;
@@ -244,30 +255,38 @@ namespace GodotPCKExplorer.Cmd
 
             try
             {
-                if (args.Length >= 4 && args.Length <= 7)
+                int min_args = patch ? 5 : 4;
+                int max_args = patch ? 8 : 7;
+
+                if (args.Length >= min_args && args.Length <= max_args)
                 {
-                    dirPath = Path.GetFullPath(args[1]);
-                    filePath = Path.GetFullPath(args[2]);
-                    strVer = args[3];
+                    int idx = 1;
 
-                    if (args.Length > 4)
+                    if (patch)
+                        patchPck = Path.GetFullPath(args[idx++]);
+
+                    dirPath = Path.GetFullPath(args[idx++]);
+                    filePath = Path.GetFullPath(args[idx++]);
+                    strVer = args[idx++];
+
+                    if (args.Length > idx)
                     {
-                        prefix = args[4];
+                        prefix = args[idx++];
 
-                        if (args.Length > 5)
+                        if (args.Length > idx)
                         {
-                            encKey = args[5];
+                            encKey = args[idx++];
 
                             if (!ValidateEncryptionKey(encKey))
                                 return;
 
-                            if (args.Length > 6)
+                            if (args.Length > idx)
                             {
-                                encType = args[6];
+                                encType = args[idx++];
 
                                 if (!encyptionTypes.Contains(encType))
                                 {
-                                    LogErrHelp($"Invalid encryption type: {encType}");
+                                    LogErr($"Invalid encryption type: {encType}. Only \"both\", \"index\" and \"files\" can be used as encryption mode.");
                                     return;
                                 }
                             }
@@ -276,7 +295,7 @@ namespace GodotPCKExplorer.Cmd
                 }
                 else
                 {
-                    LogErrHelp($"Invalid number of arguments! Expected from 4 to 6, but got {args.Length}");
+                    LogErrHelp($"Invalid number of arguments! Expected from {min_args} to {max_args}, but got {args.Length}");
                     return;
                 }
             }
@@ -306,7 +325,7 @@ namespace GodotPCKExplorer.Cmd
                 }
             }
 
-            var res = PCKActions.Pack(dirPath, filePath, strVer, pckToPatch: "", packPathPrefix: prefix, alignment: 16, embed: embed, encKey: encKey, encIndex: encIndex, encFiles: encFiles);
+            var res = PCKActions.Pack(dirPath, filePath, strVer, pckToPatch: patchPck, packPathPrefix: prefix, alignment: 16, embed: embed, encKey: encKey, encIndex: encIndex, encFiles: encFiles);
             SetResult(res);
         }
 

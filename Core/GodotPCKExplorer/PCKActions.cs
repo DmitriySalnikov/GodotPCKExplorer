@@ -344,6 +344,13 @@ namespace GodotPCKExplorer
         {
             if (Directory.Exists(dirPath))
             {
+                var ver = new PCKVersion(strVer);
+                if (!ver.IsValid())
+                {
+                    progress?.ShowMessage($"The version '{ver}' is specified incorrectly. Negative values are not allowed.", "Error", MessageType.Error);
+                    return false;
+                }
+
                 if (outFilePath == pckToPatch)
                 {
                     progress?.ShowMessage($"The path to the new file cannot be equal to the patch file", "Error", MessageType.Error);

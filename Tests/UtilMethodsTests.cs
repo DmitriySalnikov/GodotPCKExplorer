@@ -868,7 +868,7 @@ namespace Tests
         }
     }
 
-    // TODO tests for patching
+    // TODO add console tests
 
     public class MyFixtureData
     {
