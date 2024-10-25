@@ -2,6 +2,7 @@
 using System.Collections;
 using System.IO.Compression;
 using GodotPCKExplorer;
+using GodotPCKExplorer.Cmd;
 using PCKBruteforcer;
 
 namespace Tests
@@ -38,6 +39,7 @@ namespace Tests
 
         static readonly string DefaultGodotArgs = "--headless --quit";
 
+        string test_folder_name;
         string binaries_base;
         string binaries;
 
@@ -86,11 +88,13 @@ namespace Tests
         [SetUp]
         public void GodotPCKInit()
         {
+            test_folder_name = $"{GodotVersion}_{TestContext.CurrentContext.Test.MethodName}";
+            binaries_base = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "", "TestBinaries", test_folder_name);
+            binaries = Path.Combine(binaries_base, PlatformFolder);
+
             if (!PCKActions.IsInited)
                 PCKActions.Init(new ProgressReporterTests($"{TestContext.CurrentContext.Test.MethodName ?? "!NoTest!"}({GodotVersion})"));
-
-            binaries_base = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "", "TestBinaries", $"{GodotVersion}_{TestContext.CurrentContext.Test.MethodName}");
-            binaries = Path.Combine(binaries_base, PlatformFolder);
+            ConsoleCommands.InitLogs(t => Console.WriteLine($"[Console ({test_folder_name})] {t}"), ex => Console.WriteLine($"[Console ({test_folder_name}) ⚠] {ex.GetType().Name}:\n{ex.Message}\nStackTrace:\n{ex.StackTrace}"));
 
             if (!Directory.Exists(binaries_base))
                 Directory.CreateDirectory(binaries_base);
@@ -136,21 +140,6 @@ namespace Tests
                 catch { }
             }
         }
-
-        /* TODO add UI tests?..
-        [Test]
-        public void TestOpenCommand()
-        {
-            Application.Idle += (sender, e) => Application.Exit();
-            Title("Open");
-            Assert.IsTrue(PCKActions.OpenPCKRun(Path.Combine(binaries, "Test.pck")));
-            PCKActions.ClosePCK();
-
-            Title("Wrong Path");
-            Assert.IsFalse(PCKActions.OpenPCKRun(Path.Combine(binaries, "WrongPath/Test.pck")));
-            PCKActions.ClosePCK();
-        }
-        */
 
         void CompareRealFilesAndPCK(string folder, string origPck, string newPck, bool compareMD5Raw, string? encKey = null, Func<string, string>? realFileNameChange = null)
         {
@@ -239,7 +228,7 @@ namespace Tests
                     file.Write(bytes);
                 }
                 Directory.CreateDirectory(patchFolder);
-                File.Copy(filePath, Path.Combine(patchFolder, Path.GetFileName(filePath)));
+                TUtils.CopyFile(filePath, Path.Combine(patchFolder, Path.GetFileName(filePath)));
                 var prefix = (Path.GetDirectoryName(filePath) ?? "").Replace(extractCheckPatch, "").TrimStart(Path.DirectorySeparatorChar);
                 if (!string.IsNullOrWhiteSpace(prefix))
                     prefix += Path.DirectorySeparatorChar;
@@ -774,7 +763,7 @@ namespace Tests
 
             string enc_key = "7FDBF68B69B838194A6F1055395225BBA3F1C5689D08D71DCD620A7068F61CBA";
             string wrong_enc_key = "8FDBF68B69B838194A6F1055395225BBA3F1C5689D08D71DCD620A7068F61CBA";
-            string ver = "2.4.0.2";
+            string ver = $"{(GodotVersion == 4 ? 2 : 1)}.{GodotVersion}.0.2";
 
             string extracted = Path.Combine(binaries, "EncryptedExport");
             string exe = Path.Combine(binaries, Exe("TestEncrypted"));
@@ -866,9 +855,208 @@ namespace Tests
             using (var r = new RunGodotWithOutput(exe_new_wrong_key, DefaultGodotArgs))
                 Assert.That(r.IsSuccess(), Is.False);
         }
-    }
 
-    // TODO add console tests
+        [Test]
+        public void TestConsoleCommands()
+        {
+            //if (GodotVersion == 3)
+            //    Assert.Inconclusive("Not applicable!");
+
+            string enc_key = "7FDBF68B69B838194A6F1055395225BBA3F1C5689D08D71DCD620A7068F61CBA";
+            string wrong_enc_key = "8FDBF68B69B838194A6F1055395225BBA3F1C5689D08D71DCD620A7068F61CBA";
+            string ver = $"{(GodotVersion == 4 ? 2 : 1)}.{GodotVersion}.3.0";
+
+            string extractTestPath = Path.Combine(binaries, "ExtractTest");
+            string testEXE = Path.Combine(binaries, Exe("Test"));
+            string testEmbedEXE = Path.Combine(binaries, Exe("TestPack"));
+            string testPCK = Path.Combine(binaries, "Test.pck");
+            string encPCK = Path.Combine(binaries, "TestEncrypted.pck");
+            string encOnlyFilesPCK = GodotVersion > 3 ? Path.Combine(binaries, "TestEncryptedFiles.pck") : "";
+
+            string testPCKVersion = Path.Combine(binaries, "TestVer.pck");
+
+            string testEXERip = Path.Combine(binaries, Exe("TestRip"));
+            string testPCKRip = Path.Combine(binaries, "TestRip.pck");
+            string testEXERipRemove = Path.Combine(binaries, Exe("TestRipRemove"));
+
+            string testEXESplit = Path.Combine(binaries, Exe("TestSplitPair"));
+
+            string testExtractFolder = Path.Combine(binaries, "TestExtract");
+
+            string testPCKPack = Path.Combine(binaries, "TestPCKPack.pck");
+            string testPCKPackEnc = Path.Combine(binaries, "TestPCKPackEnc.pck");
+
+            TUtils.CopyFile(Path.Combine(binaries, Exe("TestEmbedded")), testEmbedEXE);
+
+            {
+                string onlyFilesFolder = Path.Combine(binaries, "TestExtractOnlyFiles");
+                Assert.That(PCKActions.Extract(testPCK, onlyFilesFolder, true), Is.True);
+                if (GodotVersion > 3)
+                    Assert.That(PCKActions.Pack(onlyFilesFolder, encOnlyFilesPCK, ver, encIndex: false, encFiles: true, encKey: enc_key), Is.True);
+            }
+
+            bool RunCommand(params string[] args)
+            {
+                return ConsoleCommands.RunCommand(args) && ConsoleCommands.ExitCode == 0;
+            }
+
+            Title("-i");
+            {
+                Assert.That(RunCommand("-i", testPCK), Is.True);
+                Assert.That(RunCommand("-i"), Is.False);
+                Assert.That(RunCommand("-i", "some/fake/path.pck"), Is.False);
+                Assert.That(RunCommand("-i", testPCK, "extra arg"), Is.False);
+            }
+
+            Title("-l");
+            {
+                Assert.That(RunCommand("-l", testPCK), Is.True);
+                Assert.That(RunCommand("-l"), Is.False);
+                Assert.That(RunCommand("-l", "some/fake/path.pck"), Is.False);
+                Assert.That(RunCommand("-l", testPCK, "extra arg"), Is.False);
+
+                if (GodotVersion > 3)
+                {
+                    Assert.That(RunCommand("-l", encPCK, enc_key), Is.True);
+                    Assert.That(RunCommand("-l", encPCK, wrong_enc_key), Is.False);
+                    Assert.That(RunCommand("-l", encPCK), Is.False);
+                    Assert.That(RunCommand("-l", encPCK, enc_key, "extra arg"), Is.False);
+                }
+            }
+
+            Title("-c");
+            {
+                TUtils.CopyFile(testPCK, testPCKVersion);
+                var newVer = GetPCKVersion(testPCKVersion);
+                newVer.Revision += 1;
+                Assert.That(RunCommand("-c", testPCKVersion, newVer.ToString()), Is.True);
+                Assert.That(GetPCKVersion(testPCKVersion), Is.EqualTo(newVer));
+                Assert.That(RunCommand("-c", testPCKVersion, "-1.0.0,1"), Is.False);
+                Assert.That(RunCommand("-c", testPCKVersion, "1.0.-.1"), Is.False);
+                Assert.That(RunCommand("-c", "some/fake/path.pck", "1.0.-.1"), Is.False);
+                Assert.That(RunCommand("-c", "some/fake/path.pck", newVer.ToString(), "extra arg"), Is.False);
+            }
+
+            Title("-r");
+            {
+                TUtils.CopyFile(testEmbedEXE, testEXERip);
+                TUtils.CopyFile(testEmbedEXE, testEXERipRemove);
+
+                Assert.That(RunCommand("-r", testEXERip, testPCKRip), Is.True);
+                Assert.That(RunCommand("-r", testEXERipRemove), Is.True);
+
+                {
+                    using var pckReader = new PCKReader();
+                    Assert.That(pckReader.OpenFile(testEXERip), Is.True);
+                    Assert.That(pckReader.OpenFile(testPCKRip), Is.True);
+
+                    Assert.That(pckReader.OpenFile(testEXERipRemove), Is.False);
+                }
+
+                Assert.That(RunCommand("-r", testEXERipRemove), Is.False);
+                Assert.That(RunCommand("-r", testEXERipRemove + "testWrongPath"), Is.False);
+
+                Assert.That(RunCommand("-r", testEXERip, testPCKRip, "extra arg"), Is.False);
+            }
+
+            Title("-m");
+            {
+                Assert.That(RunCommand("-m", testPCKRip, testEXERipRemove, "extra arg"), Is.False);
+
+                Assert.That(RunCommand("-m", testPCKRip, testEXERipRemove), Is.True);
+                Assert.That(RunCommand("-m", testPCKRip, testPCKRip), Is.False);
+                Assert.That(RunCommand("-m", testPCKRip, testEXERipRemove), Is.False);
+
+                {
+                    using var pckReader = new PCKReader();
+                    Assert.That(pckReader.OpenFile(testEXERipRemove), Is.True);
+                }
+            }
+
+            Title("-s");
+            {
+                Assert.That(RunCommand("-s", testEXERipRemove, "kek", "extra arg"), Is.False);
+                var splitExeCopy = Path.ChangeExtension(testEXERipRemove, ".copy" + Exe(""));
+                TUtils.CopyFile(testEXERipRemove, splitExeCopy);
+
+                Assert.That(RunCommand("-s", testEXERipRemove), Is.True);
+                Assert.That(RunCommand("-s", splitExeCopy, testEXESplit), Is.True);
+
+                {
+                    using var pckReader = new PCKReader();
+                    Assert.That(pckReader.OpenFile(testEXERipRemove), Is.False);
+                    Assert.That(pckReader.OpenFile(Path.ChangeExtension(testEXERipRemove, ".pck")), Is.True);
+
+                    Assert.That(pckReader.OpenFile(testEXESplit), Is.False);
+                    Assert.That(pckReader.OpenFile(Path.ChangeExtension(testEXESplit, ".pck")), Is.True);
+                }
+            }
+
+            Title("-e, -es");
+            {
+                Assert.That(RunCommand("-e", testPCK, testExtractFolder, "", "extra arg"), Is.False);
+
+                Assert.That(RunCommand("-e", testPCK, testExtractFolder), Is.True);
+                Assert.That(RunCommand("-e", testPCK, testPCK), Is.False);
+                Assert.That(RunCommand("-e", testEXE, testPCK), Is.False);
+
+                if (GodotVersion > 3)
+                {
+                    Assert.That(RunCommand("-e", encPCK, testExtractFolder + "Enc"), Is.False);
+                    Assert.That(RunCommand("-e", encPCK, testExtractFolder + "Enc", wrong_enc_key), Is.False);
+                    Assert.That(RunCommand("-e", encPCK, testExtractFolder + "Enc", enc_key), Is.True);
+
+                    CompareRealFilesAndPCK(testExtractFolder + "Enc", encPCK, encPCK, false, enc_key);
+
+                    // "skip" and "encrypted" does not works if Index is encrypted
+
+                    // skip
+                    Assert.That(RunCommand("-e", encPCK, testExtractFolder + "EncSkip", "skip"), Is.False);
+                    Assert.That(RunCommand("-e", encPCK, testExtractFolder + "EncEncrypted", "encrypted"), Is.False);
+
+                    Assert.That(RunCommand("-e", encOnlyFilesPCK, testExtractFolder + "EncSkip", "skip"), Is.True);
+                    Assert.That(PCKUtils.GetListOfFilesToPack(testExtractFolder + "EncSkip"), Has.Count.EqualTo(0));
+
+                    // encrypted
+                    Assert.That(RunCommand("-e", encOnlyFilesPCK, testExtractFolder + "EncEncrypted", "encrypted"), Is.True);
+                    CompareRealFilesAndPCK(testExtractFolder + "EncEncrypted", encOnlyFilesPCK, encOnlyFilesPCK, true, enc_key, f => f + ".encrypted");
+                }
+            }
+
+            // just testing the arguments. Everything else is tested in a separate test.
+            Title("-p, -pe");
+            {
+                Assert.That(RunCommand("-p", testExtractFolder, testPCKPack, ver, "", enc_key, "both", "extra arg"), Is.False);
+
+                Assert.That(RunCommand("-p", testExtractFolder, testPCKPack, ver, ""), Is.True);
+                Assert.That(RunCommand("-p", testExtractFolder, testExtractFolder, ver, ""), Is.False);
+                Assert.That(RunCommand("-p", testExtractFolder, testPCKPack, "", ""), Is.False);
+                if (GodotVersion > 3)
+                {
+                    Assert.That(RunCommand("-p", testExtractFolder, testPCKPackEnc, ver, "", enc_key, "both"), Is.True);
+                    CompareRealFilesAndPCK(testExtractFolder, testPCK, testPCKPackEnc, false, enc_key);
+
+                    Assert.That(RunCommand("-p", testExtractFolder, testPCKPackEnc, ver, "", "wrong key", "both"), Is.False);
+                }
+            }
+
+            Title("-pc, -pce");
+            {
+                Assert.That(RunCommand("-pc", testPCK, testExtractFolder, testPCKPack, ver, "", enc_key, "both", "extra arg"), Is.False);
+
+                Assert.That(RunCommand("-pc", testPCK, testExtractFolder, testPCKPack, ver, ""), Is.True);
+                Assert.That(RunCommand("-pc", testPCK, testExtractFolder, testExtractFolder, ver, ""), Is.False);
+                Assert.That(RunCommand("-pc", testPCK, testExtractFolder, testPCKPack, "", ""), Is.False);
+                if (GodotVersion > 3)
+                {
+                    Assert.That(RunCommand("-pc", testPCK, testExtractFolder, testPCKPackEnc, ver, "", enc_key, "both"), Is.True);
+                    CompareRealFilesAndPCK(testExtractFolder, testPCK, testPCKPackEnc, false, enc_key);
+
+                    Assert.That(RunCommand("-pc", testPCK, testExtractFolder, testPCKPackEnc, ver, "", "wrong key", "both"), Is.False);
+                }
+            }
+        }
+    }
 
     public class MyFixtureData
     {

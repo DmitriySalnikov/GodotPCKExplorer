@@ -32,6 +32,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\Core\GodotPCKExplorer\GodotPCKExplorer.csproj" />
+		<ProjectReference Include="..\Explorer\Console\GodotPCKExplorer.Console.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

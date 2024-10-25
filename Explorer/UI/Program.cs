@@ -44,6 +44,7 @@ namespace GodotPCKExplorer.UI
             Init();
             // Cleaning up on exit if closed by closing console window
             AppDomain.CurrentDomain.ProcessExit += (s, e) => Cleanup();
+            ConsoleCommands.InitLogs(Log, Log);
 
             if (!ConsoleCommands.RunCommand(args))
             {
@@ -198,25 +199,6 @@ namespace GodotPCKExplorer.UI
             var res = ShowMessage(ex.Message, ex.GetType().Name, messageType, boxButtons);
             Log(ex);
             return res;
-        }
-
-        public static void LogHelp()
-        {
-            string HelpText = @"Godot can embed '.pck' files into other files.
-Therefore, GodotPCKExplorer can open both '.pck' and files with embedded 'pck'.
-Encryption is only verified with PCK for Godot 4.
-Paths and other arguments must be without spaces or inside quotes: ""some path""
-
-{} - Optional arguments
-
-Examples of valid commands:
--o	Open pack file
-	-o [path to pack] {[encryption key]}
-	-o C:/Game.exe
-	-o C:/Game.pck
-";
-
-            Log("\n" + HelpText);
         }
 
         #endregion

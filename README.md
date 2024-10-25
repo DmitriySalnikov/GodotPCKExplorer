@@ -11,6 +11,7 @@ Also `PCK Bruteforcer` is available as part of this project [here](Bruteforcer/)
 * `Explore` existing PCK files (regular PCK or Embedded)
 * `Extract` content from a PCK file
 * `Create` new PCK files or embed the folder as PCK into any other files
+* `Patch` PCK files and replace some of their contents with new files from the folder
 * `Merge` existing PCK into other files
 * `Change` the version of existing PCK
 * `Extract` whole embedded PCK
