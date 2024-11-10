@@ -2,9 +2,9 @@ name: 🛠️ .NET Desktop
 
 on:
   push:
-    paths-ignore: [HexEditorStructures/**, Images/**, Core/mbedTLS_AES/**, "README.md", "LICENSE", ".gitignore*", ".github/**/util_*"]
+    paths-ignore: [HexEditorStructures/**, Images/**, Core/mbedTLS_AES/**, "README.md", "LICENSE", ".gitignore*", ".github/**/util_*", ".github/ISSUE_TEMPLATE/**"]
   pull_request:
-    paths-ignore: [HexEditorStructures/**, Images/**, Core/mbedTLS_AES/**, "README.md", "LICENSE", ".gitignore*", ".github/**/util_*"]
+    paths-ignore: [HexEditorStructures/**, Images/**, Core/mbedTLS_AES/**, "README.md", "LICENSE", ".gitignore*", ".github/**/util_*", ".github/ISSUE_TEMPLATE/**"]
 
 # Stop the same workflow actions
 concurrency:
