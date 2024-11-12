@@ -527,9 +527,7 @@ namespace GodotPCKExplorer
                 int count = 0;
                 double one_file_in_progress_line = 1.0 / files_count;
 
-                bool selected_encrypted_files = Files.Where(f => names.Contains(f.Key)).Any(f => f.Value.IsEncrypted);
-
-                if (IsEncryptedFiles && selected_encrypted_files)
+                if (IsEncryptedFiles && names.Any(name => Files.TryGetValue(name, out var file) && file.IsEncrypted))
                 {
                     if (encryption_key == null)
                     {
