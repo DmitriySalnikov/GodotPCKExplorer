@@ -12,7 +12,7 @@
 		<PackageId>PCKBruteforcer.UI</PackageId>
 		<Authors>Dmitriy Salnikov</Authors>
 		<Description>A small utility to find the encryption key for PCK.</Description>
-		<Copyright>Copyright © 2024</Copyright>
+		<Copyright>Copyright © 2025</Copyright>
 		<PackageProjectUrl>https://github.com/DmitriySalnikov/GodotPCKExplorer/tree/master/Bruteforcer</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/DmitriySalnikov/GodotPCKExplorer/tree/master/Bruteforcer</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>

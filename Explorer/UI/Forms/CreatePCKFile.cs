@@ -71,7 +71,15 @@ namespace GodotPCKExplorer.UI
             patchModeControls.Add(tb_patch_target);
             patchModeControls.Add(btn_browse_patch_target);
             UpdatePatchModeControls();
+            CalculatePCKSize();
 
+            cb_packFiltered.CheckedChanged += cb_packFiltered_CheckedChanged;
+            cb_previewPaths.CheckedChanged += cb_previewPaths_CheckedChanged;
+            cb_enable_patching.CheckedChanged += cb_enable_patching_CheckedChanged;
+        }
+
+        private void CreatePCKFile_Shown(object sender, EventArgs e)
+        {
             SetFolderPath(tb_folder_path.Text);
         }
 
@@ -412,17 +420,17 @@ namespace GodotPCKExplorer.UI
             tmp.ShowDialog(this);
         }
 
-        private void cb_packFiltered_CheckedChanged(object sender, EventArgs e)
+        private void cb_packFiltered_CheckedChanged(object? sender, EventArgs e)
         {
             CalculatePCKSize();
         }
 
-        private void cb_previewPaths_CheckedChanged(object sender, EventArgs e)
+        private void cb_previewPaths_CheckedChanged(object? sender, EventArgs e)
         {
             UpdateTableContent();
         }
 
-        private void cb_enable_patching_CheckedChanged(object sender, EventArgs e)
+        private void cb_enable_patching_CheckedChanged(object? sender, EventArgs e)
         {
             UpdatePatchModeControls();
             RegenerateFilesToPackList();

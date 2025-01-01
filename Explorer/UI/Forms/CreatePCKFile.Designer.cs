@@ -404,7 +404,6 @@
             cb_packFiltered.TabIndex = 28;
             cb_packFiltered.Text = "Pack only filtered";
             cb_packFiltered.UseVisualStyleBackColor = true;
-            cb_packFiltered.CheckedChanged += cb_packFiltered_CheckedChanged;
             // 
             // cb_previewPaths
             // 
@@ -418,7 +417,6 @@
             cb_previewPaths.TabIndex = 28;
             cb_previewPaths.Text = "Preview paths";
             cb_previewPaths.UseVisualStyleBackColor = true;
-            cb_previewPaths.CheckedChanged += cb_previewPaths_CheckedChanged;
             // 
             // label5
             // 
@@ -472,7 +470,6 @@
             cb_enable_patching.TabIndex = 34;
             cb_enable_patching.Text = "Enabled patching";
             cb_enable_patching.UseVisualStyleBackColor = true;
-            cb_enable_patching.CheckedChanged += cb_enable_patching_CheckedChanged;
             // 
             // btn_browse_patch_target
             // 
@@ -532,6 +529,7 @@
             StartPosition = FormStartPosition.CenterParent;
             Text = "Pack or Embed folder";
             FormClosed += CreatePCKFile_FormClosed;
+            Shown += CreatePCKFile_Shown;
             ((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
             ((System.ComponentModel.ISupportInitialize)nud_major).EndInit();
             ((System.ComponentModel.ISupportInitialize)nud_minor).EndInit();
