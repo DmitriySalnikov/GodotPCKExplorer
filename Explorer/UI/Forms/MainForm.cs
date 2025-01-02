@@ -365,6 +365,8 @@ namespace GodotPCKExplorer.UI
             dataGridView1.Columns["encrypted"].Visible = pckReader.IsEncryptedFiles;
             if (pckReader.IsOpened)
             {
+                List<DataGridViewRow> tmp_rows = [];
+
                 foreach (var f in pckReader.Files)
                 {
                     if (string.IsNullOrWhiteSpace(searchText.Text) ||
@@ -376,9 +378,11 @@ namespace GodotPCKExplorer.UI
                         tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = Utils.SizeSuffix(f.Value.Size), Tag = f.Value.Size });
                         tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.IsEncrypted ? "*" : string.Empty, Tag = f.Value.IsEncrypted });
 
-                        dataGridView1.Rows.Add(tmpRow);
+                        tmp_rows.Add(tmpRow);
                     }
                 }
+
+                dataGridView1.Rows.AddRange([.. tmp_rows]);
             }
 
             extractFilteredToolStripMenuItem.Enabled = !string.IsNullOrWhiteSpace(searchText.Text);

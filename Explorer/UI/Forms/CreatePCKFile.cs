@@ -186,6 +186,8 @@ namespace GodotPCKExplorer.UI
             }
 
             dataGridView1.Rows.Clear();
+            List<DataGridViewRow> tmp_rows = [];
+
             foreach (var f in filesToPack)
             {
                 if (string.IsNullOrWhiteSpace(searchText.Text) ||
@@ -214,10 +216,12 @@ namespace GodotPCKExplorer.UI
                         tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = "", Tag = false });
                     }
 
-
-                    dataGridView1.Rows.Add(tmpRow);
+                    tmp_rows.Add(tmpRow);
                 }
             }
+
+            dataGridView1.Rows.AddRange([.. tmp_rows]);
+
             CalculatePCKSize();
         }
 
