@@ -537,7 +537,7 @@ namespace GodotPCKExplorer.UI
                 return;
             }
 
-            e.SortResult = (long)(dataGridView1.Rows[e.RowIndex1].Cells[2].Tag) > (long)(dataGridView1.Rows[e.RowIndex2].Cells[2].Tag) ? 1 : -1;
+            e.SortResult = ((long)(dataGridView1.Rows[e.RowIndex1].Cells[2].Tag)).CompareTo((long)(dataGridView1.Rows[e.RowIndex2].Cells[2].Tag));
             e.Handled = true;
         }
 

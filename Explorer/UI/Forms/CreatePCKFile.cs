@@ -1,7 +1,4 @@
-﻿using System.IO;
-using System.Security.Cryptography;
-
-namespace GodotPCKExplorer.UI
+﻿namespace GodotPCKExplorer.UI
 {
     public partial class CreatePCKFile : Form
     {
@@ -207,7 +204,7 @@ namespace GodotPCKExplorer.UI
                             tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = $"{Utils.SizeSuffix(orig_file.Size)} -> {Utils.SizeSuffix(f.Value.Size)}", Tag = f.Value.Size, Style = current_styleRealFileSize });
                         else
                             tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = Utils.SizeSuffix(f.Value.Size), Tag = f.Value.Size, Style = current_styleRealFileSize });
-                        tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = "*", Tag = false });
+                        tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = "*", Tag = true });
                     }
                     else
                     {
@@ -332,14 +329,22 @@ namespace GodotPCKExplorer.UI
 
         private void dataGridView1_SortCompare(object? sender, DataGridViewSortCompareEventArgs e)
         {
-            if (e.Column.Index != 1)
+            if (e.Column.Index != 1 && e.Column.Index != 2)
             {
                 e.Handled = false;
                 return;
             }
 
-            e.SortResult = (long)(dataGridView1.Rows[e.RowIndex1].Cells[1].Tag) > (long)(dataGridView1.Rows[e.RowIndex2].Cells[1].Tag) ? 1 : -1;
-            e.Handled = true;
+            if (e.Column.Index == 1)
+            {
+                e.SortResult = ((long)(dataGridView1.Rows[e.RowIndex1].Cells[1].Tag)).CompareTo((long)(dataGridView1.Rows[e.RowIndex2].Cells[1].Tag));
+                e.Handled = true;
+            }
+            else if (e.Column.Index == 2)
+            {
+                e.SortResult = ((bool)(dataGridView1.Rows[e.RowIndex1].Cells[2].Tag)).CompareTo((bool)(dataGridView1.Rows[e.RowIndex2].Cells[2].Tag));
+                e.Handled = true;
+            }
         }
 
         private void tb_folder_path_KeyDown(object? sender, KeyEventArgs e)
