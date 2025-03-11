@@ -55,13 +55,18 @@ namespace GodotPCKExplorer
         public PCKVersion PCK_Version { get { return new PCKVersion(PCK_VersionPack, PCK_VersionMajor, PCK_VersionMinor, PCK_VersionRevision); } }
         public bool IsOpened { get { return binReader != null; } }
 
+        public bool IsRelativeFileBase
+        {
+            get => PCK_Flags != -1 && (PCK_Flags & PCKUtils.PCK_FLAG_REL_FILEBASE) != 0;
+        }
+
         public bool IsEncrypted
         {
             get => IsEncryptedIndex || IsEncryptedFiles;
         }
         public bool IsEncryptedIndex
         {
-            get => PCK_Flags != -1 && (PCK_Flags & PCKUtils.PCK_DIR_ENCRYPTED) != 0;
+            get => PCK_Flags != -1 && (PCK_Flags & PCKUtils.PCK_FLAG_DIR_ENCRYPTED) != 0;
         }
         public bool IsEncryptedFiles
         {
@@ -187,7 +192,7 @@ namespace GodotPCKExplorer
         /// <returns></returns>
         public bool OpenFile(string path, bool show_NotPCKError = true, bool readOnlyHeaderGodot4 = false, bool logFileNamesProgress = true, bool disableExceptions = false, Func<PCKReaderEncryptionKeyResult>? getEncryptionKey = null, CancellationToken? cancellationToken = null)
         {
-            BinaryReader reader;
+            BinaryReader? reader = null;
 
             try
             {
@@ -196,11 +201,16 @@ namespace GodotPCKExplorer
             }
             catch (Exception ex)
             {
+                reader?.Dispose();
                 PCKActions.progress?.ShowMessage(ex, MessageType.Error);
                 return false;
             }
 
-            return OpenFile(reader, show_NotPCKError, readOnlyHeaderGodot4, logFileNamesProgress, disableExceptions, getEncryptionKey, cancellationToken);
+            var res = OpenFile(reader, show_NotPCKError, readOnlyHeaderGodot4, logFileNamesProgress, disableExceptions, getEncryptionKey, cancellationToken);
+            if (!res)
+                reader?.Dispose();
+
+            return res;
         }
 
         /// <summary>
@@ -294,6 +304,11 @@ namespace GodotPCKExplorer
                     PCK_Flags = fileReader.ReadInt32(); // 20-23
                     PCK_FileBaseAddressOffset = fileReader.BaseStream.Position;
                     PCK_FileBase = fileReader.ReadInt64(); // 24-31
+
+                    if (IsRelativeFileBase)
+                    {
+                        PCK_FileBase += PCK_StartPosition;
+                    }
                 }
 
                 PCKActions.progress?.LogProgress(op, $"Version: {PCK_VersionPack}.{PCK_VersionMajor}.{PCK_VersionMinor}.{PCK_VersionRevision}, Flags: {PCK_Flags}");
@@ -348,7 +363,9 @@ namespace GodotPCKExplorer
                                     return false;
                                 }
                                 else
+                                {
                                     throw new OperationCanceledException();
+                                }
                             }
                         }
 
@@ -368,7 +385,9 @@ namespace GodotPCKExplorer
                                 return false;
                             }
                             else
+                            {
                                 throw new CryptographicException("The decrypted index data has an incorrect MD5 hash sum.");
+                            }
                         }
                     }
                     mem.Position = 0;
@@ -409,7 +428,7 @@ namespace GodotPCKExplorer
                         else
                             throw new OperationCanceledException();
                     }
-                };
+                }
 
                 // In some rare cases, the PCK may contain duplicate files
                 // So it is necessary to mark them as duplicates,
@@ -965,7 +984,12 @@ namespace GodotPCKExplorer
 
         public bool IsEncrypted
         {
-            get => (Flags & PCKUtils.PCK_FILE_ENCRYPTED) != 0;
+            get => (Flags & PCKUtils.PCK_FILE_FLAG_ENCRYPTED) != 0;
+        }
+
+        public bool IsRemoval
+        {
+            get => (Flags & PCKUtils.PCK_FILE_FLAG_REMOVAL) != 0;
         }
 
         public bool ExtractFile(string basePath, out string extractPath, out bool skippedExisted, bool overwriteExisting = true, byte[]? encKey = null, PCKExtractNoEncryptionKeyMode noKeyMode = PCKExtractNoEncryptionKeyMode.Cancel, CancellationToken? cancellationToken = null)

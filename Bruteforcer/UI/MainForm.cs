@@ -59,12 +59,27 @@ namespace PCKBruteforcer.UI
             {
                 tb_exe.Text = ofd_exe.FileName;
 
-                var pck = Path.ChangeExtension(tb_exe.Text, ".pck");
-                if (File.Exists(pck))
-                {
-                    tb_pck.Text = pck;
-                }
+                update_pck_path_on_exe_select();
                 UpdateFileLengthAdresses();
+            }
+        }
+
+        void update_pck_path_on_exe_select()
+        {
+            var pck_path = Path.ChangeExtension(tb_exe.Text, ".pck");
+            if (File.Exists(pck_path))
+            {
+                tb_pck.Text = pck_path;
+            }
+            else
+            {
+                using var pck = new PCKReader();
+                pck.OpenFile(tb_exe.Text, show_NotPCKError: false, readOnlyHeaderGodot4: false, logFileNamesProgress: false, disableExceptions: true);
+
+                if (pck.IsOpened || pck.IsEncrypted)
+                {
+                    tb_pck.Text = tb_exe.Text;
+                }
             }
         }
 
@@ -154,7 +169,19 @@ namespace PCKBruteforcer.UI
             {
                 var f = new FileInfo(tb_exe.Text);
                 nud_from.Maximum = f.Length;
-                nud_to.Value = nud_to.Maximum = f.Length;
+                nud_to.Maximum = f.Length;
+
+                using var pck = new PCKReader();
+                pck.OpenFile(tb_exe.Text, show_NotPCKError: false, readOnlyHeaderGodot4: true, logFileNamesProgress: false, disableExceptions: true);
+
+                if (pck.PCK_Embedded)
+                {
+                    nud_to.Value = pck.PCK_StartPosition;
+                }
+                else
+                {
+                    nud_to.Value = f.Length;
+                }
             }
         }
 
@@ -284,6 +311,70 @@ namespace PCKBruteforcer.UI
                 SetControlsEnabled(true);
                 StopTask();
             });
+        }
+
+        private void BruteforcerMainForm_DragEnter(object sender, DragEventArgs e)
+        {
+            if (e.Data != null && e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                string[]? files = (string[]?)e.Data.GetData(DataFormats.FileDrop);
+                if (files != null && files.Length == 1)
+                {
+                    using var pck = new PCKReader();
+
+                    if (File.Exists(files[0]))
+                    {
+                        try
+                        {
+                            pck.OpenFile(files[0], show_NotPCKError: false, logFileNamesProgress: false, disableExceptions: true);
+
+                            if (pck.PCK_EndPosition != 0)
+                            {
+                                if (pck.PCK_Embedded)
+                                {
+                                    e.Effect = DragDropEffects.Link;
+                                    return;
+                                }
+                                else
+                                {
+                                    e.Effect = DragDropEffects.Move;
+                                    return;
+                                }
+                            }
+                            else
+                            {
+                                e.Effect = DragDropEffects.Copy;
+                                return;
+                            }
+                        }
+                        finally { }
+                    }
+                }
+            }
+
+            e.Effect = DragDropEffects.None;
+        }
+
+        private void BruteforcerMainForm_DragDrop(object sender, DragEventArgs e)
+        {
+            if (e.Data != null && e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                string[]? files = (string[]?)e.Data.GetData(DataFormats.FileDrop);
+                if (files != null && files.Length == 1)
+                {
+                    if (e.Effect == DragDropEffects.Move)
+                    {
+                        tb_pck.Text = files[0];
+                        return;
+                    }
+                    else if (e.Effect == DragDropEffects.Link || e.Effect == DragDropEffects.Copy)
+                    {
+                        tb_exe.Text = files[0];
+                        update_pck_path_on_exe_select();
+                        UpdateFileLengthAdresses();
+                    }
+                }
+            }
         }
     }
 }

@@ -1,0 +1,67 @@
+diff --git a/main/main.cpp b/main/main.cpp
+index 10064b3503..4a9df1ce3b 100644
+--- a/main/main.cpp
++++ b/main/main.cpp
+@@ -1859,7 +1859,7 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
+ #else
+ 		const String error_msg = "Error: Couldn't load project data at path \"" + project_path + "\". Is the .pck file missing?\nIf you've renamed the executable, the associated .pck file should also be renamed to match the executable's name (without the extension).\n";
+ 		OS::get_singleton()->print("%s", error_msg.utf8().get_data());
+-		OS::get_singleton()->alert(error_msg);
++		//OS::get_singleton()->alert(error_msg);
+ 
+ 		goto error;
+ #endif
+@@ -2032,7 +2032,7 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
+ #endif
+ 			const String error_msg = "Error: Can't run project: no main scene defined in the project.\n";
+ 			OS::get_singleton()->print("%s", error_msg.utf8().get_data());
+-			OS::get_singleton()->alert(error_msg);
++			//OS::get_singleton()->alert(error_msg);
+ 			goto error;
+ #ifdef TOOLS_ENABLED
+ 		}
+@@ -3886,7 +3886,7 @@ int Main::start() {
+ 		// Let's throw an error gently. The code leading to this is pretty brittle so
+ 		// this might end up triggered by valid usage, in which case we'll have to
+ 		// fine-tune further.
+-		OS::get_singleton()->alert("Couldn't detect whether to run the editor, the project manager or a specific project. Aborting.");
++		//OS::get_singleton()->alert("Couldn't detect whether to run the editor, the project manager or a specific project. Aborting.");
+ 		ERR_FAIL_V_MSG(EXIT_FAILURE, "Couldn't detect whether to run the editor, the project manager or a specific project. Aborting.");
+ 	}
+ #endif
+@@ -3915,7 +3915,7 @@ int Main::start() {
+ 				if (obj) {
+ 					memdelete(obj);
+ 				}
+-				OS::get_singleton()->alert(vformat("Can't load the script \"%s\" as it doesn't inherit from SceneTree or MainLoop.", script));
++				//OS::get_singleton()->alert(vformat("Can't load the script \"%s\" as it doesn't inherit from SceneTree or MainLoop.", script));
+ 				ERR_FAIL_V_MSG(EXIT_FAILURE, vformat("Can't load the script \"%s\" as it doesn't inherit from SceneTree or MainLoop.", script));
+ 			}
+ 
+@@ -3929,7 +3929,7 @@ int Main::start() {
+ 			String script_path = ScriptServer::get_global_class_path(main_loop_type);
+ 			Ref<Script> script_res = ResourceLoader::load(script_path);
+ 			if (script_res.is_null()) {
+-				OS::get_singleton()->alert("Error: Could not load MainLoop script type: " + main_loop_type);
++				//OS::get_singleton()->alert("Error: Could not load MainLoop script type: " + main_loop_type);
+ 				ERR_FAIL_V_MSG(EXIT_FAILURE, vformat("Could not load global class %s.", main_loop_type));
+ 			}
+ 			StringName script_base = script_res->get_instance_base_type();
+@@ -3939,7 +3939,7 @@ int Main::start() {
+ 				if (obj) {
+ 					memdelete(obj);
+ 				}
+-				OS::get_singleton()->alert("Error: Invalid MainLoop script base type: " + script_base);
++				//OS::get_singleton()->alert("Error: Invalid MainLoop script base type: " + script_base);
+ 				ERR_FAIL_V_MSG(EXIT_FAILURE, vformat("The global class %s does not inherit from SceneTree or MainLoop.", main_loop_type));
+ 			}
+ 			script_loop->set_script(script_res);
+@@ -3953,7 +3953,7 @@ int Main::start() {
+ 
+ 	if (!main_loop) {
+ 		if (!ClassDB::class_exists(main_loop_type)) {
+-			OS::get_singleton()->alert("Error: MainLoop type doesn't exist: " + main_loop_type);
++			//OS::get_singleton()->alert("Error: MainLoop type doesn't exist: " + main_loop_type);
+ 			return EXIT_FAILURE;
+ 		} else {
+ 			Object *ml = ClassDB::instantiate(main_loop_type);

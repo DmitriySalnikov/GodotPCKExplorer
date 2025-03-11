@@ -26,13 +26,19 @@ namespace GodotPCKExplorer
         public const int PCK_VERSION_GODOT_3 = 1;
         public const int PCK_VERSION_GODOT_4 = 2;
         public const int PCK_MAGIC = 0x43504447;
-        public const int PCK_DIR_ENCRYPTED = 1 << 0;
-        public const int PCK_FILE_ENCRYPTED = 1 << 0;
+
         public const int BUFFER_MAX_SIZE = 1024 * 1024;
         public const int UnknownProgressStatus = -1234;
 
         public const string PathPrefixRes = "res://";
         public const string PathPrefixUser = "user://";
+
+        public const int PCK_FLAG_DIR_ENCRYPTED = 1 << 0;
+        public const int PCK_FLAG_REL_FILEBASE = 1 << 1; // Added in https://github.com/godotengine/godot/commit/7e65fd87253fecb630151bbc4c6ac31d5cfa01a0
+        public const int PCK_FILE_FLAG_ENCRYPTED = 1 << 0;
+        // TODO ?
+        public const int PCK_FILE_FLAG_REMOVAL = 1 << 1; // Added in https://github.com/godotengine/godot/commit/d76fbb7a40c56fa4b10edc017dc33a2d668c5c0d
+
 
         static readonly Random rng = new Random();
 
@@ -200,6 +206,7 @@ namespace GodotPCKExplorer
         public static string GetResFilePath(string path, string prefix)
         {
             bool is_user = path.StartsWith(PathPrefixUser);
+            // TODO add to readme
             const string custom_user_folder = "@@user@@/";
             var base_path = path.Replace(PathPrefixRes, "").Replace(PathPrefixUser, "").Replace("\\", "/");
             if (base_path.StartsWith(custom_user_folder) || is_user)
@@ -208,6 +215,7 @@ namespace GodotPCKExplorer
             }
             else
             {
+                // TODO no more res:// in 4.4 (4.3?)!!!!!!!
                 return (PathPrefixRes + prefix + base_path).Replace("\\", "/");
             }
         }

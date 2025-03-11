@@ -285,7 +285,7 @@ namespace GodotPCKExplorer
                 PCKReaderEncryptionKeyResult getEncKey()
                 {
                     return new PCKReaderEncryptionKeyResult() { Key = encKey ?? "" };
-                };
+                }
 
                 if (pckReader.OpenFile(filePath, getEncryptionKey: getEncKey))
                 {
@@ -361,7 +361,7 @@ namespace GodotPCKExplorer
                 PCKReaderEncryptionKeyResult getEncKey()
                 {
                     return new PCKReaderEncryptionKeyResult() { Key = encKey ?? "" };
-                };
+                }
 
                 Dictionary<string, PCKPackerFile> files = new Dictionary<string, PCKPackerFile>();
                 if (!string.IsNullOrWhiteSpace(pckToPatch))

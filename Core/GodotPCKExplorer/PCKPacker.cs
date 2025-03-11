@@ -246,12 +246,21 @@ namespace GodotPCKExplorer
                     binWriter.Write(godotVersion.Revision);
 
                     long file_base_address = -1;
+                    int pack_flags = 0;
 
                     if (godotVersion.PackVersion == PCKUtils.PCK_VERSION_GODOT_4)
                     {
-                        binWriter.Write((int)(encryptIndex ? 1 : 0));
+                        if (encryptIndex)
+                            pack_flags |= PCKUtils.PCK_FLAG_DIR_ENCRYPTED;
+
+                        // https://github.com/godotengine/godot/commit/7e65fd87253fecb630151bbc4c6ac31d5cfa01a0 4.3+
+                        if (embed && godotVersion.Major >= 4 && godotVersion.Minor >= 3)
+                            pack_flags |= PCKUtils.PCK_FLAG_REL_FILEBASE;
+
+                        binWriter.Write(pack_flags); // pack_flags
+
                         file_base_address = binWriter.BaseStream.Position;
-                        binWriter.Write((long)0);
+                        binWriter.Write((long)0); // file_base
                     }
 
                     PCKUtils.AddPadding(binWriter, 16 * sizeof(int)); // reserved
@@ -324,7 +333,7 @@ namespace GodotPCKExplorer
                             }
 
                             PCKActions.progress?.LogProgress(op, (int)(((double)file_idx / files.Count()) * 100));
-                        };
+                        }
 
                         if (encryptIndex)
                         {
@@ -347,8 +356,12 @@ namespace GodotPCKExplorer
                     if (godotVersion.PackVersion == PCKUtils.PCK_VERSION_GODOT_4)
                     {
                         // update actual address of file_base in the header
+                        long file_base_store = file_base;
+                        if ((pack_flags & PCKUtils.PCK_FLAG_REL_FILEBASE) != 0)
+                            file_base_store -= pck_start;
+
                         binWriter.BaseStream.Seek(file_base_address, SeekOrigin.Begin);
-                        binWriter.Write(file_base);
+                        binWriter.Write(file_base_store);
                         binWriter.BaseStream.Seek(offset, SeekOrigin.Begin);
                     }
 
@@ -432,7 +445,7 @@ namespace GodotPCKExplorer
                         PCKUtils.AddPadding(binWriter, offset - binWriter.BaseStream.Position, encryptFiles); // fill random bytes between files
 
                         count += 1;
-                    };
+                    }
 
                     // TODO add PCK validation
 

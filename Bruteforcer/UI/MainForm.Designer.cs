@@ -324,6 +324,7 @@
             // 
             // BruteforcerMainForm
             // 
+            AllowDrop = true;
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(553, 278);
@@ -345,6 +346,8 @@
             Name = "BruteforcerMainForm";
             Text = "PCK Bruteforcer";
             FormClosing += MainForm_FormClosing;
+            DragDrop += BruteforcerMainForm_DragDrop;
+            DragEnter += BruteforcerMainForm_DragEnter;
             ((System.ComponentModel.ISupportInitialize)nud_threads).EndInit();
             ((System.ComponentModel.ISupportInitialize)nud_from).EndInit();
             ((System.ComponentModel.ISupportInitialize)nud_to).EndInit();

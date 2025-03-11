@@ -1,6 +1,5 @@
 SOURCE = dllmain.c \
 		mbedtls/library/aes.c \
-		mbedtls/library/aesce.c \
 		mbedtls/library/aesni.c \
 		mbedtls/library/platform_util.c
 CC = gcc

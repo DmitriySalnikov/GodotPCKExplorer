@@ -1,0 +1,282 @@
+[gd_scene load_steps=23 format=4 uid="uid://de7qapkqfycxl"]
+
+[ext_resource type="Texture2D" uid="uid://cs8h2qyuakmko" path="res://level/obstacle.png" id="2"]
+[ext_resource type="PackedScene" uid="uid://dv7f3uqpda3g0" path="res://player/player.tscn" id="3"]
+[ext_resource type="Texture2D" uid="uid://cxl5cvsgyxcoe" path="res://level/princess.png" id="4"]
+[ext_resource type="Texture2D" uid="uid://1ign8s1w414r" path="res://level/circle.png" id="5"]
+[ext_resource type="Texture2D" uid="uid://hp84e6iwjqjy" path="res://level/long_obstacle.png" id="6"]
+[ext_resource type="Script" uid="uid://cq8fjth3dpws6" path="res://level/princess.gd" id="7"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_on5ov"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_vnjib"]
+texture = ExtResource("2")
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+
+[sub_resource type="TileSet" id="TileSet_xqlka"]
+physics_layer_0/collision_layer = 1
+physics_layer_0/physics_material = SubResource("PhysicsMaterial_on5ov")
+sources/0 = SubResource("TileSetAtlasSource_vnjib")
+
+[sub_resource type="RectangleShape2D" id="3"]
+size = Vector2(16, 16)
+
+[sub_resource type="Animation" id="4"]
+length = 10.0
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1, 5, 6),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(184, 152), Vector2(184, 152), Vector2(328.086, 152), Vector2(328.086, 152)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_2v3oa"]
+_data = {
+&"leftright": SubResource("4")
+}
+
+[sub_resource type="Animation" id="5"]
+resource_name = "leftright"
+length = 10.0
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1, 5, 6),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(184, 152), Vector2(184, 152), Vector2(328.086, 152), Vector2(328.086, 152)]
+}
+
+[sub_resource type="Animation" id="6"]
+length = 10.0
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1, 5, 6),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(88.3493, 296), Vector2(88.3493, 296), Vector2(88.3493, 152), Vector2(88.3493, 152)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_j555p"]
+_data = {
+&"leftright": SubResource("5"),
+&"updown": SubResource("6")
+}
+
+[sub_resource type="RectangleShape2D" id="7"]
+size = Vector2(16, 16)
+
+[sub_resource type="RectangleShape2D" id="8"]
+size = Vector2(20, 8)
+
+[sub_resource type="CircleShape2D" id="9"]
+radius = 32.0
+
+[sub_resource type="Animation" id="10"]
+length = 20.0
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:rotation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 5, 10, 15),
+"transitions": PackedFloat32Array(-2, -2, -2, -2),
+"update": 0,
+"values": [0.0, 1.5708, 0.0, -1.5708]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_gijtf"]
+_data = {
+&"turn": SubResource("10")
+}
+
+[sub_resource type="RectangleShape2D" id="11"]
+size = Vector2(16, 16)
+
+[sub_resource type="RectangleShape2D" id="12"]
+size = Vector2(64, 16)
+
+[node name="World" type="Node2D"]
+
+[node name="Layer0" type="TileMapLayer" parent="."]
+use_parent_material = true
+tile_map_data = PackedByteArray("AAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAMAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAUAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAAcAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAkAAAAAAAAAAAAAAAoAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA0AAAAAAAAAAAAAAA4AAAAAAAAAAAAAAA8AAAAAAAAAAAAAABAAAAAAAAAAAAAAABEAAAAAAAAAAAAAABIAAAAAAAAAAAAAABMAAAAAAAAAAAAAABQAAAAAAAAAAAAAABUAAAAAAAAAAAAAABYAAAAAAAAAAAAAABcAAAAAAAAAAAAAABgAAAAAAAAAAAAAABkAAAAAAAAAAAAAABoAAAAAAAAAAAAAABsAAAAAAAAAAAAAABwAAAAAAAAAAAAAAB0AAAAAAAAAAAAAAB4AAAAAAAAAAAABAAAAAAAAAAAAAAABAAEAAAAAAAAAAAABAAIAAAAAAAAAAAABAAMAAAAAAAAAAAABAAQAAAAAAAAAAAABAAUAAAAAAAAAAAABAAYAAAAAAAAAAAABAAcAAAAAAAAAAAABAAgAAAAAAAAAAAABAAkAAAAAAAAAAAABAAoAAAAAAAAAAAABAAsAAAAAAAAAAAABAAwAAAAAAAAAAAABAA0AAAAAAAAAAAABAA4AAAAAAAAAAAABAA8AAAAAAAAAAAABABAAAAAAAAAAAAABABEAAAAAAAAAAAABABIAAAAAAAAAAAABABMAAAAAAAAAAAABABQAAAAAAAAAAAABABUAAAAAAAAAAAABABYAAAAAAAAAAAABABcAAAAAAAAAAAABABgAAAAAAAAAAAABABkAAAAAAAAAAAABABoAAAAAAAAAAAABABsAAAAAAAAAAAABABwAAAAAAAAAAAABAB0AAAAAAAAAAAABAB4AAAAAAAAAAAACAAAAAAAAAAAAAAACAAEAAAAAAAAAAAACAB0AAAAAAAAAAAACAB4AAAAAAAAAAAADAAAAAAAAAAAAAAADAAEAAAAAAAAAAAADAB0AAAAAAAAAAAADAB4AAAAAAAAAAAAEAAAAAAAAAAAAAAAEAAEAAAAAAAAAAAAEABwAAAAAAAAAAAAEAB0AAAAAAAAAAAAEAB4AAAAAAAAAAAAFAAAAAAAAAAAAAAAFAAEAAAAAAAAAAAAFAAUAAAAAAAAAAAAFAB0AAAAAAAAAAAAFAB4AAAAAAAAAAAAGAAAAAAAAAAAAAAAGAAEAAAAAAAAAAAAGAAUAAAAAAAAAAAAGAAkAAAAAAAAAAAAGABIAAAAAAAAAAAAGAB0AAAAAAAAAAAAGAB4AAAAAAAAAAAAHAAAAAAAAAAAAAAAHAAEAAAAAAAAAAAAHAAUAAAAAAAAAAAAHAAkAAAAAAAAAAAAHABIAAAAAAAAAAAAHAB0AAAAAAAAAAAAHAB4AAAAAAAAAAAAIAAAAAAAAAAAAAAAIAAEAAAAAAAAAAAAIAAUAAAAAAAAAAAAIAAkAAAAAAAAAAAAIABIAAAAAAAAAAAAIAB0AAAAAAAAAAAAIAB4AAAAAAAAAAAAJAAAAAAAAAAAAAAAJAAEAAAAAAAAAAAAJAAUAAAAAAAAAAAAJAAkAAAAAAAAAAAAJAB0AAAAAAAAAAAAJAB4AAAAAAAAAAAAKAAAAAAAAAAAAAAAKAAEAAAAAAAAAAAAKAAUAAAAAAAAAAAAKAAkAAAAAAAAAAAAKABsAAAAAAAAAAAAKABwAAAAAAAAAAAAKAB0AAAAAAAAAAAAKAB4AAAAAAAAAAAALAAAAAAAAAAAAAAALAAEAAAAAAAAAAAALAAUAAAAAAAAAAAALABsAAAAAAAAAAAALABwAAAAAAAAAAAALAB0AAAAAAAAAAAALAB4AAAAAAAAAAAAMAAAAAAAAAAAAAAAMAAEAAAAAAAAAAAAMAAUAAAAAAAAAAAAMABoAAAAAAAAAAAAMAB0AAAAAAAAAAAAMAB4AAAAAAAAAAAANAAAAAAAAAAAAAAANAAEAAAAAAAAAAAANAAUAAAAAAAAAAAANABkAAAAAAAAAAAANAB0AAAAAAAAAAAANAB4AAAAAAAAAAAAOAAAAAAAAAAAAAAAOAAEAAAAAAAAAAAAOAB0AAAAAAAAAAAAOAB4AAAAAAAAAAAAPAAAAAAAAAAAAAAAPAAEAAAAAAAAAAAAPAB0AAAAAAAAAAAAPAB4AAAAAAAAAAAAQAAAAAAAAAAAAAAAQAAEAAAAAAAAAAAAQAB0AAAAAAAAAAAAQAB4AAAAAAAAAAAARAAAAAAAAAAAAAAARAAEAAAAAAAAAAAARAAUAAAAAAAAAAAARAB0AAAAAAAAAAAARAB4AAAAAAAAAAAASAAAAAAAAAAAAAAASAAEAAAAAAAAAAAASAB0AAAAAAAAAAAASAB4AAAAAAAAAAAATAAAAAAAAAAAAAAATAAEAAAAAAAAAAAATAB0AAAAAAAAAAAATAB4AAAAAAAAAAAAUAAAAAAAAAAAAAAAUAAEAAAAAAAAAAAAUABMAAAAAAAAAAAAUAB0AAAAAAAAAAAAUAB4AAAAAAAAAAAAVAAAAAAAAAAAAAAAVAAEAAAAAAAAAAAAVAAYAAAAAAAAAAAAVAAkAAAAAAAAAAAAVABMAAAAAAAAAAAAVAB0AAAAAAAAAAAAVAB4AAAAAAAAAAAAWAAAAAAAAAAAAAAAWAAEAAAAAAAAAAAAWAAYAAAAAAAAAAAAWAAkAAAAAAAAAAAAWABMAAAAAAAAAAAAWAB0AAAAAAAAAAAAWAB4AAAAAAAAAAAAXAAAAAAAAAAAAAAAXAAEAAAAAAAAAAAAXAAkAAAAAAAAAAAAXABMAAAAAAAAAAAAXAB0AAAAAAAAAAAAXAB4AAAAAAAAAAAAYAAAAAAAAAAAAAAAYAAEAAAAAAAAAAAAYAB0AAAAAAAAAAAAYAB4AAAAAAAAAAAAZAAAAAAAAAAAAAAAZAAEAAAAAAAAAAAAZAAgAAAAAAAAAAAAZABkAAAAAAAAAAAAZAB0AAAAAAAAAAAAZAB4AAAAAAAAAAAAaAAAAAAAAAAAAAAAaAAEAAAAAAAAAAAAaAAgAAAAAAAAAAAAaABkAAAAAAAAAAAAaABwAAAAAAAAAAAAaAB0AAAAAAAAAAAAaAB4AAAAAAAAAAAAbAAAAAAAAAAAAAAAbAAEAAAAAAAAAAAAbABcAAAAAAAAAAAAbABwAAAAAAAAAAAAbAB0AAAAAAAAAAAAbAB4AAAAAAAAAAAAcAAAAAAAAAAAAAAAcAAEAAAAAAAAAAAAcABcAAAAAAAAAAAAcABsAAAAAAAAAAAAcAB0AAAAAAAAAAAAcAB4AAAAAAAAAAAAdAAAAAAAAAAAAAAAdAAEAAAAAAAAAAAAdABUAAAAAAAAAAAAdABoAAAAAAAAAAAAdABsAAAAAAAAAAAAdAB0AAAAAAAAAAAAdAB4AAAAAAAAAAAAeAAAAAAAAAAAAAAAeAAEAAAAAAAAAAAAeABUAAAAAAAAAAAAeABoAAAAAAAAAAAAeAB0AAAAAAAAAAAAeAB4AAAAAAAAAAAAfAAAAAAAAAAAAAAAfAAEAAAAAAAAAAAAfAAIAAAAAAAAAAAAfAAMAAAAAAAAAAAAfAAQAAAAAAAAAAAAfAAUAAAAAAAAAAAAfAAYAAAAAAAAAAAAfAAcAAAAAAAAAAAAfAAgAAAAAAAAAAAAfAAkAAAAAAAAAAAAfAAoAAAAAAAAAAAAfAAsAAAAAAAAAAAAfAAwAAAAAAAAAAAAfAA0AAAAAAAAAAAAfAA4AAAAAAAAAAAAfAA8AAAAAAAAAAAAfABAAAAAAAAAAAAAfABEAAAAAAAAAAAAfABIAAAAAAAAAAAAfABMAAAAAAAAAAAAfABQAAAAAAAAAAAAfABUAAAAAAAAAAAAfABYAAAAAAAAAAAAfABcAAAAAAAAAAAAfABgAAAAAAAAAAAAfABkAAAAAAAAAAAAfABoAAAAAAAAAAAAfABsAAAAAAAAAAAAfABwAAAAAAAAAAAAfAB0AAAAAAAAAAAAfAB4AAAAAAAAAAAAgAAAAAAAAAAAAAAAgAAEAAAAAAAAAAAAgAAIAAAAAAAAAAAAgAAMAAAAAAAAAAAAgAAQAAAAAAAAAAAAgAAUAAAAAAAAAAAAgAAYAAAAAAAAAAAAgAAcAAAAAAAAAAAAgAAgAAAAAAAAAAAAgAAkAAAAAAAAAAAAgAAoAAAAAAAAAAAAgAAsAAAAAAAAAAAAgAAwAAAAAAAAAAAAgAA0AAAAAAAAAAAAgAA4AAAAAAAAAAAAgAA8AAAAAAAAAAAAgABAAAAAAAAAAAAAgABEAAAAAAAAAAAAgABIAAAAAAAAAAAAgABMAAAAAAAAAAAAgABQAAAAAAAAAAAAgABUAAAAAAAAAAAAgABYAAAAAAAAAAAAgABcAAAAAAAAAAAAgABgAAAAAAAAAAAAgABkAAAAAAAAAAAAgABoAAAAAAAAAAAAgABsAAAAAAAAAAAAgABwAAAAAAAAAAAAgAB0AAAAAAAAAAAAgAB4AAAAAAAAAAAA=")
+tile_set = SubResource("TileSet_xqlka")
+navigation_enabled = false
+
+[node name="MovingPlatform1" type="CharacterBody2D" parent="."]
+position = Vector2(268.651, 152)
+
+[node name="Collision" type="CollisionShape2D" parent="MovingPlatform1"]
+shape = SubResource("3")
+
+[node name="Sprite2D" type="Sprite2D" parent="MovingPlatform1"]
+modulate = Color(0.4, 2, 0.8, 1)
+texture = ExtResource("2")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="MovingPlatform1"]
+callback_mode_process = 0
+libraries = {
+&"": SubResource("AnimationLibrary_2v3oa")
+}
+autoplay = "leftright"
+
+[node name="MovingPlatform2" type="CharacterBody2D" parent="."]
+position = Vector2(88.3493, 152)
+
+[node name="Collision" type="CollisionShape2D" parent="MovingPlatform2"]
+shape = SubResource("3")
+
+[node name="Sprite2D" type="Sprite2D" parent="MovingPlatform2"]
+modulate = Color(0.4, 2, 0.8, 1)
+texture = ExtResource("2")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="MovingPlatform2"]
+callback_mode_process = 0
+libraries = {
+&"": SubResource("AnimationLibrary_j555p")
+}
+autoplay = "updown"
+
+[node name="Princess" type="Area2D" parent="."]
+position = Vector2(97, 72)
+script = ExtResource("7")
+
+[node name="Collision" type="CollisionShape2D" parent="Princess"]
+shape = SubResource("7")
+
+[node name="Sprite2D" type="Sprite2D" parent="Princess"]
+texture = ExtResource("4")
+
+[node name="WinText" type="Label" parent="."]
+visible = false
+offset_left = 114.0
+offset_top = 30.0
+offset_right = 299.0
+offset_bottom = 82.0
+size_flags_horizontal = 2
+size_flags_vertical = 0
+text = "Thank You Cubio!
+You Saved The Princess!"
+
+[node name="OneWay1" type="CharacterBody2D" parent="."]
+position = Vector2(440, 308)
+
+[node name="Sprite2D" type="Sprite2D" parent="OneWay1"]
+scale = Vector2(1, 0.3)
+texture = ExtResource("2")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="OneWay1"]
+shape = SubResource("8")
+one_way_collision = true
+
+[node name="OneWay2" type="CharacterBody2D" parent="."]
+position = Vector2(456, 308)
+
+[node name="Sprite2D" type="Sprite2D" parent="OneWay2"]
+scale = Vector2(1, 0.3)
+texture = ExtResource("2")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="OneWay2"]
+shape = SubResource("8")
+one_way_collision = true
+
+[node name="OneWay3" type="CharacterBody2D" parent="."]
+position = Vector2(472, 308)
+
+[node name="Sprite2D" type="Sprite2D" parent="OneWay3"]
+scale = Vector2(1, 0.3)
+texture = ExtResource("2")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="OneWay3"]
+shape = SubResource("8")
+one_way_collision = true
+
+[node name="OneWay4" type="CharacterBody2D" parent="."]
+position = Vector2(487, 308)
+
+[node name="Sprite2D" type="Sprite2D" parent="OneWay4"]
+scale = Vector2(1, 0.3)
+texture = ExtResource("2")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="OneWay4"]
+shape = SubResource("8")
+one_way_collision = true
+
+[node name="Circle" type="CharacterBody2D" parent="."]
+position = Vector2(241.169, 304.126)
+rotation = -0.0790058
+
+[node name="Sprite2D" type="Sprite2D" parent="Circle"]
+modulate = Color(0.4, 2, 0.8, 1)
+texture = ExtResource("5")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Circle"]
+shape = SubResource("9")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Circle"]
+libraries = {
+&"": SubResource("AnimationLibrary_gijtf")
+}
+autoplay = "turn"
+
+[node name="BoxSprite" type="Sprite2D" parent="Circle"]
+modulate = Color(0.4, 2, 0.8, 1)
+position = Vector2(-3.05176e-05, -37.4108)
+texture = ExtResource("2")
+
+[node name="Box" type="CollisionShape2D" parent="Circle"]
+position = Vector2(-0.440125, -37.0904)
+shape = SubResource("11")
+
+[node name="Platform" type="StaticBody2D" parent="."]
+position = Vector2(257, 393)
+rotation = -0.428054
+metadata/_edit_group_ = true
+
+[node name="Sprite2D" type="Sprite2D" parent="Platform"]
+texture = ExtResource("6")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platform"]
+shape = SubResource("12")
+
+[node name="Platform1" type="StaticBody2D" parent="."]
+position = Vector2(369, 393)
+rotation = 0.471239
+metadata/_edit_group_ = true
+
+[node name="Sprite2D" type="Sprite2D" parent="Platform1"]
+texture = ExtResource("6")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platform1"]
+shape = SubResource("12")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+offset = Vector2(265, 247)
+
+[node name="Player" parent="." instance=ExtResource("3")]
+position = Vector2(233.06, 223.436)
+
+[connection signal="body_entered" from="Princess" to="Princess" method="_on_body_entered"]

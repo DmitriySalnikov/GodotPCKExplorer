@@ -187,7 +187,6 @@
   <ItemGroup>
     <ClCompile Include="dllmain.c" />
     <ClCompile Include="mbedtls\library\aes.c" />
-    <ClCompile Include="mbedtls\library\aesce.c" />
     <ClCompile Include="mbedtls\library\aesni.c" />
     <ClCompile Include="mbedtls\library\platform_util.c" />
   </ItemGroup>
