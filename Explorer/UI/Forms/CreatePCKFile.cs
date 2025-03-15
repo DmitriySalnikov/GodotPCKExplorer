@@ -93,7 +93,7 @@
                 PCKReaderEncryptionKeyResult getEncKey()
                 {
                     return new PCKReaderEncryptionKeyResult() { Key = GUIConfig.Instance.PackEncryptionKey ?? "" };
-                };
+                }
 
                 if (!pckReader.OpenFile(tb_patch_target.Text, getEncryptionKey: getEncKey))
                 {
@@ -105,9 +105,10 @@
                 pckReader.Close();
             }
 
+            var ver = GetPCKVersion();
             var files_scan = new List<PCKPackerRegularFile>();
             if (Directory.Exists(currentSelectedDir))
-                Program.DoTaskWithProgressBar((t) => files_scan = PCKUtils.GetListOfFilesToPack(Path.GetFullPath(currentSelectedDir), tb_prefix.Text, cancellationToken: t), this);
+                Program.DoTaskWithProgressBar((t) => files_scan = PCKUtils.GetListOfFilesToPack(Path.GetFullPath(currentSelectedDir), ver, tb_prefix.Text, cancellationToken: t), this);
 
             filesToPack = [];
 
@@ -238,6 +239,18 @@
             }
         }
 
+        PCKVersion GetPCKVersion()
+        {
+            if (!int.TryParse(cb_ver.Text, out int pack_ver))
+            {
+                Program.ShowMessage("Incorrect package version format.", "Error", MessageType.Error);
+                return new PCKVersion();
+            }
+
+            // TODO update list on version change!!!
+            return new PCKVersion(pack_ver, (int)nud_major.Value, (int)nud_minor.Value, (int)nud_revision.Value);
+        }
+
         private void CreatePCKFile_FormClosed(object sender, FormClosedEventArgs e)
         {
             pckReader.Close();
@@ -251,13 +264,7 @@
 
         private void btn_create_Click(object? sender, EventArgs e)
         {
-            if (!int.TryParse(cb_ver.Text, out int pack_ver))
-            {
-                Program.ShowMessage("Incorrect package version format.", "Error", MessageType.Error);
-                return;
-            }
-
-            var ver = new PCKVersion(pack_ver, (int)nud_major.Value, (int)nud_minor.Value, (int)nud_revision.Value);
+            var ver = GetPCKVersion();
             DialogResult res = DialogResult.No;
             string file = "";
             string prefix = tb_prefix.Text;

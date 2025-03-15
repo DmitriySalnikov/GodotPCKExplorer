@@ -32,7 +32,7 @@ Also `PCK Bruteforcer` is available as part of this project [here](Bruteforcer/)
 
 <a href="https://boosty.to/dmitriysalnikov/donate"><img src="./Images/boosty.png" alt="Boosty" width=150px/></a>
 
-<img src="./Images/USDT-TRC20.png" alt="USDT-TRC20" width=150px/>
+<a href="#"><img src="./Images/USDT-TRC20.png" alt="USDT-TRC20" width=150px/></a>
 
 <b>USDT-TRC20 TEw934PrsffHsAn5M63SoHYRuZo984EF6v</b>
 

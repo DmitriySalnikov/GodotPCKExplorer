@@ -379,7 +379,7 @@ namespace GodotPCKExplorer
                     }
                 }
 
-                var scanFiles = PCKUtils.GetListOfFilesToPack(dirPath, packPathPrefix, cancellationToken);
+                var scanFiles = PCKUtils.GetListOfFilesToPack(dirPath, ver, packPathPrefix, cancellationToken);
                 if (encFiles)
                     scanFiles.ForEach(f => f.IsEncrypted = true);
 

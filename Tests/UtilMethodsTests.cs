@@ -146,20 +146,22 @@ namespace Tests
         void CompareRealFilesAndPCK(string folder, string origPck, string newPck, bool compareMD5Raw, string? encKey = null, Func<string, string>? realFileNameChange = null)
         {
             string[] original_files = null!;
+            PCKVersion ver;
             {
                 using var pckReader = new PCKReader();
                 pckReader.OpenFile(origPck, getEncryptionKey: () => new PCKReaderEncryptionKeyResult() { Key = encKey });
+                ver = pckReader.PCK_Version;
                 original_files = [.. pckReader.Files.Select(f => f.Value.FilePath).Order()];
             }
 
             // Compare all names
-            Assert.That(PCKUtils.GetListOfFilesToPack(folder).Select(f => f.Path).Order().SequenceEqual(original_files.Select(f => realFileNameChange == null ? f : realFileNameChange(f))), Is.True);
+            Assert.That(PCKUtils.GetListOfFilesToPack(folder, ver).Select(f => f.Path).Order().SequenceEqual(original_files.Select(f => realFileNameChange == null ? f : realFileNameChange(f))), Is.True);
 
             if (GodotVersionMajor < 4)
                 return;
 
             // Test MD5 for all files
-            var new_md5s = PCKUtils.GetListOfFilesToPack(folder).OrderBy(f => f.Path).Select(f => { f.CalculateMD5(); return PCKUtils.ByteArrayToHexString(f.MD5); }).ToArray();
+            var new_md5s = PCKUtils.GetListOfFilesToPack(folder, ver).OrderBy(f => f.Path).Select(f => { f.CalculateMD5(); return PCKUtils.ByteArrayToHexString(f.MD5); }).ToArray();
             string[] orig_md5s;
             {
                 PCKReaderFile[] ordered_files = null!;
@@ -209,7 +211,8 @@ namespace Tests
             string checkPatchPck = Path.Combine(binaries, "TestCheckPatch.pck");
 
             var rnd = new Random();
-            string ver = GetPCKVersion(testPCK).ToString();
+            var ver = GetPCKVersion(testPCK);
+            var verStr = ver.ToString();
             string encKey = encrypted ? "7FDBF68B69B838194A6F1055395225BBA3F1C5689D08D71DCD620A7068F61CBA" : "";
             string wrong_encKey = encrypted ? "8FDBF68B69B838194A6F1055395225BBA3F1C5689D08D71DCD620A7068F61CBA" : "";
 
@@ -219,7 +222,7 @@ namespace Tests
 
             Title("Check Patched Prefixed Files");
             {
-                var files = PCKUtils.GetListOfFilesToPack(extractCheckPatch);
+                var files = PCKUtils.GetListOfFilesToPack(extractCheckPatch, ver);
                 var rndFile = files[rnd.Next(files.Count)];
                 var filePath = rndFile.OriginalPath;
 
@@ -236,11 +239,11 @@ namespace Tests
                     prefix += Path.DirectorySeparatorChar;
 
                 // pack with prefix from another folder
-                Assert.That(PCKActions.Pack(patchFolder, checkPatchPck, ver, pckToPatch: testPCK, packPathPrefix: prefix, encKey: encKey, encFiles: encrypted), Is.True);
+                Assert.That(PCKActions.Pack(patchFolder, checkPatchPck, verStr, pckToPatch: testPCK, packPathPrefix: prefix, encKey: encKey, encFiles: encrypted), Is.True);
                 CompareRealFilesAndPCK(extractCheckPatch, testPCK, checkPatchPck, false, encKey: encKey);
 
                 // Same PCK
-                Assert.That(PCKActions.Pack(patchFolder, testPCK, ver, pckToPatch: testPCK), Is.False);
+                Assert.That(PCKActions.Pack(patchFolder, testPCK, verStr, pckToPatch: testPCK), Is.False);
 
                 if (encrypted)
                 {
@@ -287,6 +290,9 @@ namespace Tests
             string extractTestUserPck = Path.Combine(binaries, "TestUser.pck");
             string extractTestUserPath = Path.Combine(binaries, "ExtractUser");
 
+            var ver = GetPCKVersion(testPCK);
+            var verStr = ver.ToString();
+
             Title("Extract");
             Assert.That(PCKActions.Extract(testPCK, extractTestPath, true), Is.True);
 
@@ -294,7 +300,7 @@ namespace Tests
             Assert.That(PCKActions.Extract(Path.Combine(binaries, "WrongPath/Test.pck"), extractTestPath, true), Is.False);
 
             Title("Compare content with folder");
-            var list_of_files = PCKUtils.GetListOfFilesToPack(Path.GetFullPath(extractTestPath));
+            var list_of_files = PCKUtils.GetListOfFilesToPack(Path.GetFullPath(extractTestPath), ver);
             {
                 using var pck = new PCKReader();
 
@@ -323,7 +329,7 @@ namespace Tests
             {
                 Assert.That(PCKActions.Extract(testPCK, extractTestSelectedPath, true, export_files), Is.True);
 
-                var exportedSelectedList = PCKUtils.GetListOfFilesToPack(extractTestSelectedPath);
+                var exportedSelectedList = PCKUtils.GetListOfFilesToPack(extractTestSelectedPath, ver);
                 Assert.That(seleceted_files, Has.Count.EqualTo(exportedSelectedList.Count));
 
                 foreach (var f in export_files)
@@ -360,25 +366,24 @@ namespace Tests
             }
 
             Title("Pack new PCK");
-            string ver = GetPCKVersion(testPCK).ToString();
             {
-                Assert.That(PCKActions.Pack(extractTestPath, newPckPath, ver), Is.True);
+                Assert.That(PCKActions.Pack(extractTestPath, newPckPath, verStr), Is.True);
 
                 if (OperatingSystem.IsWindows())
                 {
                     Title("Locked file");
                     string locked_file = Path.Combine(extractTestPath, "out.lock");
                     using var f = new LockedFile(locked_file);
-                    Assert.That(PCKActions.Pack(extractTestPath, locked_file, ver), Is.False);
+                    Assert.That(PCKActions.Pack(extractTestPath, locked_file, verStr), Is.False);
                 }
             }
 
             Title("Pack and Extract PCK with prefix");
             {
-                Assert.That(PCKActions.Pack(extractTestPath, testPrefixPCK, ver, packPathPrefix: "test_prefix_like_mod_folder/"), Is.True);
+                Assert.That(PCKActions.Pack(extractTestPath, testPrefixPCK, verStr, packPathPrefix: "test_prefix_like_mod_folder/"), Is.True);
                 Assert.That(PCKActions.Extract(testPrefixPCK, extractTestPrefix), Is.True);
 
-                var list_of_files_with_prefix = PCKUtils.GetListOfFilesToPack(Path.GetFullPath(extractTestPrefix));
+                var list_of_files_with_prefix = PCKUtils.GetListOfFilesToPack(Path.GetFullPath(extractTestPrefix), ver);
                 {
                     using var pck = new PCKReader();
 
@@ -395,7 +400,7 @@ namespace Tests
                 Assert.That(PCKActions.Pack(extractTestPath, newPckPath, "1234"), Is.False);
                 Assert.That(PCKActions.Pack(extractTestPath, newPckPath, "123.33.2.1"), Is.False);
                 Assert.That(PCKActions.Pack(extractTestPath, newPckPath, "-1.0.2.1"), Is.False);
-                Assert.That(PCKActions.Pack(extractTestPath + "WrongPath", newPckPath, ver), Is.False);
+                Assert.That(PCKActions.Pack(extractTestPath + "WrongPath", newPckPath, verStr), Is.False);
             }
 
             // Compare new PCK content with alredy existing trusted list of files 'list_of_files'
@@ -410,19 +415,19 @@ namespace Tests
             Title("Pack embedded");
             {
                 TUtils.CopyFile(testEXE, testEmbedPack);
-                Assert.That(PCKActions.Pack(extractTestPath, testEmbedPack, ver, embed: true), Is.True);
+                Assert.That(PCKActions.Pack(extractTestPath, testEmbedPack, verStr, embed: true), Is.True);
                 Assert.That(File.Exists(Path.ChangeExtension(testEmbedPack, Exe(".old"))), Is.True);
             }
 
             Title("Pack embedded again");
             {
-                Assert.That(PCKActions.Pack(extractTestPath, testEmbedPack, ver, embed: true), Is.False);
+                Assert.That(PCKActions.Pack(extractTestPath, testEmbedPack, verStr, embed: true), Is.False);
                 Assert.That(File.Exists(Path.ChangeExtension(testEmbedPack, Exe(".old"))), Is.False);
             }
 
             Title("Pack only selected files");
 
-            Assert.That(PCKActions.Pack(seleceted_files, selectedFilesPck, ver), Is.True);
+            Assert.That(PCKActions.Pack(seleceted_files, selectedFilesPck, verStr), Is.True);
 
             Title("Compare selected to pack content with new pck");
             {
@@ -448,10 +453,10 @@ namespace Tests
                     using var f = File.Create(user_test_file_dir_path);
                     using var f2 = File.Create(user_test_wrong_file_dir_path);
                 }
-                Assert.That(PCKActions.Pack(extractTestPath, extractTestUserPck, ver), Is.True);
+                Assert.That(PCKActions.Pack(extractTestPath, extractTestUserPck, verStr), Is.True);
                 Assert.That(PCKActions.Extract(extractTestUserPck, extractTestUserPath), Is.True);
 
-                var list_of_files_user = PCKUtils.GetListOfFilesToPack(Path.GetFullPath(extractTestUserPath));
+                var list_of_files_user = PCKUtils.GetListOfFilesToPack(Path.GetFullPath(extractTestUserPath), ver);
                 {
                     using var pck = new PCKReader();
 
@@ -465,14 +470,18 @@ namespace Tests
                     // only @@user@@ in root allowed
                     Assert.That(list_of_files_user.Find(i => i.Path == PCKUtils.PathPrefixUser + user_test_wrong_file) != null, Is.False);
                     Assert.That(pck.Files.ContainsKey(PCKUtils.PathPrefixUser + user_test_wrong_file), Is.False);
+
                     // check for wrong files in res://somefolder/@@user@@
-                    Assert.That(list_of_files_user.Find(i => i.Path == PCKUtils.PathPrefixRes + user_test_wrong_file_local_path) != null, Is.True);
-                    Assert.That(pck.Files.ContainsKey(PCKUtils.PathPrefixRes + user_test_wrong_file_local_path), Is.True);
+                    var user_wrong_res_path = PCKUtils.GetResFilePathInPCK(user_test_wrong_file_local_path, ver);
+                    Assert.That(list_of_files_user.Find(i => i.Path == user_wrong_res_path) != null, Is.True);
+                    Assert.That(pck.Files.ContainsKey(user_wrong_res_path), Is.True);
 
                     foreach (var f in list_of_files_user)
                         Assert.That(pck.Files.ContainsKey(f.Path), Is.True);
                 }
             }
+
+            // TODO add Removal test
 
             Title("Good run");
 
@@ -866,7 +875,6 @@ namespace Tests
 
             string enc_key = "7FDBF68B69B838194A6F1055395225BBA3F1C5689D08D71DCD620A7068F61CBA";
             string wrong_enc_key = "8FDBF68B69B838194A6F1055395225BBA3F1C5689D08D71DCD620A7068F61CBA";
-            string ver = $"{(GodotVersionMajor == 4 ? 2 : 1)}.{GodotVersionMajor}.3.0";
 
             string extractTestPath = Path.Combine(binaries, "ExtractTest");
             string testEXE = Path.Combine(binaries, Exe("Test"));
@@ -888,13 +896,16 @@ namespace Tests
             string testPCKPack = Path.Combine(binaries, "TestPCKPack.pck");
             string testPCKPackEnc = Path.Combine(binaries, "TestPCKPackEnc.pck");
 
+            var ver = GetPCKVersion(testPCK);
+            var verStr = ver.ToString();
+
             TUtils.CopyFile(Path.Combine(binaries, Exe("TestEmbedded")), testEmbedEXE);
 
             {
                 string onlyFilesFolder = Path.Combine(binaries, "TestExtractOnlyFiles");
                 Assert.That(PCKActions.Extract(testPCK, onlyFilesFolder, true), Is.True);
                 if (GodotVersionMajor > 3)
-                    Assert.That(PCKActions.Pack(onlyFilesFolder, encOnlyFilesPCK, ver, encIndex: false, encFiles: true, encKey: enc_key), Is.True);
+                    Assert.That(PCKActions.Pack(onlyFilesFolder, encOnlyFilesPCK, verStr, encIndex: false, encFiles: true, encKey: enc_key), Is.True);
             }
 
             bool RunCommand(params string[] args)
@@ -1017,7 +1028,7 @@ namespace Tests
                     Assert.That(RunCommand("-e", encPCK, testExtractFolder + "EncEncrypted", "encrypted"), Is.False);
 
                     Assert.That(RunCommand("-e", encOnlyFilesPCK, testExtractFolder + "EncSkip", "skip"), Is.True);
-                    Assert.That(PCKUtils.GetListOfFilesToPack(testExtractFolder + "EncSkip"), Has.Count.EqualTo(0));
+                    Assert.That(PCKUtils.GetListOfFilesToPack(testExtractFolder + "EncSkip", ver), Has.Count.EqualTo(0));
 
                     // encrypted
                     Assert.That(RunCommand("-e", encOnlyFilesPCK, testExtractFolder + "EncEncrypted", "encrypted"), Is.True);
@@ -1028,33 +1039,33 @@ namespace Tests
             // just testing the arguments. Everything else is tested in a separate test.
             Title("-p, -pe");
             {
-                Assert.That(RunCommand("-p", testExtractFolder, testPCKPack, ver, "", enc_key, "both", "extra arg"), Is.False);
+                Assert.That(RunCommand("-p", testExtractFolder, testPCKPack, verStr, "", enc_key, "both", "extra arg"), Is.False);
 
-                Assert.That(RunCommand("-p", testExtractFolder, testPCKPack, ver, ""), Is.True);
-                Assert.That(RunCommand("-p", testExtractFolder, testExtractFolder, ver, ""), Is.False);
+                Assert.That(RunCommand("-p", testExtractFolder, testPCKPack, verStr, ""), Is.True);
+                Assert.That(RunCommand("-p", testExtractFolder, testExtractFolder, verStr, ""), Is.False);
                 Assert.That(RunCommand("-p", testExtractFolder, testPCKPack, "", ""), Is.False);
                 if (GodotVersionMajor > 3)
                 {
-                    Assert.That(RunCommand("-p", testExtractFolder, testPCKPackEnc, ver, "", enc_key, "both"), Is.True);
+                    Assert.That(RunCommand("-p", testExtractFolder, testPCKPackEnc, verStr, "", enc_key, "both"), Is.True);
                     CompareRealFilesAndPCK(testExtractFolder, testPCK, testPCKPackEnc, false, enc_key);
 
-                    Assert.That(RunCommand("-p", testExtractFolder, testPCKPackEnc, ver, "", "wrong key", "both"), Is.False);
+                    Assert.That(RunCommand("-p", testExtractFolder, testPCKPackEnc, verStr, "", "wrong key", "both"), Is.False);
                 }
             }
 
             Title("-pc, -pce");
             {
-                Assert.That(RunCommand("-pc", testPCK, testExtractFolder, testPCKPack, ver, "", enc_key, "both", "extra arg"), Is.False);
+                Assert.That(RunCommand("-pc", testPCK, testExtractFolder, testPCKPack, verStr, "", enc_key, "both", "extra arg"), Is.False);
 
-                Assert.That(RunCommand("-pc", testPCK, testExtractFolder, testPCKPack, ver, ""), Is.True);
-                Assert.That(RunCommand("-pc", testPCK, testExtractFolder, testExtractFolder, ver, ""), Is.False);
+                Assert.That(RunCommand("-pc", testPCK, testExtractFolder, testPCKPack, verStr, ""), Is.True);
+                Assert.That(RunCommand("-pc", testPCK, testExtractFolder, testExtractFolder, verStr, ""), Is.False);
                 Assert.That(RunCommand("-pc", testPCK, testExtractFolder, testPCKPack, "", ""), Is.False);
                 if (GodotVersionMajor > 3)
                 {
-                    Assert.That(RunCommand("-pc", testPCK, testExtractFolder, testPCKPackEnc, ver, "", enc_key, "both"), Is.True);
+                    Assert.That(RunCommand("-pc", testPCK, testExtractFolder, testPCKPackEnc, verStr, "", enc_key, "both"), Is.True);
                     CompareRealFilesAndPCK(testExtractFolder, testPCK, testPCKPackEnc, false, enc_key);
 
-                    Assert.That(RunCommand("-pc", testPCK, testExtractFolder, testPCKPackEnc, ver, "", "wrong key", "both"), Is.False);
+                    Assert.That(RunCommand("-pc", testPCK, testExtractFolder, testPCKPackEnc, verStr, "", "wrong key", "both"), Is.False);
                 }
             }
         }

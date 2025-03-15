@@ -32,12 +32,15 @@ namespace GodotPCKExplorer
 
         public const string PathPrefixRes = "res://";
         public const string PathPrefixUser = "user://";
+        // TODO add to readme
+        public const string PathPrefixExtractUser = "@@user@@/";
+        public const string PathTagRemoval = ".removal";
 
         public const int PCK_FLAG_DIR_ENCRYPTED = 1 << 0;
-        public const int PCK_FLAG_REL_FILEBASE = 1 << 1; // Added in https://github.com/godotengine/godot/commit/7e65fd87253fecb630151bbc4c6ac31d5cfa01a0
+        public const int PCK_FLAG_REL_FILEBASE = 1 << 1; // Added in 4.3 https://github.com/godotengine/godot/commit/7e65fd87253fecb630151bbc4c6ac31d5cfa01a0
         public const int PCK_FILE_FLAG_ENCRYPTED = 1 << 0;
-        // TODO ?
-        public const int PCK_FILE_FLAG_REMOVAL = 1 << 1; // Added in https://github.com/godotengine/godot/commit/d76fbb7a40c56fa4b10edc017dc33a2d668c5c0d
+        // before 4.4 set offset to 0 instead of flag
+        public const int PCK_FILE_FLAG_REMOVAL = 1 << 1; // Added in 4.4 https://github.com/godotengine/godot/commit/d76fbb7a40c56fa4b10edc017dc33a2d668c5c0d
 
 
         static readonly Random rng = new Random();
@@ -203,24 +206,22 @@ namespace GodotPCKExplorer
             }
         }
 
-        public static string GetResFilePath(string path, string prefix)
+        public static string GetResFilePathInPCK(string path, PCKVersion version)
         {
-            bool is_user = path.StartsWith(PathPrefixUser);
-            // TODO add to readme
-            const string custom_user_folder = "@@user@@/";
-            var base_path = path.Replace(PathPrefixRes, "").Replace(PathPrefixUser, "").Replace("\\", "/");
-            if (base_path.StartsWith(custom_user_folder) || is_user)
+            // removed res:// prefix in 4.4. editor_export_platform.cpp:227 https://github.com/godotengine/godot/commit/d76fbb7a40c56fa4b10edc017dc33a2d668c5c0d
+
+            if (version.Major >= 4 && version.Minor >= 4)
             {
-                return PathPrefixUser + base_path.Replace(custom_user_folder, "");
+                return path;
             }
             else
             {
-                // TODO no more res:// in 4.4 (4.3?)!!!!!!!
-                return (PathPrefixRes + prefix + base_path).Replace("\\", "/");
+                // res:// + prefix/ + path.file
+                return PathPrefixRes + path;
             }
         }
 
-        public static List<PCKPackerRegularFile> GetListOfFilesToPack(string folder, string packPathPrefix = "", CancellationToken? cancellationToken = null)
+        public static List<PCKPackerRegularFile> GetListOfFilesToPack(string folder, PCKVersion version, string packPathPrefix = "", CancellationToken? cancellationToken = null)
         {
             if (!Directory.Exists(folder))
                 return new List<PCKPackerRegularFile>();
@@ -233,7 +234,7 @@ namespace GodotPCKExplorer
             PCKActions.progress?.LogProgress(op, $"Started scanning files in '{folder}'");
             PCKActions.progress?.LogProgress(op, PCKUtils.UnknownProgressStatus);
 
-            GetListOfFilesToPackRecursive(folder, files, ref folder, ref packPathPrefix, ref cancel, cancellationToken);
+            GetListOfFilesToPackRecursive(folder, files, ref folder, ref version, ref packPathPrefix, ref cancel, cancellationToken);
             if (cancel)
                 files.Clear();
             GC.Collect();
@@ -243,7 +244,7 @@ namespace GodotPCKExplorer
             return files;
         }
 
-        static void GetListOfFilesToPackRecursive(string folder, List<PCKPackerRegularFile> files, ref string basePath, ref string packPathPrefix, ref bool cancel, CancellationToken? cancellationToken = null)
+        static void GetListOfFilesToPackRecursive(string folder, List<PCKPackerRegularFile> files, ref string basePath, ref PCKVersion version, ref string packPathPrefix, ref bool cancel, CancellationToken? cancellationToken = null)
         {
             const string op = "Scan folder";
             IEnumerable<string> dirEnums;
@@ -263,7 +264,7 @@ namespace GodotPCKExplorer
                 if (cancel || (cancellationToken?.IsCancellationRequested ?? false))
                     return;
 
-                GetListOfFilesToPackRecursive(d, files, ref basePath, ref packPathPrefix, ref cancel, cancellationToken);
+                GetListOfFilesToPackRecursive(d, files, ref basePath, ref version, ref packPathPrefix, ref cancel, cancellationToken);
             }
 
             IEnumerable<string> filesEnum;
@@ -285,7 +286,9 @@ namespace GodotPCKExplorer
 
                 try
                 {
-                    files.Add(new PCKPackerRegularFile(f, GetResFilePath(f.Replace(basePath + Path.DirectorySeparatorChar, ""), packPathPrefix)));
+                    var file = new PCKPackerRegularFile(f, basePath);
+                    file.UpdateFileInfo(version, packPathPrefix);
+                    files.Add(file);
                     PCKActions.progress?.LogProgress(op, f);
                     PCKActions.progress?.LogProgress(op, files.Count, "Found files: ");
                 }

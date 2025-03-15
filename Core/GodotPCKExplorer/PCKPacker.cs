@@ -10,12 +10,13 @@ namespace GodotPCKExplorer
 {
     public class PCKPackerFile
     {
-        public string Path;
-        public long Size = 0;
+        public string Path { get; protected set; }
+        public long Size { get; protected set; } = 0;
         public long IndexOffsetPosition = 0;
 
-        public byte[]? MD5 = null;
+        public byte[]? MD5 { get; protected set; } = null;
         public bool IsEncrypted = false;
+        public bool IsRemoval = false;
 
         public PCKPackerFile(string path)
         {
@@ -36,17 +37,75 @@ namespace GodotPCKExplorer
 
     public sealed class PCKPackerRegularFile : PCKPackerFile
     {
-        public string OriginalPath;
+        public string OriginalPath { get; }
+        readonly long originalSize = 0;
+        readonly string rootFolder;
 
-        public PCKPackerRegularFile(string o_path, string path) : base(path)
+        public PCKPackerRegularFile(string o_path, string base_path) : base("")
         {
             OriginalPath = o_path;
-            Size = new FileInfo(o_path).Length;
+            originalSize = new FileInfo(OriginalPath).Length;
+
+            rootFolder = base_path;
+            if (!rootFolder.EndsWith(System.IO.Path.DirectorySeparatorChar))
+            {
+                rootFolder += System.IO.Path.DirectorySeparatorChar;
+            }
+        }
+
+        // TODO use this to update paths in Packer after changing version
+        public void UpdateFileInfo(PCKVersion version, string prefix)
+        {
+            // added Removal flag in 4.4. file_access_pack.h:53 https://github.com/godotengine/godot/commit/d76fbb7a40c56fa4b10edc017dc33a2d668c5c0d
+
+            prefix = prefix.Replace("\\", "/");
+            var file_path = OriginalPath.Replace(rootFolder, "").Replace("\\", "/");
+            bool is_user = file_path.StartsWith(PCKUtils.PathPrefixUser);
+
+            // paths with user://
+            if (file_path.StartsWith(PCKUtils.PathPrefixExtractUser) || is_user)
+            {
+                Path = PCKUtils.PathPrefixUser + file_path.Replace(PCKUtils.PathPrefixExtractUser, "");
+            }
+            // regular paths with res://
+            else
+            {
+                Path = PCKUtils.GetResFilePathInPCK(prefix + file_path, version);
+            }
+
+            string file_name = System.IO.Path.GetFileName(Path);
+
+            if (file_name.Contains(PCKUtils.PathTagRemoval))
+            {
+                Path = Path.Replace(PCKUtils.PathTagRemoval, "");
+                IsRemoval = true;
+            }
+            else
+            {
+                IsRemoval = false;
+            }
+
+            if (IsRemoval)
+            {
+                Size = 0;
+            }
+            else
+            {
+                Size = originalSize;
+            }
         }
 
         public override void CalculateMD5()
         {
-            MD5 = PCKUtils.GetFileMD5(OriginalPath);
+            if (IsRemoval)
+            {
+                // Fill with 0
+                MD5 = new byte[16];
+            }
+            else
+            {
+                MD5 = PCKUtils.GetFileMD5(OriginalPath);
+            }
         }
 
         public override IEnumerable<ReadOnlyMemory<byte>> ReadMemoryBlocks()
@@ -68,6 +127,7 @@ namespace GodotPCKExplorer
             OriginalFile = o_file;
             Size = o_file.Size;
             IsEncrypted = o_file.IsEncrypted;
+            IsRemoval = o_file.IsRemoval;
         }
 
         public override void CalculateMD5()
@@ -329,7 +389,15 @@ namespace GodotPCKExplorer
                             else
                             {
                                 index_writer.Write(file.MD5);
-                                index_writer.Write((int)(file.IsEncrypted ? 1 : 0));
+
+                                int flags = 0;
+                                if (file.IsEncrypted)
+                                    flags |= PCKUtils.PCK_FILE_FLAG_ENCRYPTED;
+
+                                if (file.IsRemoval)
+                                    flags |= PCKUtils.PCK_FILE_FLAG_REMOVAL;
+
+                                index_writer.Write(flags);
                             }
 
                             PCKActions.progress?.LogProgress(op, (int)(((double)file_idx / files.Count()) * 100));
