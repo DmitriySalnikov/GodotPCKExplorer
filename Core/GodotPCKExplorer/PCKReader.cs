@@ -49,10 +49,11 @@ namespace GodotPCKExplorer
         public long PCK_EndPosition = 0;
         public bool PCK_Embedded = false;
         public bool PCK_ContainsEncryptedFiles = false;
+        public bool PCK_ContainsRemovalFiles = false;
 
-        public byte[]? ReceivedEncryptionKey { get; set; } = null;
+        public byte[]? ReceivedEncryptionKey { get; private set; } = null;
 
-        public PCKVersion PCK_Version { get { return new PCKVersion(PCK_VersionPack, PCK_VersionMajor, PCK_VersionMinor, PCK_VersionRevision); } }
+        public PCKVersion PCK_Version { get; private set; } = new PCKVersion(-1, -1, -1, -1);
         public bool IsOpened { get { return binReader != null; } }
 
         public bool IsRelativeFileBase
@@ -71,6 +72,10 @@ namespace GodotPCKExplorer
         public bool IsEncryptedFiles
         {
             get => PCK_ContainsEncryptedFiles;
+        }
+        public bool IsRemovalFiles
+        {
+            get => PCK_ContainsRemovalFiles;
         }
         public BinaryReader? ReaderStream
         {
@@ -103,6 +108,7 @@ namespace GodotPCKExplorer
             PCK_VersionMajor = -1;
             PCK_VersionMinor = -1;
             PCK_VersionRevision = -1;
+            PCK_Version = new PCKVersion(-1, -1, -1, -1);
             PCK_Flags = -1;
             PCK_FileBaseAddressOffset = 0;
             PCK_FileBase = 0;
@@ -110,6 +116,7 @@ namespace GodotPCKExplorer
             PCK_EndPosition = 0;
             PCK_Embedded = false;
             PCK_ContainsEncryptedFiles = false;
+            PCK_ContainsRemovalFiles = false;
 
             ReceivedEncryptionKey = null;
         }
@@ -296,6 +303,8 @@ namespace GodotPCKExplorer
                 PCK_VersionMinor = fileReader.ReadInt32(); // 12-15
                 PCK_VersionRevision = fileReader.ReadInt32(); // 16-19
 
+                PCK_Version = new PCKVersion(PCK_VersionPack, PCK_VersionMajor, PCK_VersionMinor, PCK_VersionRevision);
+
                 PCK_Flags = 0;
                 PCK_FileBase = 0;
 
@@ -416,7 +425,7 @@ namespace GodotPCKExplorer
                         PCKActions.progress?.LogProgress(op, (int)(((double)i / PCK_FileCount) * 100));
                     }
 
-                    tmp_files.Add(new PCKReaderFile(fileReader, path, ofs, pos_of_ofs, size, md5, flags, PCK_VersionPack));
+                    tmp_files.Add(new PCKReaderFile(fileReader, path, ofs, pos_of_ofs, size, md5, flags, PCK_Version));
 
                     if (cancellationToken?.IsCancellationRequested ?? false)
                     {
@@ -478,6 +487,7 @@ namespace GodotPCKExplorer
                 PackPath = file_path;
                 binReader = fileReader;
                 PCK_ContainsEncryptedFiles = Files.Any((f) => f.Value.IsEncrypted);
+                PCK_ContainsRemovalFiles = Files.Any((f) => f.Value.IsRemoval);
                 return true;
             }
             catch (Exception ex)
@@ -964,9 +974,9 @@ namespace GodotPCKExplorer
         /// <summary>
         /// Pack Version
         /// </summary>
-        public int PackVersion;
+        public PCKVersion Version;
 
-        public PCKReaderFile(BinaryReader reader, string path, long contentOffset, long positionOfOffsetValue, long size, byte[] MD5, int flags, int pack_version)
+        public PCKReaderFile(BinaryReader reader, string path, long contentOffset, long positionOfOffsetValue, long size, byte[] MD5, int flags, PCKVersion pack_version)
         {
             this.StreamReader = reader;
             FilePath = path;
@@ -976,7 +986,7 @@ namespace GodotPCKExplorer
             this.MD5 = MD5;
             Flags = flags;
 
-            PackVersion = pack_version;
+            Version = pack_version;
         }
 
         public delegate void VoidInt(int progress);
@@ -989,12 +999,26 @@ namespace GodotPCKExplorer
 
         public bool IsRemoval
         {
-            get => (Flags & PCKUtils.PCK_FILE_FLAG_REMOVAL) != 0;
+            get
+            {
+                if (Version.Major >= 4 && Version.Minor >= 4)
+                {
+                    return (Flags & PCKUtils.PCK_FILE_FLAG_REMOVAL) != 0;
+                }
+
+                return false;
+            }
         }
 
         public bool ExtractFile(string basePath, out string extractPath, out bool skippedExisted, bool overwriteExisting = true, byte[]? encKey = null, PCKExtractNoEncryptionKeyMode noKeyMode = PCKExtractNoEncryptionKeyMode.Cancel, CancellationToken? cancellationToken = null)
         {
-            string path = extractPath = Path.GetFullPath(Path.Combine(basePath, FilePath.Replace(PCKUtils.PathPrefixRes, "").Replace(PCKUtils.PathPrefixUser, "@@user@@/")));
+            string file_name = FilePath.Replace(PCKUtils.PathPrefixRes, "").Replace(PCKUtils.PathPrefixUser, PCKUtils.PathExtractPrefixUser);
+            if (IsRemoval)
+            {
+                file_name += PCKUtils.PathExtractTagRemoval;
+            }
+
+            string path = extractPath = Path.GetFullPath(Path.Combine(basePath, file_name));
             string op = "Extracting file";
 
             skippedExisted = false;
@@ -1042,7 +1066,7 @@ namespace GodotPCKExplorer
 
             try
             {
-                if (Size > 0)
+                if (Size > 0 && !IsRemoval)
                 {
                     StreamReader.BaseStream.Seek(Offset, SeekOrigin.Begin);
 
@@ -1126,7 +1150,11 @@ namespace GodotPCKExplorer
 
         public bool CheckMD5(string path)
         {
-            if (PackVersion > 1)
+            // Do not check the MD5 for the Removal file.
+            if (IsRemoval)
+                return true;
+
+            if (Version.PackVersion >= 2)
             {
                 var exp_md5 = PCKUtils.GetFileMD5(path);
                 if (!exp_md5.SequenceEqual(MD5))

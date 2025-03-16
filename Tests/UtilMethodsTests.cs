@@ -173,6 +173,11 @@ namespace Tests
                 {
                     orig_md5s = ordered_files.Select(f =>
                     {
+                        if (f.IsRemoval)
+                        {
+                            return PCKUtils.ByteArrayToHexString(new byte[16]);
+                        }
+
                         return PCKUtils.ByteArrayToHexString(PCKUtils.GetStreamMD5(pckReader.ReaderStream!.BaseStream, f.Offset, f.Offset + f.ActualSize));
                     }).ToArray();
                 }
@@ -287,8 +292,6 @@ namespace Tests
             string out_exe = Path.ChangeExtension(newPckPath, ExecutableExtension);
             string extractTestPrefix = Path.Combine(binaries, "ExtractTestPrefix");
             string testPrefixPCK = Path.Combine(binaries, "TestPrefix.pck");
-            string extractTestUserPck = Path.Combine(binaries, "TestUser.pck");
-            string extractTestUserPath = Path.Combine(binaries, "ExtractUser");
 
             var ver = GetPCKVersion(testPCK);
             var verStr = ver.ToString();
@@ -441,19 +444,27 @@ namespace Tests
 
             Title("Pack and Extract PCK with User dir");
             {
+                string extractTestPathUserOrig = Path.Combine(binaries, "ExtractTestUser");
+                string extractTestUserPath = Path.Combine(binaries, "ExtractUser");
+                string extractTestUserPck = Path.Combine(binaries, "TestUser.pck");
+
+                Assert.That(PCKActions.Extract(testPCK, extractTestPathUserOrig, true), Is.True);
+
                 var user_test_file = "test.empty";
-                var user_test_file_dir_path = Path.Combine(extractTestPath, "@@user@@", user_test_file).Replace("\\", "/");
+                var user_test_file_dir_path = Path.Combine(extractTestPathUserOrig, PCKUtils.PathExtractPrefixUser, user_test_file).Replace("\\", "/");
 
                 var user_test_wrong_file = "test2.empty";
-                var user_test_wrong_file_local_path = Path.Combine("somefolder", "@@user@@", user_test_wrong_file).Replace("\\", "/");
-                var user_test_wrong_file_dir_path = Path.Combine(extractTestPath, user_test_wrong_file_local_path).Replace("\\", "/");
+                var user_test_wrong_file_local_path = Path.Combine("somefolder", PCKUtils.PathExtractPrefixUser, user_test_wrong_file).Replace("\\", "/");
+                var user_test_wrong_file_dir_path = Path.Combine(extractTestPathUserOrig, user_test_wrong_file_local_path).Replace("\\", "/");
                 {
                     Directory.CreateDirectory(Path.GetDirectoryName(user_test_file_dir_path)!);
                     Directory.CreateDirectory(Path.GetDirectoryName(user_test_wrong_file_dir_path)!);
                     using var f = File.Create(user_test_file_dir_path);
                     using var f2 = File.Create(user_test_wrong_file_dir_path);
                 }
-                Assert.That(PCKActions.Pack(extractTestPath, extractTestUserPck, verStr), Is.True);
+
+
+                Assert.That(PCKActions.Pack(extractTestPathUserOrig, extractTestUserPck, verStr), Is.True);
                 Assert.That(PCKActions.Extract(extractTestUserPck, extractTestUserPath), Is.True);
 
                 var list_of_files_user = PCKUtils.GetListOfFilesToPack(Path.GetFullPath(extractTestUserPath), ver);
@@ -461,11 +472,13 @@ namespace Tests
                     using var pck = new PCKReader();
 
                     Assert.That(pck.OpenFile(extractTestUserPck), Is.True);
-                    Assert.That(list_of_files_user, Has.Count.EqualTo(pck.Files.Count));
+                    Assert.That(list_of_files_user, Has.Count.EqualTo(pck.Files.Count)); // same count
 
                     Assert.That(list_of_files_user.Find(i => i.Path == PCKUtils.PathPrefixUser + user_test_file) != null, Is.True);
                     Assert.That(pck.Files.ContainsKey(PCKUtils.PathPrefixUser + user_test_file), Is.True);
 
+                    // check for no removal files
+                    Assert.That(pck.IsRemovalFiles, Is.False);
 
                     // only @@user@@ in root allowed
                     Assert.That(list_of_files_user.Find(i => i.Path == PCKUtils.PathPrefixUser + user_test_wrong_file) != null, Is.False);
@@ -481,7 +494,67 @@ namespace Tests
                 }
             }
 
-            // TODO add Removal test
+            if (GodotVersionMajor >= 4 && ver.Minor >= 4)
+            {
+                Title("Removal files");
+
+                string extractTestPathRemovalOrig = Path.Combine(binaries, "ExtractTestRemoval");
+                string extractTestRemovalPath = Path.Combine(binaries, "ExtractRemoval");
+                string extractTestRemovalPck = Path.Combine(binaries, "TestRemoval.pck");
+                string extractTestRemovalPck2 = Path.Combine(binaries, "TestRemoval2.pck");
+
+                Assert.That(PCKActions.Extract(testPCK, extractTestPathRemovalOrig, true), Is.True);
+
+                var removal_test_file = "test.empty" + PCKUtils.PathExtractTagRemoval;
+                var removal_test_file_dir_path = Path.Combine(extractTestPathRemovalOrig, removal_test_file).Replace("\\", "/");
+
+                var removal_test_wrong_file = "test2.empty";
+                var removal_test_wrong_file_local_path = Path.Combine("somefolder" + PCKUtils.PathExtractTagRemoval, removal_test_wrong_file).Replace("\\", "/");
+                var removal_test_wrong_file_dir_path = Path.Combine(extractTestPathRemovalOrig, removal_test_wrong_file_local_path).Replace("\\", "/");
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(removal_test_file_dir_path)!);
+                    Directory.CreateDirectory(Path.GetDirectoryName(removal_test_wrong_file_dir_path)!);
+                    using var f = File.Create(removal_test_file_dir_path);
+                    using var f2 = File.Create(removal_test_wrong_file_dir_path);
+                }
+
+                var removal_test_file_object = new PCKPackerRegularFile(removal_test_file_dir_path, extractTestPathRemovalOrig);
+                removal_test_file_object.UpdateFileInfo(ver); // It is also testing the conversion of \\ to /
+                removal_test_file_object.CalculateMD5(); // should be 16 zeros.
+
+                Assert.That(PCKActions.Pack(extractTestPathRemovalOrig, extractTestRemovalPck, verStr), Is.True);
+                Assert.That(PCKActions.Extract(extractTestRemovalPck, extractTestRemovalPath), Is.True);
+                Assert.That(PCKActions.Pack(extractTestRemovalPath, extractTestRemovalPck2, verStr), Is.True);
+
+                var list_of_files_removal = PCKUtils.GetListOfFilesToPack(Path.GetFullPath(extractTestRemovalPath), ver);
+                {
+                    using var pck = new PCKReader();
+
+                    Assert.That(pck.OpenFile(extractTestRemovalPck), Is.True);
+                    Assert.That(list_of_files_removal, Has.Count.EqualTo(pck.Files.Count)); // same count
+
+                    var res_file_path = PCKUtils.GetResFilePathInPCK(removal_test_file_object.Path, ver);
+                    var res_wrong_file_path = PCKUtils.GetResFilePathInPCK(removal_test_wrong_file_local_path, ver);
+
+                    Assert.That(list_of_files_removal.Find(i => i.Path == res_file_path) != null, Is.True);
+                    Assert.That(list_of_files_removal.Find(i => i.Path == res_wrong_file_path) != null, Is.True);
+                    Assert.That(pck.Files.ContainsKey(res_file_path), Is.True);
+                    Assert.That(pck.Files.ContainsKey(res_wrong_file_path), Is.True); // regular file with .@@removal@@ tag
+
+                    Assert.That(pck.IsRemovalFiles, Is.True);
+                    Assert.That(pck.Files.Count(f => f.Value.IsRemoval), Is.EqualTo(1));
+
+                    Assert.That(list_of_files_removal.Find(i => i.Path == res_file_path)!.IsRemoval, Is.True);
+                    Assert.That(list_of_files_removal.Find(i => i.Path == res_wrong_file_path)!.IsRemoval, Is.False);
+                    Assert.That(pck.Files[res_file_path].IsRemoval, Is.True);
+                    Assert.That(pck.Files[res_wrong_file_path].IsRemoval, Is.False);
+
+                    Assert.That(pck.Files[res_file_path].MD5.SequenceEqual(new byte[16]), Is.True);
+                    Assert.That(pck.Files[res_file_path].MD5.SequenceEqual(removal_test_file_object.MD5!), Is.True);
+
+                    CompareRealFilesAndPCK(extractTestPathRemovalOrig, extractTestRemovalPck, extractTestRemovalPck2, true);
+                }
+            }
 
             Title("Good run");
 
@@ -581,7 +654,7 @@ namespace Tests
             using (var r = new RunGodotWithOutput(newEXE1Byte, DefaultGodotArgs))
                 if (GodotVersionMajor == 3)
                     Assert.That(r.IsSuccess(), Is.True);
-                else if (GodotVersionMajor == 4)
+                else if (GodotVersionMajor >= 4)
                     Assert.That(r.IsSuccess(), Is.False);
         }
 

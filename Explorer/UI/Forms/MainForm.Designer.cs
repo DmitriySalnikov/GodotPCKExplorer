@@ -32,6 +32,7 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ExplorerMainForm));
             DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
             DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle3 = new DataGridViewCellStyle();
             menuStrip1 = new MenuStrip();
             fileToolStripMenuItem = new ToolStripMenuItem();
             openFileToolStripMenuItem = new ToolStripMenuItem();
@@ -71,10 +72,6 @@
             ofd_open_pack = new OpenFileDialog();
             fbd_extract_folder = new FolderBrowserDialog();
             dataGridView1 = new DataGridView();
-            path = new DataGridViewTextBoxColumn();
-            offset = new DataGridViewTextBoxColumn();
-            size = new DataGridViewTextBoxColumn();
-            encrypted = new DataGridViewTextBoxColumn();
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
             tssl_selected_size = new ToolStripStatusLabel();
@@ -95,6 +92,11 @@
             ofd_merge_pck = new OpenFileDialog();
             ofd_merge_target = new OpenFileDialog();
             ofd_change_version = new OpenFileDialog();
+            path = new DataGridViewTextBoxColumn();
+            offset = new DataGridViewTextBoxColumn();
+            size = new DataGridViewTextBoxColumn();
+            encrypted = new DataGridViewTextBoxColumn();
+            removal = new DataGridViewTextBoxColumn();
             menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
             statusStrip1.SuspendLayout();
@@ -385,7 +387,7 @@
             dataGridView1.AllowUserToResizeRows = false;
             dataGridView1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dataGridView1.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridView1.Columns.AddRange(new DataGridViewColumn[] { path, offset, size, encrypted });
+            dataGridView1.Columns.AddRange(new DataGridViewColumn[] { path, offset, size, encrypted, removal });
             dataGridView1.EditMode = DataGridViewEditMode.EditProgrammatically;
             dataGridView1.Location = new Point(0, 31);
             dataGridView1.Margin = new Padding(4, 0, 4, 0);
@@ -396,43 +398,6 @@
             dataGridView1.TabIndex = 2;
             dataGridView1.CellMouseClick += dataGridView1_CellMouseClick;
             dataGridView1.SortCompare += dataGridView1_SortCompare;
-            // 
-            // path
-            // 
-            path.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
-            path.FillWeight = 70F;
-            path.HeaderText = "Path";
-            path.Name = "path";
-            path.ReadOnly = true;
-            // 
-            // offset
-            // 
-            offset.FillWeight = 13F;
-            offset.HeaderText = "Offset";
-            offset.Name = "offset";
-            offset.ReadOnly = true;
-            // 
-            // size
-            // 
-            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleRight;
-            size.DefaultCellStyle = dataGridViewCellStyle1;
-            size.FillWeight = 13F;
-            size.HeaderText = "Size";
-            size.Name = "size";
-            size.ReadOnly = true;
-            // 
-            // encrypted
-            // 
-            encrypted.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
-            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle2.Font = new Font("Microsoft Sans Serif", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 204);
-            encrypted.DefaultCellStyle = dataGridViewCellStyle2;
-            encrypted.HeaderText = "Encrypted";
-            encrypted.MaxInputLength = 1;
-            encrypted.MinimumWidth = 30;
-            encrypted.Name = "encrypted";
-            encrypted.ReadOnly = true;
-            encrypted.Width = 30;
             // 
             // statusStrip1
             // 
@@ -545,6 +510,56 @@
             // 
             ofd_change_version.Title = "Select the file containing .pck";
             // 
+            // path
+            // 
+            path.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            path.FillWeight = 70F;
+            path.HeaderText = "Path";
+            path.Name = "path";
+            path.ReadOnly = true;
+            // 
+            // offset
+            // 
+            offset.FillWeight = 13F;
+            offset.HeaderText = "Offset";
+            offset.Name = "offset";
+            offset.ReadOnly = true;
+            // 
+            // size
+            // 
+            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleRight;
+            size.DefaultCellStyle = dataGridViewCellStyle1;
+            size.FillWeight = 13F;
+            size.HeaderText = "Size";
+            size.Name = "size";
+            size.ReadOnly = true;
+            // 
+            // encrypted
+            // 
+            encrypted.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle2.Font = new Font("Microsoft Sans Serif", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 204);
+            encrypted.DefaultCellStyle = dataGridViewCellStyle2;
+            encrypted.HeaderText = "Encrypted";
+            encrypted.MaxInputLength = 1;
+            encrypted.MinimumWidth = 30;
+            encrypted.Name = "encrypted";
+            encrypted.ReadOnly = true;
+            encrypted.Width = 30;
+            // 
+            // removal
+            // 
+            removal.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+            dataGridViewCellStyle3.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle3.Font = new Font("Microsoft Sans Serif", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 204);
+            removal.DefaultCellStyle = dataGridViewCellStyle3;
+            removal.HeaderText = "Removal";
+            removal.MaxInputLength = 1;
+            removal.MinimumWidth = 30;
+            removal.Name = "removal";
+            removal.ReadOnly = true;
+            removal.Width = 30;
+            // 
             // ExplorerMainForm
             // 
             AllowDrop = true;
@@ -638,6 +653,7 @@
         private DataGridViewTextBoxColumn offset;
         private DataGridViewTextBoxColumn size;
         private DataGridViewTextBoxColumn encrypted;
+        private DataGridViewTextBoxColumn removal;
     }
 }
 

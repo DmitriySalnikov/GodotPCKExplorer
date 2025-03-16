@@ -157,10 +157,26 @@
             l_total_count.Text = $"Files count: {filesToPack.Count}";
         }
 
+        void UpdatePCKVersionOfOpenedFiles()
+        {
+            var ver = GetPCKVersion();
+
+            foreach (var p in filesToPack)
+            {
+                if (p.Value is PCKPackerRegularFile rf)
+                {
+                    rf.UpdateFileInfo(ver, tb_prefix.Text);
+                }
+            }
+
+            UpdateTableContent();
+        }
+
         void UpdateTableContent()
         {
             bool preview = cb_previewPaths.Checked;
             bool patch_enabled = cb_enable_patching.Checked && pckReader.IsOpened;
+            bool contains_removal = filesToPack.Any(f => f.Value.IsRemoval);
 
             DataGridViewCellStyle current_styleRealFile = styleNormalFile;
             DataGridViewCellStyle current_stylePCKFile = styleNormalFile;
@@ -182,6 +198,8 @@
             {
                 dataGridView1.Columns["patch"].Visible = false;
             }
+
+            dataGridView1.Columns["removal"].Visible = contains_removal;
 
             dataGridView1.Rows.Clear();
             List<DataGridViewRow> tmp_rows = [];
@@ -213,6 +231,8 @@
                         tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = Utils.SizeSuffix(f.Value.Size), Tag = f.Value.Size, Style = current_stylePCKFileSize });
                         tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = "", Tag = false });
                     }
+
+                    tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.IsRemoval ? "*" : string.Empty, Tag = f.Value.IsRemoval });
 
                     tmp_rows.Add(tmpRow);
                 }
@@ -247,7 +267,6 @@
                 return new PCKVersion();
             }
 
-            // TODO update list on version change!!!
             return new PCKVersion(pack_ver, (int)nud_major.Value, (int)nud_minor.Value, (int)nud_revision.Value);
         }
 
@@ -462,6 +481,26 @@
                 tb_patch_target.Text = Path.GetFullPath(ofd_patch_target.FileName);
                 RegenerateFilesToPackList();
             }
+        }
+
+        private void cb_ver_SelectionChangeCommitted(object sender, EventArgs e)
+        {
+            UpdatePCKVersionOfOpenedFiles();
+        }
+
+        private void nud_major_ValueChanged(object sender, EventArgs e)
+        {
+            UpdatePCKVersionOfOpenedFiles();
+        }
+
+        private void nud_minor_ValueChanged(object sender, EventArgs e)
+        {
+            UpdatePCKVersionOfOpenedFiles();
+        }
+
+        private void nud_revision_ValueChanged(object sender, EventArgs e)
+        {
+            UpdatePCKVersionOfOpenedFiles();
         }
     }
 }

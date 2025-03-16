@@ -32,14 +32,13 @@ namespace GodotPCKExplorer
 
         public const string PathPrefixRes = "res://";
         public const string PathPrefixUser = "user://";
-        // TODO add to readme
-        public const string PathPrefixExtractUser = "@@user@@/";
-        public const string PathTagRemoval = ".removal";
+        public const string PathExtractPrefixUser = "@@user@@/";
+        public const string PathExtractTagRemoval = ".@@removal@@";
 
         public const int PCK_FLAG_DIR_ENCRYPTED = 1 << 0;
         public const int PCK_FLAG_REL_FILEBASE = 1 << 1; // Added in 4.3 https://github.com/godotengine/godot/commit/7e65fd87253fecb630151bbc4c6ac31d5cfa01a0
         public const int PCK_FILE_FLAG_ENCRYPTED = 1 << 0;
-        // before 4.4 set offset to 0 instead of flag
+        // before 4.4 set offset to 0 instead of flag. file_access_pack.h:199
         public const int PCK_FILE_FLAG_REMOVAL = 1 << 1; // Added in 4.4 https://github.com/godotengine/godot/commit/d76fbb7a40c56fa4b10edc017dc33a2d668c5c0d
 
 

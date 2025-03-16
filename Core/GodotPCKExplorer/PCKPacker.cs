@@ -43,18 +43,17 @@ namespace GodotPCKExplorer
 
         public PCKPackerRegularFile(string o_path, string base_path) : base("")
         {
-            OriginalPath = o_path;
+            OriginalPath = o_path.Replace('\\', '/');
             originalSize = new FileInfo(OriginalPath).Length;
 
-            rootFolder = base_path;
-            if (!rootFolder.EndsWith(System.IO.Path.DirectorySeparatorChar))
+            rootFolder = base_path.Replace('\\', '/');
+            if (!rootFolder.EndsWith('/'))
             {
-                rootFolder += System.IO.Path.DirectorySeparatorChar;
+                rootFolder += '/';
             }
         }
 
-        // TODO use this to update paths in Packer after changing version
-        public void UpdateFileInfo(PCKVersion version, string prefix)
+        public void UpdateFileInfo(PCKVersion version, string prefix = "")
         {
             // added Removal flag in 4.4. file_access_pack.h:53 https://github.com/godotengine/godot/commit/d76fbb7a40c56fa4b10edc017dc33a2d668c5c0d
 
@@ -63,9 +62,9 @@ namespace GodotPCKExplorer
             bool is_user = file_path.StartsWith(PCKUtils.PathPrefixUser);
 
             // paths with user://
-            if (file_path.StartsWith(PCKUtils.PathPrefixExtractUser) || is_user)
+            if (file_path.StartsWith(PCKUtils.PathExtractPrefixUser) || is_user)
             {
-                Path = PCKUtils.PathPrefixUser + file_path.Replace(PCKUtils.PathPrefixExtractUser, "");
+                Path = PCKUtils.PathPrefixUser + file_path.Replace(PCKUtils.PathExtractPrefixUser, "");
             }
             // regular paths with res://
             else
@@ -75,9 +74,9 @@ namespace GodotPCKExplorer
 
             string file_name = System.IO.Path.GetFileName(Path);
 
-            if (file_name.Contains(PCKUtils.PathTagRemoval))
+            if (file_name.Contains(PCKUtils.PathExtractTagRemoval))
             {
-                Path = Path.Replace(PCKUtils.PathTagRemoval, "");
+                Path = Path.Replace(PCKUtils.PathExtractTagRemoval, "");
                 IsRemoval = true;
             }
             else
@@ -110,6 +109,12 @@ namespace GodotPCKExplorer
 
         public override IEnumerable<ReadOnlyMemory<byte>> ReadMemoryBlocks()
         {
+            if (IsRemoval)
+            {
+                // If something unexpected happens, prevent the Removal file from being written.
+                yield break;
+            }
+
             using var stream = File.Open(OriginalPath, FileMode.Open, FileAccess.Read, FileShare.Read);
             foreach (var block in PCKUtils.ReadStreamAsMemoryBlocks(stream))
             {
@@ -448,6 +453,12 @@ namespace GodotPCKExplorer
                         }
 
                         PCKActions.progress?.LogProgress(op, file.Path);
+
+                        if (file.IsRemoval)
+                        {
+                            PCKActions.progress?.LogProgress(op, "- The file is marked as Removal. Skipping.");
+                            continue;
+                        }
 
                         // go back to store the file's offset
                         {

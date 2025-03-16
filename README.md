@@ -23,6 +23,10 @@ Also `PCK Bruteforcer` is available as part of this project [here](Bruteforcer/)
   * `UI`: Supports only `Windows` and requires the installation of the `.NET Desktop Runtime`
   * `Console`: Supports `Windows`, `Linux` and `macOS`
 
+PCK Explorer also supports paths with prefix `user://`. When extracting, files with the prefix `user://` will be placed in the folder `@@user@@`. Also, when packing, files from `@@user@@` will have the prefix `user://`.
+
+In Godot 4.4, support for removing files in PCK patches was added, and this program also supports this feature. Files with the `Removal` flag will have `.@@removal@@` in the name when extracted. Also, the `.@@removal@@` from the name will be removed and converted to the `Removal` flag when packing.
+
 ![Main Window](Images/MainForm.png)
 ![Pack Window](Images/CreatePack.png)
 ![Pack Window with Patching](Images/CreatePackPatch.png)

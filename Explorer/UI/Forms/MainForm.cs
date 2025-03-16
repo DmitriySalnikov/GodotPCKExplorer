@@ -363,6 +363,8 @@ namespace GodotPCKExplorer.UI
         {
             dataGridView1.Rows.Clear();
             dataGridView1.Columns["encrypted"].Visible = pckReader.IsEncryptedFiles;
+            dataGridView1.Columns["removal"].Visible = pckReader.IsRemovalFiles;
+
             if (pckReader.IsOpened)
             {
                 List<DataGridViewRow> tmp_rows = [];
@@ -377,6 +379,7 @@ namespace GodotPCKExplorer.UI
                         tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.Offset, Tag = PCKUtils.ByteArrayToHexString(f.Value.MD5, "") });
                         tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = Utils.SizeSuffix(f.Value.Size), Tag = f.Value.Size });
                         tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.IsEncrypted ? "*" : string.Empty, Tag = f.Value.IsEncrypted });
+                        tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = f.Value.IsRemoval ? "*" : string.Empty, Tag = f.Value.IsRemoval });
 
                         tmp_rows.Add(tmpRow);
                     }
