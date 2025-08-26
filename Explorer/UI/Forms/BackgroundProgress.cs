@@ -1,7 +1,8 @@
-﻿namespace GodotPCKExplorer.UI
+namespace GodotPCKExplorer.UI
 {
     public partial class BackgroundProgress : Form
     {
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool UnknowPercents { get; set; } = false;
 
         DateTime prevUpdateTime = DateTime.UtcNow;

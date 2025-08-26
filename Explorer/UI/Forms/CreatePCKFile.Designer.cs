@@ -1,4 +1,4 @@
-﻿namespace GodotPCKExplorer.UI
+namespace GodotPCKExplorer.UI
 {
     partial class CreatePCKFile
     {
@@ -28,12 +28,16 @@
         /// </summary>
         private void InitializeComponent()
         {
-            components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(CreatePCKFile));
+            components = new Container();
             DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
             DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
             DataGridViewCellStyle dataGridViewCellStyle3 = new DataGridViewCellStyle();
+            ComponentResourceManager resources = new ComponentResourceManager(typeof(CreatePCKFile));
             dataGridView1 = new DataGridView();
+            filePath = new DataGridViewTextBoxColumn();
+            size = new DataGridViewTextBoxColumn();
+            patch = new DataGridViewTextBoxColumn();
+            removal = new DataGridViewTextBoxColumn();
             btn_create = new Button();
             l_total_size = new Label();
             sfd_save_pack = new SaveFileDialog();
@@ -69,15 +73,11 @@
             cb_enable_patching = new CheckBox();
             btn_browse_patch_target = new Button();
             ofd_patch_target = new OpenFileDialog();
-            filePath = new DataGridViewTextBoxColumn();
-            size = new DataGridViewTextBoxColumn();
-            patch = new DataGridViewTextBoxColumn();
-            removal = new DataGridViewTextBoxColumn();
-            ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)nud_major).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)nud_minor).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)nud_revision).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)nud_alignment).BeginInit();
+            ((ISupportInitialize)dataGridView1).BeginInit();
+            ((ISupportInitialize)nud_major).BeginInit();
+            ((ISupportInitialize)nud_minor).BeginInit();
+            ((ISupportInitialize)nud_revision).BeginInit();
+            ((ISupportInitialize)nud_alignment).BeginInit();
             SuspendLayout();
             // 
             // dataGridView1
@@ -95,6 +95,48 @@
             dataGridView1.TabIndex = 0;
             dataGridView1.SortCompare += dataGridView1_SortCompare;
             dataGridView1.UserDeletedRow += dataGridView1_UserDeletedRow;
+            // 
+            // filePath
+            // 
+            filePath.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            filePath.FillWeight = 85F;
+            filePath.HeaderText = "File Path";
+            filePath.Name = "filePath";
+            filePath.ReadOnly = true;
+            // 
+            // size
+            // 
+            size.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleRight;
+            size.DefaultCellStyle = dataGridViewCellStyle1;
+            size.HeaderText = "Size";
+            size.Name = "size";
+            size.ReadOnly = true;
+            size.Width = 52;
+            // 
+            // patch
+            // 
+            patch.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle2.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point, 204);
+            patch.DefaultCellStyle = dataGridViewCellStyle2;
+            patch.HeaderText = "Patch";
+            patch.MaxInputLength = 1;
+            patch.MinimumWidth = 30;
+            patch.Name = "patch";
+            patch.Width = 30;
+            // 
+            // removal
+            // 
+            removal.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+            dataGridViewCellStyle3.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle3.Font = new Font("Microsoft Sans Serif", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 204);
+            removal.DefaultCellStyle = dataGridViewCellStyle3;
+            removal.HeaderText = "Removal";
+            removal.MaxInputLength = 1;
+            removal.MinimumWidth = 30;
+            removal.Name = "removal";
+            removal.Width = 30;
             // 
             // btn_create
             // 
@@ -465,48 +507,6 @@
             // 
             ofd_patch_target.Title = "Select the file containing .pck";
             // 
-            // filePath
-            // 
-            filePath.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
-            filePath.FillWeight = 85F;
-            filePath.HeaderText = "File Path";
-            filePath.Name = "filePath";
-            filePath.ReadOnly = true;
-            // 
-            // size
-            // 
-            size.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleRight;
-            size.DefaultCellStyle = dataGridViewCellStyle1;
-            size.HeaderText = "Size";
-            size.Name = "size";
-            size.ReadOnly = true;
-            size.Width = 52;
-            // 
-            // patch
-            // 
-            patch.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
-            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle2.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point, 204);
-            patch.DefaultCellStyle = dataGridViewCellStyle2;
-            patch.HeaderText = "Patch";
-            patch.MaxInputLength = 1;
-            patch.MinimumWidth = 30;
-            patch.Name = "patch";
-            patch.Width = 30;
-            // 
-            // removal
-            // 
-            removal.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
-            dataGridViewCellStyle3.Alignment = DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle3.Font = new Font("Microsoft Sans Serif", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 204);
-            removal.DefaultCellStyle = dataGridViewCellStyle3;
-            removal.HeaderText = "Removal";
-            removal.MaxInputLength = 1;
-            removal.MinimumWidth = 30;
-            removal.Name = "removal";
-            removal.Width = 30;
-            // 
             // CreatePCKFile
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -550,11 +550,11 @@
             Text = "Pack or Embed folder";
             FormClosed += CreatePCKFile_FormClosed;
             Shown += CreatePCKFile_Shown;
-            ((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
-            ((System.ComponentModel.ISupportInitialize)nud_major).EndInit();
-            ((System.ComponentModel.ISupportInitialize)nud_minor).EndInit();
-            ((System.ComponentModel.ISupportInitialize)nud_revision).EndInit();
-            ((System.ComponentModel.ISupportInitialize)nud_alignment).EndInit();
+            ((ISupportInitialize)dataGridView1).EndInit();
+            ((ISupportInitialize)nud_major).EndInit();
+            ((ISupportInitialize)nud_minor).EndInit();
+            ((ISupportInitialize)nud_revision).EndInit();
+            ((ISupportInitialize)nud_alignment).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }

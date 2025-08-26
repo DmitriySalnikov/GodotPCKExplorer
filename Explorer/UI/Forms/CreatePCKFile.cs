@@ -1,4 +1,4 @@
-﻿namespace GodotPCKExplorer.UI
+namespace GodotPCKExplorer.UI
 {
     public partial class CreatePCKFile : Form
     {
@@ -95,9 +95,16 @@
                     return new PCKReaderEncryptionKeyResult() { Key = GUIConfig.Instance.PackEncryptionKey ?? "" };
                 }
 
-                if (!pckReader.OpenFile(tb_patch_target.Text, getEncryptionKey: getEncKey))
+                if (File.Exists(tb_patch_target.Text))
                 {
-                    Program.ShowMessage("The PCK file could not be opened.\nIf it contains encrypted data, then specify the encryption key in the \"Encryption Setting\" menu.", "Error", MessageType.Error);
+                    if (!pckReader.OpenFile(tb_patch_target.Text, getEncryptionKey: getEncKey))
+                    {
+                        Program.ShowMessage("The PCK file for patching could not be opened.\nIf it contains encrypted data, then specify the encryption key in the \"Encryption Setting\" menu.", "Error", MessageType.Error);
+                    }
+                }
+                else
+                {
+                    Program.ShowMessage("The PCK file for patching does not exist.", "Error", MessageType.Error);
                 }
             }
             else
@@ -130,7 +137,7 @@
                 var filteredRows = new List<PCKPackerFile>();
                 foreach (DataGridViewRow i in dataGridView1.Rows)
                 {
-                    string file = (string)i.Cells[0].Tag;
+                    string file = (string)(i.Cells[0].Tag ?? throw new NullReferenceException("Tag"));
                     if (filesToPack.TryGetValue(file, out PCKPackerFile? value))
                         filteredRows.Add(value);
                 }
@@ -159,17 +166,21 @@
 
         void UpdatePCKVersionOfOpenedFiles()
         {
-            var ver = GetPCKVersion();
+            // Full refresh
+            SetFolderPath(tb_folder_path.Text);
 
-            foreach (var p in filesToPack)
-            {
-                if (p.Value is PCKPackerRegularFile rf)
-                {
-                    rf.UpdateFileInfo(ver, tb_prefix.Text);
-                }
-            }
+            return;
+            //var ver = GetPCKVersion();
 
-            UpdateTableContent();
+            //foreach (var p in filesToPack)
+            //{
+            //    if (p.Value is PCKPackerRegularFile rf)
+            //    {
+            //        rf.UpdateFileInfo(ver, tb_prefix.Text);
+            //    }
+            //}
+
+            //UpdateTableContent();
         }
 
         void UpdateTableContent()
@@ -192,14 +203,14 @@
                 current_styleRealFileSize = styleRealFileSize;
                 current_stylePCKFileSize = stylePCKFileSize;
 
-                dataGridView1.Columns["patch"].Visible = true;
+                dataGridView1.Columns["patch"]!.Visible = true;
             }
             else
             {
-                dataGridView1.Columns["patch"].Visible = false;
+                dataGridView1.Columns["patch"]!.Visible = false;
             }
 
-            dataGridView1.Columns["removal"].Visible = contains_removal;
+            dataGridView1.Columns["removal"]!.Visible = contains_removal;
 
             dataGridView1.Rows.Clear();
             List<DataGridViewRow> tmp_rows = [];
@@ -218,7 +229,7 @@
                     var tmpRow = new DataGridViewRow();
                     if (f.Value is PCKPackerRegularFile rf)
                     {
-                        tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = preview ? f.Value.Path : rf.OriginalPath, Tag = rf.OriginalPath, Style = current_styleRealFile });
+                        tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = preview ? f.Value.Path : rf.OriginalPath, Tag = f.Value.Path, Style = current_styleRealFile });
                         if (pckReader.Files.TryGetValue(rf.Path, out var orig_file))
                             tmpRow.Cells.Add(new DataGridViewTextBoxCell() { Value = $"{Utils.SizeSuffix(orig_file.Size)} -> {Utils.SizeSuffix(f.Value.Size)}", Tag = f.Value.Size, Style = current_styleRealFileSize });
                         else
@@ -277,7 +288,7 @@
 
         private void dataGridView1_UserDeletedRow(object? sender, DataGridViewRowEventArgs e)
         {
-            filesToPack.Remove((string)e.Row.Cells[0].Value);
+            filesToPack.Remove((string)(e.Row.Cells[0].Tag ?? throw new NullReferenceException("Tag")));
             CalculatePCKSize();
         }
 
@@ -363,12 +374,14 @@
 
             if (e.Column.Index == 1)
             {
-                e.SortResult = ((long)(dataGridView1.Rows[e.RowIndex1].Cells[1].Tag)).CompareTo((long)(dataGridView1.Rows[e.RowIndex2].Cells[1].Tag));
+                e.SortResult = ((long)(dataGridView1.Rows[e.RowIndex1].Cells[1].Tag ?? throw new NullReferenceException("Tag")))
+                    .CompareTo((long)(dataGridView1.Rows[e.RowIndex2].Cells[1].Tag ?? throw new NullReferenceException("Tag")));
                 e.Handled = true;
             }
             else if (e.Column.Index == 2)
             {
-                e.SortResult = ((bool)(dataGridView1.Rows[e.RowIndex1].Cells[2].Tag)).CompareTo((bool)(dataGridView1.Rows[e.RowIndex2].Cells[2].Tag));
+                e.SortResult = ((bool)(dataGridView1.Rows[e.RowIndex1].Cells[2].Tag ?? throw new NullReferenceException("Tag")))
+                    .CompareTo((bool)(dataGridView1.Rows[e.RowIndex2].Cells[2].Tag ?? throw new NullReferenceException("Tag")));
                 e.Handled = true;
             }
         }

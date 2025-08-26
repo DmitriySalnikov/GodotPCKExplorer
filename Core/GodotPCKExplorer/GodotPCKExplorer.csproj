@@ -18,7 +18,7 @@
 		<Version>1.0.0</Version>
 	</PropertyGroup>
 
-	<Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+	<Target Name="PreBuild" BeforeTargets="PreBuildEvent;GetAssemblyIdentity">
 		<ReadLinesFromFile File="..\..\version.txt">
 			<Output TaskParameter="Lines" PropertyName="Version" />
 		</ReadLinesFromFile>

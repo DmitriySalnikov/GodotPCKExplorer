@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Collections;
 using System.IO.Compression;
 using GodotPCKExplorer;
@@ -581,6 +581,7 @@ namespace Tests
             string testEXE = Path.Combine(binaries, Exe("Test"));
             string testPCK = Path.Combine(binaries, "Test.pck");
             string newEXE = Path.Combine(binaries, Exe("TestMerge"));
+            string newEXE2 = Path.Combine(binaries, Exe("TestMerge2"));
             string newEXE1Byte = Path.Combine(binaries, Exe("TestMerge1Byte"));
             string newEXE_old = Path.Combine(binaries, Exe("TestMerge.old"));
 
@@ -645,10 +646,9 @@ namespace Tests
                 Assert.That(r.IsSuccess(), Is.False);
 
             Title("Good runs");
-            File.Delete(newEXE);
-            TUtils.CopyFile(testEXE, newEXE);
-            Assert.That(PCKActions.Merge(testPCK, newEXE), Is.True);
-            using (var r = new RunGodotWithOutput(newEXE, DefaultGodotArgs))
+            TUtils.CopyFile(testEXE, newEXE2);
+            Assert.That(PCKActions.Merge(testPCK, newEXE2), Is.True);
+            using (var r = new RunGodotWithOutput(newEXE2, DefaultGodotArgs))
                 Assert.That(r.IsSuccess(), Is.True);
 
             using (var r = new RunGodotWithOutput(newEXE1Byte, DefaultGodotArgs))

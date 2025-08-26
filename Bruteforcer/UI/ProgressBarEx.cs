@@ -1,4 +1,4 @@
-﻿namespace PCKBruteforcer.UI
+namespace PCKBruteforcer.UI
 {
     // https://stackoverflow.com/a/2498036
     internal class ProgressBarEx : ProgressBar
@@ -9,6 +9,7 @@
         public Color TextColor = SystemColors.ControlText;
 
         Color progressColor = SystemColors.HotTrack;
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public Color ProgressColor
         {
             get => progressColor;
@@ -23,6 +24,7 @@
         }
 
         string progressText = "";
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string ProgressText
         {
             get => progressText;

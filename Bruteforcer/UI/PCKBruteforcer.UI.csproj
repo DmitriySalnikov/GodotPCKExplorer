@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
-		<TargetFramework>net8.0-windows</TargetFramework>
+		<TargetFramework>net9.0-windows7.0</TargetFramework>
 		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 		<UseWindowsForms>true</UseWindowsForms>
 		<EnableWindowsTargeting>true</EnableWindowsTargeting>
@@ -37,7 +37,7 @@
 		<None Remove="publish\**" />
 	</ItemGroup>
 
-	<Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+	<Target Name="PreBuild" BeforeTargets="PreBuildEvent;GetAssemblyIdentity">
 		<ReadLinesFromFile File="..\bruteforcer_version.txt">
 			<Output TaskParameter="Lines" PropertyName="Version" />
 		</ReadLinesFromFile>
@@ -64,6 +64,10 @@
 			<Generator>ResXFileCodeGenerator</Generator>
 			<LastGenOutput>Resources.Designer.cs</LastGenOutput>
 		</EmbeddedResource>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Using Include="System.ComponentModel" />
 	</ItemGroup>
 
 	<Import Project="..\..\Core\Global.Shared\Global.Shared.projitems" Label="Shared" />

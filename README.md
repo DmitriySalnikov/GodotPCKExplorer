@@ -49,13 +49,13 @@ The binaries of the latest version are available on [**itch.io**](https://dmitri
 >
 > `native` is a standalone program that does not require anything extra to run.
 >
-> `dotnet` is a program that requires `.NET 8` to work. Its download should be prompted when you run `.exe` files in Windows, if it has not been installed previously.
+> `dotnet` is a program that requires `.NET 9` to work. Its download should be prompted when you run `.exe` files in Windows, if it has not been installed previously.
 >
 > The `.NET Desktop Runtime` is required to use the UI versions of the program.
 >
 > On Linux and macOS, you just need to install the `.NET Runtime`. Use the command `dotnet GodotPCKExplorer.Console.dll [some arguments]` to run it.
 >
-> `.NET 8` is available [here](https://dotnet.microsoft.com/en-us/download/dotnet/8.0).
+> `.NET 9` is available [here](https://dotnet.microsoft.com/en-us/download/dotnet/9.0).
 
 ## License
 

@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
-		<TargetFramework>net8.0-windows</TargetFramework>
+		<TargetFramework>net9.0-windows7.0</TargetFramework>
 		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 		<UseWindowsForms>true</UseWindowsForms>
 		<EnableWindowsTargeting>true</EnableWindowsTargeting>
@@ -26,7 +26,7 @@
 		<Platforms>AnyCPU</Platforms>
 	</PropertyGroup>
 
-	<Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+	<Target Name="PreBuild" BeforeTargets="PreBuildEvent;GetAssemblyIdentity">
 		<ReadLinesFromFile File="..\..\version.txt">
 			<Output TaskParameter="Lines" PropertyName="Version" />
 		</ReadLinesFromFile>
@@ -72,6 +72,7 @@
 
 	<ItemGroup>
 		<Using Include="GodotPCKExplorer.UI" />
+		<Using Include="System.ComponentModel" />
 	</ItemGroup>
 
 	<Import Project="..\..\Core\Global.Shared\Global.Shared.projitems" Label="Shared" />

@@ -1,4 +1,4 @@
-﻿using GodotPCKExplorer.GlobalShared;
+using GodotPCKExplorer.GlobalShared;
 
 namespace GodotPCKExplorer.UI
 {
@@ -50,11 +50,11 @@ namespace GodotPCKExplorer.UI
             dataGridView1.SelectionChanged += (o, e) => UpdateStatuStrip();
             extractToolStripMenuItem.Enabled = false;
 
-            copyPathToolStripMenuItem.Click += (o, e) => { if (cms_table_row.Tag != null) { var text = dataGridView1.Rows[(int)cms_table_row.Tag].Cells[0].Value.ToString(); if (text != null) Clipboard.SetText(text); } };
-            copyOffsetToolStripMenuItem.Click += (o, e) => { if (cms_table_row.Tag != null) { var text = dataGridView1.Rows[(int)cms_table_row.Tag].Cells[1].Value.ToString(); if (text != null) Clipboard.SetText(text); } };
-            copySizeToolStripMenuItem.Click += (o, e) => { if (cms_table_row.Tag != null) { var text = dataGridView1.Rows[(int)cms_table_row.Tag].Cells[2].Value.ToString(); if (text != null) Clipboard.SetText(text); } };
-            copySizeInBytesToolStripMenuItem.Click += (o, e) => { if (cms_table_row.Tag != null) { var text = dataGridView1.Rows[(int)cms_table_row.Tag].Cells[2].Tag.ToString(); if (text != null) Clipboard.SetText(text); } };
-            copyMD5ToolStripMenuItem.Click += (o, e) => { if (cms_table_row.Tag != null) { var text = dataGridView1.Rows[(int)cms_table_row.Tag].Cells[1].Tag.ToString(); if (text != null) Clipboard.SetText(text); } };
+            copyPathToolStripMenuItem.Click += (o, e) => { if (cms_table_row.Tag != null) { var text = dataGridView1.Rows[(int)cms_table_row.Tag].Cells[0].Value; if (text != null) Clipboard.SetText(text.ToString() ?? ""); } };
+            copyOffsetToolStripMenuItem.Click += (o, e) => { if (cms_table_row.Tag != null) { var text = dataGridView1.Rows[(int)cms_table_row.Tag].Cells[1].Value; if (text != null) Clipboard.SetText(text.ToString() ?? ""); } };
+            copySizeToolStripMenuItem.Click += (o, e) => { if (cms_table_row.Tag != null) { var text = dataGridView1.Rows[(int)cms_table_row.Tag].Cells[2].Value; if (text != null) Clipboard.SetText(text.ToString() ?? ""); } };
+            copySizeInBytesToolStripMenuItem.Click += (o, e) => { if (cms_table_row.Tag != null) { var text = dataGridView1.Rows[(int)cms_table_row.Tag].Cells[2].Tag; if (text != null) Clipboard.SetText(text.ToString() ?? ""); } };
+            copyMD5ToolStripMenuItem.Click += (o, e) => { if (cms_table_row.Tag != null) { var text = dataGridView1.Rows[(int)cms_table_row.Tag].Cells[1].Tag; if (text != null) Clipboard.SetText(text.ToString() ?? ""); } };
 
             searchText.KeyDown += new KeyEventHandler(searchText_KeyDown);
 
@@ -362,8 +362,8 @@ namespace GodotPCKExplorer.UI
         public void UpdateListOfPCKContent()
         {
             dataGridView1.Rows.Clear();
-            dataGridView1.Columns["encrypted"].Visible = pckReader.IsEncryptedFiles;
-            dataGridView1.Columns["removal"].Visible = pckReader.IsRemovalFiles;
+            dataGridView1.Columns["encrypted"]!.Visible = pckReader.IsEncryptedFiles;
+            dataGridView1.Columns["removal"]!.Visible = pckReader.IsRemovalFiles;
 
             if (pckReader.IsOpened)
             {
@@ -399,7 +399,7 @@ namespace GodotPCKExplorer.UI
 
                 foreach (DataGridViewRow f in dataGridView1.SelectedRows)
                 {
-                    size += (long)f.Cells[2].Tag;
+                    size += (long)(f.Cells[2].Tag ?? throw new NullReferenceException("Tag"));
                 }
 
                 var enc_text = GetEncryptionStatusString();
@@ -450,7 +450,7 @@ namespace GodotPCKExplorer.UI
             {
                 var selectedRows = new List<string>();
                 foreach (DataGridViewRow i in dataGridView1.SelectedRows)
-                    selectedRows.Add((string)i.Cells[0].Value);
+                    selectedRows.Add((string)(i.Cells[0].Value ?? throw new NullReferenceException("Value")));
 
                 ExtractFilesFromPCK(selectedRows);
             }
@@ -472,7 +472,7 @@ namespace GodotPCKExplorer.UI
             {
                 var filteredRows = new List<string>();
                 foreach (DataGridViewRow i in dataGridView1.Rows)
-                    filteredRows.Add((string)i.Cells[0].Value);
+                    filteredRows.Add((string)(i.Cells[0].Value ?? throw new NullReferenceException("Value")));
 
                 ExtractFilesFromPCK(filteredRows);
             }
@@ -540,7 +540,8 @@ namespace GodotPCKExplorer.UI
                 return;
             }
 
-            e.SortResult = ((long)(dataGridView1.Rows[e.RowIndex1].Cells[2].Tag)).CompareTo((long)(dataGridView1.Rows[e.RowIndex2].Cells[2].Tag));
+            e.SortResult = ((long)(dataGridView1.Rows[e.RowIndex1].Cells[2].Tag ?? throw new NullReferenceException("Tag")))
+                .CompareTo((long)(dataGridView1.Rows[e.RowIndex2].Cells[2].Tag ?? throw new NullReferenceException("Tag")));
             e.Handled = true;
         }
 

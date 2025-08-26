@@ -1,4 +1,4 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 
 namespace GodotPCKExplorer.UI
 {
@@ -23,6 +23,7 @@ namespace GodotPCKExplorer.UI
         }
 
         string cueBanner = "";
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public string CueBanner
         {
             get { return cueBanner; }
