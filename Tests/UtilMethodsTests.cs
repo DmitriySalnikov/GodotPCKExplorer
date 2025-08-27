@@ -106,17 +106,18 @@ namespace Tests
             var zip = ZipFile.OpenRead(ZipFilePath);
             foreach (var f in zip.Entries)
             {
-                try
+                if (f.Length == 0)
                 {
-                    var file = Path.Combine(binaries_base, f.FullName);
-                    Directory.CreateDirectory(Path.GetDirectoryName(file) ?? "");
-
-                    if (f.FullName.StartsWith(PlatformFolder))
-                    {
-                        f.ExtractToFile(file, false);
-                    }
+                    continue;
                 }
-                catch { }
+
+                var file = Path.Combine(binaries_base, f.FullName);
+                Directory.CreateDirectory(Path.GetDirectoryName(file) ?? "");
+
+                if (f.FullName.StartsWith(PlatformFolder))
+                {
+                    f.ExtractToFile(file, false);
+                }
             }
         }
 
@@ -1155,6 +1156,7 @@ namespace Tests
                 yield return new TestFixtureData(3, 3);
                 yield return new TestFixtureData(4, 422);
                 yield return new TestFixtureData(4, 440);
+                yield return new TestFixtureData(4, 450);
             }
         }
     }

@@ -1,6 +1,8 @@
 Test*/
-.godot/
+*/.godot/**/
 .import/
 
 godot.*
 Godot_*
+
+*/.godot/*cache*
