@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
@@ -23,8 +23,13 @@ namespace GodotPCKExplorer
         [ThreadStatic]
         static byte[]? md5_buffer;
 
-        public const int PCK_VERSION_GODOT_3 = 1;
-        public const int PCK_VERSION_GODOT_4 = 2;
+        public enum PACK_VERSION
+        {
+            Godot_3 = 1,
+            Godot_4 = 2,
+            Godot_4_5 = 3,
+        }
+
         public const int PCK_MAGIC = 0x43504447;
 
         public const int BUFFER_MAX_SIZE = 1024 * 1024;
@@ -35,11 +40,19 @@ namespace GodotPCKExplorer
         public const string PathExtractPrefixUser = "@@user@@/";
         public const string PathExtractTagRemoval = ".@@removal@@";
 
-        public const int PCK_FLAG_DIR_ENCRYPTED = 1 << 0;
-        public const int PCK_FLAG_REL_FILEBASE = 1 << 1; // Added in 4.3 https://github.com/godotengine/godot/commit/7e65fd87253fecb630151bbc4c6ac31d5cfa01a0
-        public const int PCK_FILE_FLAG_ENCRYPTED = 1 << 0;
-        // before 4.4 set offset to 0 instead of flag. file_access_pack.h:199
-        public const int PCK_FILE_FLAG_REMOVAL = 1 << 1; // Added in 4.4 https://github.com/godotengine/godot/commit/d76fbb7a40c56fa4b10edc017dc33a2d668c5c0d
+        [Flags]
+        public enum PCK_FLAG
+        {
+            DIR_ENCRYPTED = 1 << 0,
+            REL_FILEBASE = 1 << 1, // Added in 4.3 https://github.com/godotengine/godot/commit/7e65fd87253fecb630151bbc4c6ac31d5cfa01a0
+        }
+        [Flags]
+        public enum PCK_FILE
+        {
+            FLAG_ENCRYPTED = 1 << 0,
+            // before 4.4 set offset to 0 instead of flag. file_access_pack.h:199
+            FLAG_REMOVAL = 1 << 1, // Added in 4.4 https://github.com/godotengine/godot/commit/d76fbb7a40c56fa4b10edc017dc33a2d668c5c0d
+        }
 
 
         static readonly Random rng = new Random();

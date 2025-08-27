@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -58,7 +58,7 @@ namespace GodotPCKExplorer
 
         public bool IsRelativeFileBase
         {
-            get => PCK_Flags != -1 && (PCK_Flags & PCKUtils.PCK_FLAG_REL_FILEBASE) != 0;
+            get => PCK_Flags != -1 && (PCK_Flags & (int)PCKUtils.PCK_FLAG.REL_FILEBASE) != 0;
         }
 
         public bool IsEncrypted
@@ -67,7 +67,7 @@ namespace GodotPCKExplorer
         }
         public bool IsEncryptedIndex
         {
-            get => PCK_Flags != -1 && (PCK_Flags & PCKUtils.PCK_FLAG_DIR_ENCRYPTED) != 0;
+            get => PCK_Flags != -1 && (PCK_Flags & (int)PCKUtils.PCK_FLAG.DIR_ENCRYPTED) != 0;
         }
         public bool IsEncryptedFiles
         {
@@ -308,7 +308,7 @@ namespace GodotPCKExplorer
                 PCK_Flags = 0;
                 PCK_FileBase = 0;
 
-                if (PCK_VersionPack == PCKUtils.PCK_VERSION_GODOT_4)
+                if (PCK_VersionPack == (int)PCKUtils.PACK_VERSION.Godot_4)
                 {
                     PCK_Flags = fileReader.ReadInt32(); // 20-23
                     PCK_FileBaseAddressOffset = fileReader.BaseStream.Position;
@@ -327,7 +327,7 @@ namespace GodotPCKExplorer
                 PCK_FileCount = fileReader.ReadInt32();
                 PCKActions.progress?.LogProgress(op, $"File count: {PCK_FileCount}");
 
-                if (readOnlyHeaderGodot4 && PCK_VersionPack == PCKUtils.PCK_VERSION_GODOT_4)
+                if (readOnlyHeaderGodot4 && PCK_VersionPack == (int)PCKUtils.PACK_VERSION.Godot_4)
                 {
                     PCKActions.progress?.LogProgress(op, 100);
                     PCKActions.progress?.LogProgress(op, "Completed without reading the file index!");
@@ -337,7 +337,7 @@ namespace GodotPCKExplorer
                 }
 
                 byte[]? encryption_key = null;
-                if (PCK_VersionPack == PCKUtils.PCK_VERSION_GODOT_4)
+                if (PCK_VersionPack == (int)PCKUtils.PACK_VERSION.Godot_4)
                 {
                     if (IsEncrypted)
                     {
@@ -414,7 +414,7 @@ namespace GodotPCKExplorer
                     byte[] md5 = tmp_reader.ReadBytes(16);
 
                     int flags = 0;
-                    if (PCK_VersionPack == PCKUtils.PCK_VERSION_GODOT_4)
+                    if (PCK_VersionPack == (int)PCKUtils.PACK_VERSION.Godot_4)
                     {
                         flags = tmp_reader.ReadInt32();
                     }
@@ -761,7 +761,7 @@ namespace GodotPCKExplorer
                 }
 
                 // Fix addresses
-                if (PCK_VersionPack < PCKUtils.PCK_VERSION_GODOT_4)
+                if (PCK_VersionPack < (int)PCKUtils.PACK_VERSION.Godot_4)
                 {
                     foreach (var p in Files.Values)
                     {
@@ -884,7 +884,7 @@ namespace GodotPCKExplorer
                 }
 
                 // Fix addresses
-                if (PCK_VersionPack < PCKUtils.PCK_VERSION_GODOT_4)
+                if (PCK_VersionPack < (int)PCKUtils.PACK_VERSION.Godot_4)
                 {
                     foreach (var p in Files.Values)
                     {
@@ -994,7 +994,7 @@ namespace GodotPCKExplorer
 
         public bool IsEncrypted
         {
-            get => (Flags & PCKUtils.PCK_FILE_FLAG_ENCRYPTED) != 0;
+            get => (Flags & (int)PCKUtils.PCK_FILE.FLAG_ENCRYPTED) != 0;
         }
 
         public bool IsRemoval
@@ -1003,7 +1003,7 @@ namespace GodotPCKExplorer
             {
                 if (Version.Major >= 4 && Version.Minor >= 4)
                 {
-                    return (Flags & PCKUtils.PCK_FILE_FLAG_REMOVAL) != 0;
+                    return (Flags & (int)PCKUtils.PCK_FILE.FLAG_REMOVAL) != 0;
                 }
 
                 return false;

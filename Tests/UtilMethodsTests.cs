@@ -798,6 +798,7 @@ namespace Tests
             string exe = Path.Combine(binaries, Exe("TestVersion"));
             string pck = Path.Combine(binaries, "TestVersion.pck");
             string exeEmbedded = Path.Combine(binaries, Exe("TestVersionEmbedded"));
+            string exeEmbedded2 = Path.Combine(binaries, Exe("TestVersionEmbedded2"));
 
             TUtils.CopyFile(Path.Combine(binaries, Exe("Test")), exe);
             TUtils.CopyFile(Path.Combine(binaries, "Test.pck"), pck);
@@ -827,14 +828,15 @@ namespace Tests
             {
                 Assert.That(PCKActions.ChangeVersion(exeEmbedded, newVersion.ToString()), Is.True);
                 Assert.That(GetPCKVersion(exeEmbedded), Is.EqualTo(newVersion));
+                TUtils.CopyFile(exeEmbedded, exeEmbedded2);
 
                 using (var r = new RunGodotWithOutput(exeEmbedded, DefaultGodotArgs))
                     Assert.That(r.IsSuccess(), Is.False);
 
-                Assert.That(PCKActions.ChangeVersion(exeEmbedded, origVersion.ToString()), Is.True);
-                Assert.That(GetPCKVersion(exeEmbedded), Is.EqualTo(origVersion));
+                Assert.That(PCKActions.ChangeVersion(exeEmbedded2, origVersion.ToString()), Is.True);
+                Assert.That(GetPCKVersion(exeEmbedded2), Is.EqualTo(origVersion));
 
-                using (var r = new RunGodotWithOutput(exeEmbedded, DefaultGodotArgs))
+                using (var r = new RunGodotWithOutput(exeEmbedded2, DefaultGodotArgs))
                     Assert.That(r.IsSuccess(), Is.True);
             }
         }

@@ -1,4 +1,4 @@
-﻿using GodotPCKExplorer;
+using GodotPCKExplorer;
 using System.Drawing;
 using System.Text;
 
@@ -150,7 +150,7 @@ namespace PCKBruteforcer
                                      logFileNamesProgress: false,
                                      cancellationToken: ct.Token);
 
-                    if (pck_reader.PCK_VersionPack < PCKUtils.PCK_VERSION_GODOT_4)
+                    if (pck_reader.PCK_VersionPack < (int)PCKUtils.PACK_VERSION.Godot_4)
                     {
                         use_custom_output = true;
                         SetOutputText("Unsupported PCK version.");
