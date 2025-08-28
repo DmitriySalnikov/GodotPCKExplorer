@@ -41,6 +41,8 @@ namespace GodotPCKExplorer
         public int PCK_Flags = -1;
         public long PCK_FileBase = 0;
         public long PCK_FileBaseAddressOffset = 0;
+        public long PCK_IndexBase = 0;
+        public long PCK_IndexBaseAddressOffset = 0;
         public long PCK_StartPosition = 0;
         public long PCK_EndPosition = 0;
         public bool PCK_Embedded = false;
@@ -302,6 +304,8 @@ namespace GodotPCKExplorer
                 PCK_Flags = 0;
                 PCK_FileBase = 0;
                 PCK_FileBaseAddressOffset = 0;
+                PCK_IndexBase = 0;
+                PCK_IndexBaseAddressOffset = 0;
 
                 if (PCK_Version.Pack >= (int)PCKUtils.PACK_VERSION.Godot_4)
                 {
@@ -309,9 +313,18 @@ namespace GodotPCKExplorer
                     PCK_FileBaseAddressOffset = fileReader.BaseStream.Position;
                     PCK_FileBase = fileReader.ReadInt64();
 
-                    if (IsRelativeFileBase)
+                    // Must always be true after 4.5
+                    // https://github.com/godotengine/godot/pull/105757#issuecomment-2832209137
+                    // e8a02152c46ba3ddb8a2520ae6b4fa61059581de
+                    if (IsRelativeFileBase || PCK_Version.Pack >= (int)PCKUtils.PACK_VERSION.Godot_4_5)
                     {
                         PCK_FileBase += PCK_StartPosition;
+                    }
+
+                    if (PCK_Version.Pack >= (int)PCKUtils.PACK_VERSION.Godot_4_5)
+                    {
+                        PCK_IndexBaseAddressOffset = fileReader.BaseStream.Position;
+                        PCK_IndexBase = fileReader.ReadInt64() + PCK_StartPosition;
                     }
                 }
 
@@ -319,7 +332,14 @@ namespace GodotPCKExplorer
 
                 fileReader.ReadBytes(16 * sizeof(int));
 
-                fileReader.ReadBytes(16 * sizeof(int)); // 32-95 reserved
+                if (PCK_Version.Pack < (int)PCKUtils.PACK_VERSION.Godot_4_5)
+                {
+                    PCK_IndexBaseAddressOffset = -1;
+                    PCK_IndexBase = fileReader.BaseStream.Position;
+                }
+
+                // Starting with PackV3 (Godot 4.5) Index (Directory) has been moved to the bottom of the PCK
+                fileReader.BaseStream.Seek(PCK_IndexBase, SeekOrigin.Begin);
 
                 PCK_FileCount = fileReader.ReadInt32();
                 PCKActions.progress?.LogProgress(op, $"File count: {PCK_FileCount}");
