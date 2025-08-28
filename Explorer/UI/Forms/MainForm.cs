@@ -319,7 +319,7 @@ namespace GodotPCKExplorer.UI
             if (pckReader.OpenFile(path, getEncryptionKey: () => InvokeRequired ? Invoke(get_enc_key) : get_enc_key()))
             {
                 var enc_text = GetEncryptionStatusString();
-                Text = $"\"{Utils.GetShortPath(pckReader.PackPath, 50)}\" Pack version: {pckReader.PCK_VersionPack}. Godot Version: {pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}{enc_text}";
+                Text = $"\"{Utils.GetShortPath(pckReader.PackPath, 50)}\" Pack version: {pckReader.PCK_Version.Pack}. Godot Version: {pckReader.PCK_Version.Major}.{pckReader.PCK_Version.Minor}.{pckReader.PCK_Version.Revision}{enc_text}";
 
                 TotalOpenedSize = 0;
 
@@ -403,7 +403,7 @@ namespace GodotPCKExplorer.UI
                 }
 
                 var enc_text = GetEncryptionStatusString();
-                tssl_version_and_stats.Text = $"Version: {pckReader.PCK_VersionPack} {pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}" +
+                tssl_version_and_stats.Text = $"Version: {pckReader.PCK_Version.Pack} {pckReader.PCK_Version.Major}.{pckReader.PCK_Version.Minor}.{pckReader.PCK_Version.Revision}" +
                     $" Files count: {pckReader.Files.Count}" +
                     $" Total size: {Utils.SizeSuffix(TotalOpenedSize)}" +
                     enc_text;

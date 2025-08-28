@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -180,8 +180,8 @@ namespace GodotPCKExplorer
                     cancellationToken: cancellationToken))
                 {
                     progress?.ShowMessage(
-                        $"Pack version {pckReader.PCK_VersionPack}. Godot version {pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}\n" +
-                        $"Version string for this program: {pckReader.PCK_VersionPack}.{pckReader.PCK_VersionMajor}.{pckReader.PCK_VersionMinor}.{pckReader.PCK_VersionRevision}\n" +
+                        $"Pack version {pckReader.PCK_Version.Pack}. Godot version {pckReader.PCK_Version.Major}.{pckReader.PCK_Version.Minor}.{pckReader.PCK_Version.Revision}\n" +
+                        $"Version string for this program: {pckReader.PCK_Version.Pack}.{pckReader.PCK_Version.Major}.{pckReader.PCK_Version.Minor}.{pckReader.PCK_Version.Revision}\n" +
                         $"File count: {pckReader.PCK_FileCount}" +
                         (pckReader.IsEncryptedIndex ? "\nThe file index is encrypted" : "") +
                         (pckReader.IsEncryptedFiles ? "\nFiles are encrypted" : ""), "Pack Info", MessageType.Info);
@@ -241,7 +241,7 @@ namespace GodotPCKExplorer
                         return false;
                     }
 
-                    bw.Write((int)newVersion.PackVersion);
+                    bw.Write((int)newVersion.Pack);
                     bw.Write((int)newVersion.Major);
                     bw.Write((int)newVersion.Minor);
                     bw.Write((int)newVersion.Revision);

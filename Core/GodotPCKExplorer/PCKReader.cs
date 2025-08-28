@@ -38,10 +38,6 @@ namespace GodotPCKExplorer
         public string PackPath = "";
 
         public int PCK_FileCount = -1;
-        public int PCK_VersionPack = -1;
-        public int PCK_VersionMajor = -1;
-        public int PCK_VersionMinor = -1;
-        public int PCK_VersionRevision = -1;
         public int PCK_Flags = -1;
         public long PCK_FileBase = 0;
         public long PCK_FileBaseAddressOffset = 0;
@@ -104,10 +100,6 @@ namespace GodotPCKExplorer
             PackPath = "";
 
             PCK_FileCount = -1;
-            PCK_VersionPack = -1;
-            PCK_VersionMajor = -1;
-            PCK_VersionMinor = -1;
-            PCK_VersionRevision = -1;
             PCK_Version = new PCKVersion(-1, -1, -1, -1);
             PCK_Flags = -1;
             PCK_FileBaseAddressOffset = 0;
@@ -255,7 +247,7 @@ namespace GodotPCKExplorer
                 PCKActions.progress?.LogProgress(op, $"Opening: {file_path}");
                 PCKActions.progress?.LogProgress(op, PCKUtils.UnknownProgressStatus);
 
-                int magic = fileReader.ReadInt32(); // 0-3
+                int magic = fileReader.ReadInt32();
 
                 if (magic != PCKUtils.PCK_MAGIC)
                 {
@@ -298,21 +290,24 @@ namespace GodotPCKExplorer
                     PCK_EndPosition = fileReader.BaseStream.Length;
                 }
 
-                PCK_VersionPack = fileReader.ReadInt32(); // 4-7
-                PCK_VersionMajor = fileReader.ReadInt32(); // 8-11
-                PCK_VersionMinor = fileReader.ReadInt32(); // 12-15
-                PCK_VersionRevision = fileReader.ReadInt32(); // 16-19
+                {
+                    int ver_pack = fileReader.ReadInt32();
+                    int ver_major = fileReader.ReadInt32();
+                    int ver_minor = fileReader.ReadInt32();
+                    int ver_revision = fileReader.ReadInt32();
 
-                PCK_Version = new PCKVersion(PCK_VersionPack, PCK_VersionMajor, PCK_VersionMinor, PCK_VersionRevision);
+                    PCK_Version = new PCKVersion(ver_pack, ver_major, ver_minor, ver_revision);
+                }
 
                 PCK_Flags = 0;
                 PCK_FileBase = 0;
+                PCK_FileBaseAddressOffset = 0;
 
-                if (PCK_VersionPack == (int)PCKUtils.PACK_VERSION.Godot_4)
+                if (PCK_Version.Pack >= (int)PCKUtils.PACK_VERSION.Godot_4)
                 {
-                    PCK_Flags = fileReader.ReadInt32(); // 20-23
+                    PCK_Flags = fileReader.ReadInt32();
                     PCK_FileBaseAddressOffset = fileReader.BaseStream.Position;
-                    PCK_FileBase = fileReader.ReadInt64(); // 24-31
+                    PCK_FileBase = fileReader.ReadInt64();
 
                     if (IsRelativeFileBase)
                     {
@@ -320,14 +315,16 @@ namespace GodotPCKExplorer
                     }
                 }
 
-                PCKActions.progress?.LogProgress(op, $"Version: {PCK_VersionPack}.{PCK_VersionMajor}.{PCK_VersionMinor}.{PCK_VersionRevision}, Flags: {PCK_Flags}");
+                PCKActions.progress?.LogProgress(op, $"Version: {PCK_Version.Pack}.{PCK_Version.Major}.{PCK_Version.Minor}.{PCK_Version.Revision}, Flags: {PCK_Flags}");
+
+                fileReader.ReadBytes(16 * sizeof(int));
 
                 fileReader.ReadBytes(16 * sizeof(int)); // 32-95 reserved
 
                 PCK_FileCount = fileReader.ReadInt32();
                 PCKActions.progress?.LogProgress(op, $"File count: {PCK_FileCount}");
 
-                if (readOnlyHeaderGodot4 && PCK_VersionPack == (int)PCKUtils.PACK_VERSION.Godot_4)
+                if (readOnlyHeaderGodot4 && PCK_Version.Pack >= (int)PCKUtils.PACK_VERSION.Godot_4)
                 {
                     PCKActions.progress?.LogProgress(op, 100);
                     PCKActions.progress?.LogProgress(op, "Completed without reading the file index!");
@@ -337,7 +334,7 @@ namespace GodotPCKExplorer
                 }
 
                 byte[]? encryption_key = null;
-                if (PCK_VersionPack == (int)PCKUtils.PACK_VERSION.Godot_4)
+                if (PCK_Version.Pack >= (int)PCKUtils.PACK_VERSION.Godot_4)
                 {
                     if (IsEncrypted)
                     {
@@ -414,7 +411,7 @@ namespace GodotPCKExplorer
                     byte[] md5 = tmp_reader.ReadBytes(16);
 
                     int flags = 0;
-                    if (PCK_VersionPack == (int)PCKUtils.PACK_VERSION.Godot_4)
+                    if (PCK_Version.Pack >= (int)PCKUtils.PACK_VERSION.Godot_4)
                     {
                         flags = tmp_reader.ReadInt32();
                     }
@@ -761,7 +758,7 @@ namespace GodotPCKExplorer
                 }
 
                 // Fix addresses
-                if (PCK_VersionPack < (int)PCKUtils.PACK_VERSION.Godot_4)
+                if (PCK_Version.Pack < (int)PCKUtils.PACK_VERSION.Godot_4)
                 {
                     foreach (var p in Files.Values)
                     {
@@ -884,7 +881,7 @@ namespace GodotPCKExplorer
                 }
 
                 // Fix addresses
-                if (PCK_VersionPack < (int)PCKUtils.PACK_VERSION.Godot_4)
+                if (PCK_Version.Pack < (int)PCKUtils.PACK_VERSION.Godot_4)
                 {
                     foreach (var p in Files.Values)
                     {
@@ -1154,7 +1151,7 @@ namespace GodotPCKExplorer
             if (IsRemoval)
                 return true;
 
-            if (Version.PackVersion >= 2)
+            if (Version.Pack >= 2)
             {
                 var exp_md5 = PCKUtils.GetFileMD5(path);
                 if (!exp_md5.SequenceEqual(MD5))

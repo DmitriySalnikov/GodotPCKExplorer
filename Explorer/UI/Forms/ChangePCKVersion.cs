@@ -1,4 +1,4 @@
-﻿namespace GodotPCKExplorer.UI
+namespace GodotPCKExplorer.UI
 {
     public partial class ChangePCKVersion : Form
     {
@@ -22,7 +22,7 @@
                         l_path.Text = $"File Path:\n{Utils.GetShortPath(filePath, 50)}";
                         l_version.Text = $"Original Version:\n{ver}";
 
-                        cb_ver.Text = ver.PackVersion.ToString();
+                        cb_ver.Text = ver.Pack.ToString();
                         nud_major.Value = ver.Major;
                         nud_minor.Value = ver.Minor;
                         nud_revision.Value = ver.Revision;

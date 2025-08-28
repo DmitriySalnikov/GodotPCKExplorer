@@ -53,7 +53,7 @@ namespace GodotPCKExplorer.UI
             cb_previewPaths.Checked = GUIConfig.Instance.PackPreviewPaths;
 
             var ver = GUIConfig.Instance.PackVersion;
-            cb_ver.SelectedItem = ver.PackVersion.ToString();
+            cb_ver.SelectedItem = ver.Pack.ToString();
             nud_major.Value = ver.Major;
             nud_minor.Value = ver.Minor;
             nud_revision.Value = ver.Revision;

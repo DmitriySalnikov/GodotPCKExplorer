@@ -17,6 +17,7 @@ namespace Tests
         }
 
         int GodotVersionMajor = 0;
+        int GodotPackVersion = 0;
         int GodotVersion = 0;
 
         string ZipFilePath
@@ -46,9 +47,10 @@ namespace Tests
 
         List<string> OriginalTestFiles = [];
 
-        public UtilMethodsTests(int major, int version)
+        public UtilMethodsTests(int major, int packVersion, int version)
         {
             GodotVersionMajor = major;
+            GodotPackVersion = packVersion;
             GodotVersion = version;
         }
 
@@ -850,7 +852,7 @@ namespace Tests
 
             string enc_key = "7FDBF68B69B838194A6F1055395225BBA3F1C5689D08D71DCD620A7068F61CBA";
             string wrong_enc_key = "8FDBF68B69B838194A6F1055395225BBA3F1C5689D08D71DCD620A7068F61CBA";
-            string ver = $"{(GodotVersionMajor == 4 ? 2 : 1)}.{GodotVersionMajor}.0.2";
+            string ver = $"{GodotPackVersion}.{GodotVersionMajor}.0.2";
 
             string extracted = Path.Combine(binaries, "EncryptedExport");
             string exe = Path.Combine(binaries, Exe("TestEncrypted"));
@@ -1153,10 +1155,11 @@ namespace Tests
         {
             get
             {
-                yield return new TestFixtureData(3, 3);
-                yield return new TestFixtureData(4, 422);
-                yield return new TestFixtureData(4, 440);
-                yield return new TestFixtureData(4, 450);
+                // Major, PackVer, Folder num
+                yield return new TestFixtureData(3, 1, 3);
+                yield return new TestFixtureData(4, 2, 422);
+                yield return new TestFixtureData(4, 2, 440);
+                yield return new TestFixtureData(4, 3, 450);
             }
         }
     }

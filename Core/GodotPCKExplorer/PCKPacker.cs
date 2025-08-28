@@ -201,7 +201,7 @@ namespace GodotPCKExplorer
 
             bool encryptFiles = files.Any(f => f is PCKPackerRegularFile && f.IsEncrypted);
 
-            if (godotVersion.PackVersion == (int)PCKUtils.PACK_VERSION.Godot_3)
+            if (godotVersion.Pack == (int)PCKUtils.PACK_VERSION.Godot_3)
             {
                 if (EncryptionKey != null || encryptIndex || encryptFiles)
                 {
@@ -305,7 +305,7 @@ namespace GodotPCKExplorer
                     PCKActions.progress?.LogProgress(op, "Writing the file index");
 
                     binWriter.Write(PCKUtils.PCK_MAGIC);
-                    binWriter.Write(godotVersion.PackVersion);
+                    binWriter.Write(godotVersion.Pack);
                     binWriter.Write(godotVersion.Major);
                     binWriter.Write(godotVersion.Minor);
                     binWriter.Write(godotVersion.Revision);
@@ -313,7 +313,7 @@ namespace GodotPCKExplorer
                     long file_base_address = -1;
                     int pack_flags = 0;
 
-                    if (godotVersion.PackVersion == (int)PCKUtils.PACK_VERSION.Godot_4)
+                    if (godotVersion.Pack >= (int)PCKUtils.PACK_VERSION.Godot_4)
                     {
                         if (encryptIndex)
                             pack_flags |= (int)PCKUtils.PCK_FLAG.DIR_ENCRYPTED;
@@ -343,7 +343,7 @@ namespace GodotPCKExplorer
                             index_writer = new BinaryWriter(new MemoryStream());
 
                         // Multi-threaded MD5 pre-calculation
-                        if (godotVersion.PackVersion >= (int)PCKUtils.PACK_VERSION.Godot_4)
+                        if (godotVersion.Pack >= (int)PCKUtils.PACK_VERSION.Godot_4)
                         {
                             Parallel.ForEach(files, (f) =>
                             {
@@ -369,7 +369,7 @@ namespace GodotPCKExplorer
                             var str_len = str.Count;
 
                             // Godot 4's PCK uses padding for some reason...
-                            if (godotVersion.PackVersion == (int)PCKUtils.PACK_VERSION.Godot_4)
+                            if (godotVersion.Pack >= (int)PCKUtils.PACK_VERSION.Godot_4)
                                 str_len = (int)PCKUtils.AlignAddress(str_len, 4); // align with 4
 
                             // store pascal string (size, data)
@@ -377,7 +377,7 @@ namespace GodotPCKExplorer
                             index_writer.Write(str.ToArray());
 
                             // Add padding for string
-                            if (godotVersion.PackVersion == (int)PCKUtils.PACK_VERSION.Godot_4)
+                            if (godotVersion.Pack >= (int)PCKUtils.PACK_VERSION.Godot_4)
                                 PCKUtils.AddPadding(index_writer, str_len - str.Count);
 
                             file.IndexOffsetPosition = index_writer.BaseStream.Position;
@@ -386,7 +386,7 @@ namespace GodotPCKExplorer
 
                             total_size += file.Size; // for progress bar
 
-                            if (godotVersion.PackVersion < (int)PCKUtils.PACK_VERSION.Godot_4)
+                            if (godotVersion.Pack < (int)PCKUtils.PACK_VERSION.Godot_4)
                             {
                                 // # empty md5
                                 PCKUtils.AddPadding(index_writer, 16 * sizeof(byte));
@@ -426,7 +426,7 @@ namespace GodotPCKExplorer
                     PCKUtils.AddPadding(binWriter, offset - binWriter.BaseStream.Position, encryptIndex); // fill random bytes between index and files
 
                     long file_base = offset;
-                    if (godotVersion.PackVersion == (int)PCKUtils.PACK_VERSION.Godot_4)
+                    if (godotVersion.Pack >= (int)PCKUtils.PACK_VERSION.Godot_4)
                     {
                         // update actual address of file_base in the header
                         long file_base_store = file_base;
@@ -465,7 +465,7 @@ namespace GodotPCKExplorer
                             long pos = index_writer.BaseStream.Position;
                             index_writer.BaseStream.Seek(file.IndexOffsetPosition, SeekOrigin.Begin);
 
-                            if (godotVersion.PackVersion < (int)PCKUtils.PACK_VERSION.Godot_4)
+                            if (godotVersion.Pack < (int)PCKUtils.PACK_VERSION.Godot_4)
                             {
                                 index_writer.Write((long)offset);
                             }

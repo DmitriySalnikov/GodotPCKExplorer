@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 
 namespace GodotPCKExplorer
 {
@@ -7,14 +7,14 @@ namespace GodotPCKExplorer
         const string version_string_pattern = @"^([0-9]{1,2})\.([0-9]{1,2})\.([0-9]{1,2})\.([0-9]{1,2})$";
         static readonly Regex VersionStringRegEx = new Regex(version_string_pattern);
 
-        public int PackVersion { get; set; }
+        public int Pack { get; set; }
         public int Major { get; set; }
         public int Minor { get; set; }
         public int Revision { get; set; }
 
         public PCKVersion(int pckVersion, int major, int minor, int revision)
         {
-            PackVersion = pckVersion;
+            Pack = pckVersion;
             Major = major;
             Minor = minor;
             Revision = revision;
@@ -26,14 +26,14 @@ namespace GodotPCKExplorer
             if (tmpCheck.Success)
             {
                 var digits = tmpCheck.Value.Split('.');
-                PackVersion = int.Parse(digits[0]);
+                Pack = int.Parse(digits[0]);
                 Major = int.Parse(digits[1]);
                 Minor = int.Parse(digits[2]);
                 Revision = int.Parse(digits[3]);
             }
             else
             {
-                PackVersion = -1;
+                Pack = -1;
                 Major = -1;
                 Minor = -1;
                 Revision = -1;
@@ -42,12 +42,12 @@ namespace GodotPCKExplorer
 
         public override readonly string ToString()
         {
-            return $"{PackVersion}.{Major}.{Minor}.{Revision}";
+            return $"{Pack}.{Major}.{Minor}.{Revision}";
         }
 
         public readonly bool IsValid()
         {
-            return PackVersion >= 0 && Major >= 0 && Minor >= 0 && Revision >= 0;
+            return Pack >= 0 && Major >= 0 && Minor >= 0 && Revision >= 0;
         }
     }
 }
