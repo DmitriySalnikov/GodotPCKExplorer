@@ -1,4 +1,4 @@
-﻿namespace GodotPCKExplorer.UI
+namespace GodotPCKExplorer.UI
 {
     partial class ChangePCKVersion
     {
@@ -28,10 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            cb_ver = new ComboBox();
-            nud_revision = new NumericUpDown();
-            nud_minor = new NumericUpDown();
-            nud_major = new NumericUpDown();
             label1 = new Label();
             l_path = new Label();
             label2 = new Label();
@@ -41,63 +37,25 @@
             btn_ok = new Button();
             label5 = new Label();
             panel1 = new Panel();
+            tableLayoutPanel2 = new TableLayoutPanel();
+            pckVersionSelector1 = new GodotPCKExplorer.UI.UIComponents.PCKVersionSelector();
             tableLayoutPanel1 = new TableLayoutPanel();
-            ((ISupportInitialize)nud_revision).BeginInit();
-            ((ISupportInitialize)nud_minor).BeginInit();
-            ((ISupportInitialize)nud_major).BeginInit();
             panel1.SuspendLayout();
+            tableLayoutPanel2.SuspendLayout();
             tableLayoutPanel1.SuspendLayout();
             SuspendLayout();
-            // 
-            // cb_ver
-            // 
-            cb_ver.FormattingEnabled = true;
-            cb_ver.Items.AddRange(new object[] { "1", "2" });
-            cb_ver.Location = new Point(34, 106);
-            cb_ver.Margin = new Padding(4, 3, 4, 3);
-            cb_ver.MaxLength = 2;
-            cb_ver.Name = "cb_ver";
-            cb_ver.Size = new Size(79, 23);
-            cb_ver.TabIndex = 17;
-            cb_ver.Text = "2";
-            // 
-            // nud_revision
-            // 
-            nud_revision.Location = new Point(264, 17);
-            nud_revision.Margin = new Padding(4, 3, 4, 3);
-            nud_revision.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
-            nud_revision.Name = "nud_revision";
-            nud_revision.Size = new Size(79, 23);
-            nud_revision.TabIndex = 16;
-            // 
-            // nud_minor
-            // 
-            nud_minor.Location = new Point(177, 16);
-            nud_minor.Margin = new Padding(4, 3, 4, 3);
-            nud_minor.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
-            nud_minor.Name = "nud_minor";
-            nud_minor.Size = new Size(79, 23);
-            nud_minor.TabIndex = 15;
-            // 
-            // nud_major
-            // 
-            nud_major.Location = new Point(91, 18);
-            nud_major.Margin = new Padding(4, 3, 4, 3);
-            nud_major.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
-            nud_major.Name = "nud_major";
-            nud_major.Size = new Size(78, 23);
-            nud_major.TabIndex = 14;
-            nud_major.Value = new decimal(new int[] { 4, 0, 0, 0 });
             // 
             // label1
             // 
             label1.AutoSize = true;
+            label1.Dock = DockStyle.Fill;
             label1.Location = new Point(4, 0);
             label1.Margin = new Padding(4, 0, 4, 0);
             label1.Name = "label1";
-            label1.Size = new Size(76, 15);
+            label1.Size = new Size(77, 22);
             label1.TabIndex = 13;
             label1.Text = "Pack Version:";
+            label1.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // l_path
             // 
@@ -113,32 +71,38 @@
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new Point(91, 0);
+            label2.Dock = DockStyle.Fill;
+            label2.Location = new Point(89, 0);
             label2.Margin = new Padding(4, 0, 4, 0);
             label2.Name = "label2";
-            label2.Size = new Size(77, 15);
+            label2.Size = new Size(77, 22);
             label2.TabIndex = 19;
-            label2.Text = "Godot Major:";
+            label2.Text = "Major:";
+            label2.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // label3
             // 
             label3.AutoSize = true;
-            label3.Location = new Point(178, 0);
+            label3.Dock = DockStyle.Fill;
+            label3.Location = new Point(174, 0);
             label3.Margin = new Padding(4, 0, 4, 0);
             label3.Name = "label3";
-            label3.Size = new Size(78, 15);
+            label3.Size = new Size(77, 22);
             label3.TabIndex = 20;
-            label3.Text = "Godot Minor:";
+            label3.Text = "Minor:";
+            label3.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // label4
             // 
             label4.AutoSize = true;
-            label4.Location = new Point(264, 0);
+            label4.Dock = DockStyle.Fill;
+            label4.Location = new Point(259, 0);
             label4.Margin = new Padding(4, 0, 4, 0);
             label4.Name = "label4";
-            label4.Size = new Size(76, 15);
+            label4.Size = new Size(80, 22);
             label4.TabIndex = 21;
-            label4.Text = "Godot Patch:";
+            label4.Text = "Patch:";
+            label4.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // l_version
             // 
@@ -177,19 +141,40 @@
             // panel1
             // 
             panel1.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            panel1.Controls.Add(label1);
-            panel1.Controls.Add(nud_major);
+            panel1.Controls.Add(tableLayoutPanel2);
+            panel1.Controls.Add(pckVersionSelector1);
             panel1.Controls.Add(btn_ok);
-            panel1.Controls.Add(nud_minor);
-            panel1.Controls.Add(nud_revision);
-            panel1.Controls.Add(label4);
-            panel1.Controls.Add(cb_ver);
-            panel1.Controls.Add(label3);
-            panel1.Controls.Add(label2);
             panel1.Location = new Point(71, 3);
             panel1.Name = "panel1";
             panel1.Size = new Size(349, 83);
             panel1.TabIndex = 25;
+            // 
+            // tableLayoutPanel2
+            // 
+            tableLayoutPanel2.ColumnCount = 4;
+            tableLayoutPanel2.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
+            tableLayoutPanel2.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
+            tableLayoutPanel2.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
+            tableLayoutPanel2.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
+            tableLayoutPanel2.Controls.Add(label4, 3, 0);
+            tableLayoutPanel2.Controls.Add(label1, 0, 0);
+            tableLayoutPanel2.Controls.Add(label3, 2, 0);
+            tableLayoutPanel2.Controls.Add(label2, 1, 0);
+            tableLayoutPanel2.Location = new Point(3, 3);
+            tableLayoutPanel2.Margin = new Padding(3, 3, 3, 0);
+            tableLayoutPanel2.Name = "tableLayoutPanel2";
+            tableLayoutPanel2.RowCount = 1;
+            tableLayoutPanel2.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            tableLayoutPanel2.Size = new Size(343, 22);
+            tableLayoutPanel2.TabIndex = 25;
+            // 
+            // pckVersionSelector1
+            // 
+            pckVersionSelector1.Location = new Point(3, 27);
+            pckVersionSelector1.Margin = new Padding(3, 1, 3, 3);
+            pckVersionSelector1.Name = "pckVersionSelector1";
+            pckVersionSelector1.Size = new Size(343, 25);
+            pckVersionSelector1.TabIndex = 24;
             // 
             // tableLayoutPanel1
             // 
@@ -222,22 +207,15 @@
             Name = "ChangePCKVersion";
             StartPosition = FormStartPosition.CenterParent;
             Text = "Change PCK Version";
-            ((ISupportInitialize)nud_revision).EndInit();
-            ((ISupportInitialize)nud_minor).EndInit();
-            ((ISupportInitialize)nud_major).EndInit();
             panel1.ResumeLayout(false);
-            panel1.PerformLayout();
+            tableLayoutPanel2.ResumeLayout(false);
+            tableLayoutPanel2.PerformLayout();
             tableLayoutPanel1.ResumeLayout(false);
             ResumeLayout(false);
             PerformLayout();
         }
 
         #endregion
-
-        private ComboBox cb_ver;
-        private NumericUpDown nud_revision;
-        private NumericUpDown nud_minor;
-        private NumericUpDown nud_major;
         private Label label1;
         private Label l_path;
         private Label label2;
@@ -248,5 +226,7 @@
         private Label label5;
         private Panel panel1;
         private TableLayoutPanel tableLayoutPanel1;
+        private TableLayoutPanel tableLayoutPanel2;
+        private UIComponents.PCKVersionSelector pckVersionSelector1;
     }
 }

@@ -74,16 +74,15 @@ struct FileIndex
 	
 	// flags - md5 - file_size - prev offset for this var
 	$shift_by(- 4 - 16 - 8 - 8);
-	
 	if (flags & 1)
 	{
 		[color_scheme("Residency")]
-		int64 file_offset as FileDataEncrypted  *(files_base + (is_rel_filebase ? start_of_pck : 0));
+		int64 file_offset as FileDataEncrypted  *(files_base + start_of_pck);
 	}
 	else
 	{
 		[color_scheme("Residency")]
-		int64 file_offset as FileData *(files_base + (is_rel_filebase ? start_of_pck : 0));
+		int64 file_offset as FileData *(files_base + start_of_pck);
 	}
 	
 	// return to `flags`
@@ -108,7 +107,7 @@ struct FileIndexEncrypted
 	char data[ds];
 };
 
-public struct GodotPCK4
+public struct GodotPCK4_5
 {
 	var start_of_pck = 0;
 	var doc_file_size = GetDocumentSize();
@@ -146,16 +145,22 @@ visible:
 	
 	[color_scheme("Characteristics")]
 	int32 flags;
-	var is_rel_filebase = (flags & (1<<1)) != 0;
 	
 	[color_scheme("Size")]
 	int64 files_base;
+	
+	[color_scheme("Size")]
+	int64 index_base;
 	
 hidden:
 	[color_scheme("AttributeHeader")]
 	int32 reserved[16];
 
 visible:
+	// magic + version + flags + file_base + index_base + reserve
+	$shift_by(-(4 + 16 + 4 + 8 + 8 + 4*16));	
+	$shift_by(index_base);
+	
 	[color_scheme("HeaderNt")]
 	int32 file_count;
 	

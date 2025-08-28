@@ -54,6 +54,12 @@ namespace GodotPCKExplorer
             FLAG_REMOVAL = 1 << 1, // Added in 4.4 https://github.com/godotengine/godot/commit/d76fbb7a40c56fa4b10edc017dc33a2d668c5c0d
         }
 
+        public static readonly Dictionary<int, VersionLimitRanges> VersionLimits = new Dictionary<int, VersionLimitRanges>()
+        {
+            {1, new VersionLimitRanges(1,0,0, 3,ushort.MaxValue,ushort.MaxValue)},
+            {2, new VersionLimitRanges(4,0,0, 4,4,ushort.MaxValue)},
+            {3, new VersionLimitRanges(4,5,0, ushort.MaxValue,ushort.MaxValue,ushort.MaxValue)},
+        };
 
         static readonly Random rng = new Random();
 
@@ -309,6 +315,40 @@ namespace GodotPCKExplorer
                     cancel = PCKActions.progress?.ShowMessage($"{ex.Message}\nThe file will be skipped!", "Warning", MessageType.Warning, PCKMessageBoxButtons.OKCancel) == PCKDialogResult.Cancel;
                 }
             }
+        }
+
+        public readonly struct VersionLimitRanges
+        {
+            public readonly ushort MinMajor, MinMinor, MinRevision;
+            public readonly ushort MaxMajor, MaxMinor, MaxRevision;
+
+            public VersionLimitRanges(ushort minMajor, ushort minMinor, ushort minRevision, ushort maxMajor, ushort maxMinor, ushort maxRevision)
+            {
+                MinMajor = minMajor; MinMinor = minMinor; MinRevision = minRevision;
+                MaxMajor = maxMajor; MaxMinor = maxMinor; MaxRevision = maxRevision;
+            }
+        }
+
+        public static bool IsVersionInAllowedLimits(PCKVersion ver)
+        {
+            if (!ver.IsValid())
+                return false;
+
+            if (VersionLimits.TryGetValue(ver.Pack, out VersionLimitRanges ranges))
+            {
+                static ulong get_num(int major, int minor, int rev) { return ((ulong)major << 16 * 2) + ((ulong)minor << 16 * 1) + (ulong)rev; }
+
+                ulong ver_num = get_num(ver.Major, ver.Minor, ver.Revision);
+                ulong ver_min = get_num(ranges.MinMajor, ranges.MinMinor, ranges.MinRevision);
+                ulong ver_max = get_num(ranges.MaxMajor, ranges.MaxMinor, ranges.MaxRevision);
+
+                if (ver_num >= ver_min && ver_num <= ver_max)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

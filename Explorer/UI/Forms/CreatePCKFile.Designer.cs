@@ -42,10 +42,6 @@ namespace GodotPCKExplorer.UI
             l_total_size = new Label();
             sfd_save_pack = new SaveFileDialog();
             label1 = new Label();
-            nud_major = new NumericUpDown();
-            nud_minor = new NumericUpDown();
-            nud_revision = new NumericUpDown();
-            cb_ver = new ComboBox();
             label2 = new Label();
             cb_embed = new CheckBox();
             ofd_pack_into = new OpenFileDialog();
@@ -73,10 +69,8 @@ namespace GodotPCKExplorer.UI
             cb_enable_patching = new CheckBox();
             btn_browse_patch_target = new Button();
             ofd_patch_target = new OpenFileDialog();
+            pckVersionSelector1 = new GodotPCKExplorer.UI.UIComponents.PCKVersionSelector();
             ((ISupportInitialize)dataGridView1).BeginInit();
-            ((ISupportInitialize)nud_major).BeginInit();
-            ((ISupportInitialize)nud_minor).BeginInit();
-            ((ISupportInitialize)nud_revision).BeginInit();
             ((ISupportInitialize)nud_alignment).BeginInit();
             SuspendLayout();
             // 
@@ -172,60 +166,12 @@ namespace GodotPCKExplorer.UI
             // 
             label1.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             label1.AutoSize = true;
-            label1.Location = new Point(165, 512);
+            label1.Location = new Point(165, 513);
             label1.Margin = new Padding(4, 0, 4, 0);
             label1.Name = "label1";
-            label1.Size = new Size(369, 15);
+            label1.Size = new Size(330, 15);
             label1.TabIndex = 7;
-            label1.Text = "Godot PCK version and Godot Engine version(major, minor, revision)";
-            // 
-            // nud_major
-            // 
-            nud_major.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            nud_major.Location = new Point(605, 508);
-            nud_major.Margin = new Padding(4, 3, 4, 3);
-            nud_major.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
-            nud_major.Name = "nud_major";
-            nud_major.Size = new Size(44, 23);
-            nud_major.TabIndex = 8;
-            nud_major.Value = new decimal(new int[] { 4, 0, 0, 0 });
-            nud_major.ValueChanged += nud_major_ValueChanged;
-            // 
-            // nud_minor
-            // 
-            nud_minor.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            nud_minor.Location = new Point(657, 508);
-            nud_minor.Margin = new Padding(4, 3, 4, 3);
-            nud_minor.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
-            nud_minor.Name = "nud_minor";
-            nud_minor.Size = new Size(44, 23);
-            nud_minor.TabIndex = 9;
-            nud_minor.ValueChanged += nud_minor_ValueChanged;
-            // 
-            // nud_revision
-            // 
-            nud_revision.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            nud_revision.Location = new Point(708, 508);
-            nud_revision.Margin = new Padding(4, 3, 4, 3);
-            nud_revision.Maximum = new decimal(new int[] { 99, 0, 0, 0 });
-            nud_revision.Name = "nud_revision";
-            nud_revision.Size = new Size(44, 23);
-            nud_revision.TabIndex = 10;
-            nud_revision.ValueChanged += nud_revision_ValueChanged;
-            // 
-            // cb_ver
-            // 
-            cb_ver.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            cb_ver.FormattingEnabled = true;
-            cb_ver.Items.AddRange(new object[] { "1", "2" });
-            cb_ver.Location = new Point(553, 508);
-            cb_ver.Margin = new Padding(4, 3, 4, 3);
-            cb_ver.MaxLength = 2;
-            cb_ver.Name = "cb_ver";
-            cb_ver.Size = new Size(44, 23);
-            cb_ver.TabIndex = 12;
-            cb_ver.Text = "2";
-            cb_ver.SelectionChangeCommitted += cb_ver_SelectionChangeCommitted;
+            label1.Text = "Godot PCK version and Godot version(major, minor, revision)";
             // 
             // label2
             // 
@@ -507,11 +453,19 @@ namespace GodotPCKExplorer.UI
             // 
             ofd_patch_target.Title = "Select the file containing .pck";
             // 
+            // pckVersionSelector1
+            // 
+            pckVersionSelector1.Location = new Point(503, 507);
+            pckVersionSelector1.Name = "pckVersionSelector1";
+            pckVersionSelector1.Size = new Size(250, 25);
+            pckVersionSelector1.TabIndex = 35;
+            // 
             // CreatePCKFile
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(850, 538);
+            Controls.Add(pckVersionSelector1);
             Controls.Add(cb_enable_patching);
             Controls.Add(tb_patch_target);
             Controls.Add(label6);
@@ -535,10 +489,6 @@ namespace GodotPCKExplorer.UI
             Controls.Add(tb_folder_path);
             Controls.Add(cb_embed);
             Controls.Add(label2);
-            Controls.Add(cb_ver);
-            Controls.Add(nud_revision);
-            Controls.Add(nud_minor);
-            Controls.Add(nud_major);
             Controls.Add(label1);
             Controls.Add(l_total_size);
             Controls.Add(btn_create);
@@ -551,9 +501,6 @@ namespace GodotPCKExplorer.UI
             FormClosed += CreatePCKFile_FormClosed;
             Shown += CreatePCKFile_Shown;
             ((ISupportInitialize)dataGridView1).EndInit();
-            ((ISupportInitialize)nud_major).EndInit();
-            ((ISupportInitialize)nud_minor).EndInit();
-            ((ISupportInitialize)nud_revision).EndInit();
             ((ISupportInitialize)nud_alignment).EndInit();
             ResumeLayout(false);
             PerformLayout();
@@ -566,10 +513,6 @@ namespace GodotPCKExplorer.UI
         private Label l_total_size;
         private SaveFileDialog sfd_save_pack;
         private Label label1;
-        private NumericUpDown nud_major;
-        private NumericUpDown nud_minor;
-        private NumericUpDown nud_revision;
-        private ComboBox cb_ver;
         private Label label2;
         private CheckBox cb_embed;
         private OpenFileDialog ofd_pack_into;
@@ -601,5 +544,6 @@ namespace GodotPCKExplorer.UI
         private DataGridViewTextBoxColumn size;
         private DataGridViewTextBoxColumn patch;
         private DataGridViewTextBoxColumn removal;
+        private UIComponents.PCKVersionSelector pckVersionSelector1;
     }
 }

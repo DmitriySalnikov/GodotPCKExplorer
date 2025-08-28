@@ -9,7 +9,7 @@ namespace Tests
 {
     [TestFixture, NonParallelizable, SingleThreaded]
     [TestFixtureSource(typeof(MyFixtureData), nameof(MyFixtureData.FixtureParams))]
-    public class UtilMethodsTests
+    public class TestsWithFiles
     {
         static string ExecutableExtension
         {
@@ -47,7 +47,7 @@ namespace Tests
 
         List<string> OriginalTestFiles = [];
 
-        public UtilMethodsTests(int major, int packVersion, int version)
+        public TestsWithFiles(int major, int packVersion, int version)
         {
             GodotVersionMajor = major;
             GodotPackVersion = packVersion;
@@ -701,6 +701,8 @@ namespace Tests
 
             Title("Rip PCK from PCK");
             Assert.That(PCKActions.Rip(new_pck, null, true), Is.False);
+
+            Title("Rip PCK from regular exe");
             Assert.That(PCKActions.Remove(new_exe_remove, true), Is.False);
 
             Title("Good run");
@@ -1161,6 +1163,36 @@ namespace Tests
                 yield return new TestFixtureData(4, 2, 440);
                 yield return new TestFixtureData(4, 3, 450);
             }
+        }
+    }
+
+    [TestFixture]
+    public class UtilMethodsTests
+    {
+        [Test]
+        public void IsVersionInAllowedLimits()
+        {
+            Assert.That(PCKUtils.IsVersionInAllowedLimits(new(-1, -1, -1, -1)), Is.False);
+
+            Assert.That(PCKUtils.IsVersionInAllowedLimits(new(0, 0, 0, 0)), Is.False);
+            Assert.That(PCKUtils.IsVersionInAllowedLimits(new(1, 0, 1, 1)), Is.False);
+            Assert.That(PCKUtils.IsVersionInAllowedLimits(new(1, 1, 0, 0)), Is.True);
+            Assert.That(PCKUtils.IsVersionInAllowedLimits(new(1, 2, 4, 6)), Is.True);
+            Assert.That(PCKUtils.IsVersionInAllowedLimits(new(1, 3, ushort.MaxValue, ushort.MaxValue)), Is.True);
+
+            Assert.That(PCKUtils.IsVersionInAllowedLimits(new(2, 3, 1, 5)), Is.False);
+            Assert.That(PCKUtils.IsVersionInAllowedLimits(new(2, 4, 0, 0)), Is.True);
+            Assert.That(PCKUtils.IsVersionInAllowedLimits(new(2, 5, 4, 4)), Is.False);
+            Assert.That(PCKUtils.IsVersionInAllowedLimits(new(2, 4, 4, 123)), Is.True);
+            Assert.That(PCKUtils.IsVersionInAllowedLimits(new(2, 4, 5, 0)), Is.False);
+
+            Assert.That(PCKUtils.IsVersionInAllowedLimits(new(3, 4, 5, 0)), Is.True);
+            Assert.That(PCKUtils.IsVersionInAllowedLimits(new(3, 4, 4, 0)), Is.False);
+            Assert.That(PCKUtils.IsVersionInAllowedLimits(new(3, 4, 4, ushort.MaxValue)), Is.False);
+            Assert.That(PCKUtils.IsVersionInAllowedLimits(new(3, 0, 4, 0)), Is.False);
+            Assert.That(PCKUtils.IsVersionInAllowedLimits(new(3, 0, 4, 0)), Is.False);
+
+            Assert.That(PCKUtils.IsVersionInAllowedLimits(new(3, ushort.MaxValue, ushort.MaxValue, ushort.MaxValue)), Is.True);
         }
     }
 }

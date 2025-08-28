@@ -1,4 +1,4 @@
-﻿#if CONSOLE_BUILD
+#if CONSOLE_BUILD
 using GodotPCKExplorer.Cmd;
 using System.Diagnostics;
 using System.Reflection;
@@ -92,7 +92,10 @@ namespace GodotPCKExplorer.Cmd
 Therefore, GodotPCKExplorer can open both '.pck' and files with embedded 'pck'.
 
 Paths and other arguments must be without spaces or inside quotes: ""some path""
-The PACK_VERSION in the version can be 1 for Godot 3 or 2 for Godot 4.
+The PACK_VERSION in the version can be:
+	1 for Godot 3 (possibly older versions)
+	2 for Godot 4.0-4.4
+	3 for Godot 4.5+
 Encryption only works with '.pck' for Godot 4.
 
 {} - Optional arguments
@@ -138,7 +141,7 @@ Examples of valid commands:
 	-p [folder] [output pack file] [version] {[path prefix]} {[encryption key]} {[encryption: both|index|files]}
 	-p ""C:/Directory with files"" C:/Game_New.pck 1.3.2.0
 	-p ""C:/Directory with files"" C:/Game_New.pck 2.4.0.1 ""some/prefix/dir/""
-	-p ""C:/Directory with files"" C:/Game_New.pck 2.4.0.1 """" 7FDBF68B69B838194A6F1055395225BBA3F1C5689D08D71DCD620A7068F61CBA files
+	-p ""C:/Directory with files"" C:/Game_New.pck 3.4.5.1 """" 7FDBF68B69B838194A6F1055395225BBA3F1C5689D08D71DCD620A7068F61CBA files
 
 -pe	Pack Embedded. Equal to -p, but embed '.pck' into target file
 	-pe [folder] [exe to pack into] [version] {[path prefix]} {[encryption key]} {[encryption: both|index|files]}

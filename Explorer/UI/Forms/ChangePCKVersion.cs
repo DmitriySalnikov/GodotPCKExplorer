@@ -15,17 +15,14 @@ namespace GodotPCKExplorer.UI
             {
                 using (var pck = new PCKReader())
                 {
-                    if (pck.OpenFile(filePath, logFileNamesProgress: false))
+                    if (pck.OpenFile(filePath, logFileNamesProgress: false, readOnlyHeaderGodot4: true))
                     {
                         FilePath = filePath;
                         var ver = pck.PCK_Version;
                         l_path.Text = $"File Path:\n{Utils.GetShortPath(filePath, 50)}";
                         l_version.Text = $"Original Version:\n{ver}";
 
-                        cb_ver.Text = ver.Pack.ToString();
-                        nud_major.Value = ver.Major;
-                        nud_minor.Value = ver.Minor;
-                        nud_revision.Value = ver.Revision;
+                        pckVersionSelector1.SetVersion(ver);
                     }
                     else
                     {
@@ -44,7 +41,11 @@ namespace GodotPCKExplorer.UI
 
         private void btn_ok_Click(object? sender, EventArgs e)
         {
-            if (PCKActions.ChangeVersion(FilePath, $"{cb_ver.Text}.{nud_major.Value}.{nud_minor.Value}.{nud_revision.Value}"))
+            var ver = pckVersionSelector1.GetVersion();
+            if (!ver.IsValid())
+                return;
+
+            if (PCKActions.ChangeVersion(FilePath, $"{ver}"))
                 Close();
         }
     }

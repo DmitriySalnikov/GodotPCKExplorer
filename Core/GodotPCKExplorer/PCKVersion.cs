@@ -49,5 +49,25 @@ namespace GodotPCKExplorer
         {
             return Pack >= 0 && Major >= 0 && Minor >= 0 && Revision >= 0;
         }
+
+        public override readonly bool Equals(object obj)
+        {
+            return obj is PCKVersion v && this == v;
+        }
+
+        public override readonly int GetHashCode()
+        {
+            return Pack.GetHashCode() ^ Major.GetHashCode() ^ Minor.GetHashCode() ^ Revision.GetHashCode();
+        }
+
+        public static bool operator ==(PCKVersion a, PCKVersion b)
+        {
+            return a.Pack == b.Pack && a.Major == b.Major && a.Minor == b.Minor && a.Revision == b.Revision;
+        }
+
+        public static bool operator !=(PCKVersion a, PCKVersion b)
+        {
+            return !(a == b);
+        }
     }
 }

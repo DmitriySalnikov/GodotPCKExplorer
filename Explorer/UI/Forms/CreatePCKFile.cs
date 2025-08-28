@@ -1,3 +1,5 @@
+using static GodotPCKExplorer.UI.UIComponents.PCKVersionSelector;
+
 namespace GodotPCKExplorer.UI
 {
     public partial class CreatePCKFile : Form
@@ -53,10 +55,8 @@ namespace GodotPCKExplorer.UI
             cb_previewPaths.Checked = GUIConfig.Instance.PackPreviewPaths;
 
             var ver = GUIConfig.Instance.PackVersion;
-            cb_ver.SelectedItem = ver.Pack.ToString();
-            nud_major.Value = ver.Major;
-            nud_minor.Value = ver.Minor;
-            nud_revision.Value = ver.Revision;
+            pckVersionSelector1.SetVersion(ver);
+            pckVersionSelector1.VersionChanged += PckVersionSelector1_VersionChanged;
 
             cb_embed.Checked = GUIConfig.Instance.PackEmbedPCK;
 
@@ -76,6 +76,11 @@ namespace GodotPCKExplorer.UI
         }
 
         private void CreatePCKFile_Shown(object sender, EventArgs e)
+        {
+            RefreshFilesList();
+        }
+
+        void RefreshFilesList()
         {
             SetFolderPath(tb_folder_path.Text);
         }
@@ -112,12 +117,18 @@ namespace GodotPCKExplorer.UI
                 pckReader.Close();
             }
 
-            var ver = GetPCKVersion();
+            filesToPack = [];
+
+            var ver = pckVersionSelector1.GetVersion(true);
+            if (!ver.IsValid())
+            {
+                UpdateTableContent();
+                return;
+            }
+
             var files_scan = new List<PCKPackerRegularFile>();
             if (Directory.Exists(currentSelectedDir))
                 Program.DoTaskWithProgressBar((t) => files_scan = PCKUtils.GetListOfFilesToPack(Path.GetFullPath(currentSelectedDir), ver, tb_prefix.Text, cancellationToken: t), this);
-
-            filesToPack = [];
 
             // Fill with PCK files
             foreach (var file in pckReader.Files)
@@ -162,25 +173,6 @@ namespace GodotPCKExplorer.UI
 
             l_total_size.Text = $"Total size: ~{Utils.SizeSuffix(size)}";
             l_total_count.Text = $"Files count: {filesToPack.Count}";
-        }
-
-        void UpdatePCKVersionOfOpenedFiles()
-        {
-            // Full refresh
-            SetFolderPath(tb_folder_path.Text);
-
-            return;
-            //var ver = GetPCKVersion();
-
-            //foreach (var p in filesToPack)
-            //{
-            //    if (p.Value is PCKPackerRegularFile rf)
-            //    {
-            //        rf.UpdateFileInfo(ver, tb_prefix.Text);
-            //    }
-            //}
-
-            //UpdateTableContent();
         }
 
         void UpdateTableContent()
@@ -270,17 +262,6 @@ namespace GodotPCKExplorer.UI
             }
         }
 
-        PCKVersion GetPCKVersion()
-        {
-            if (!int.TryParse(cb_ver.Text, out int pack_ver))
-            {
-                Program.ShowMessage("Incorrect package version format.", "Error", MessageType.Error);
-                return new PCKVersion();
-            }
-
-            return new PCKVersion(pack_ver, (int)nud_major.Value, (int)nud_minor.Value, (int)nud_revision.Value);
-        }
-
         private void CreatePCKFile_FormClosed(object sender, FormClosedEventArgs e)
         {
             pckReader.Close();
@@ -294,7 +275,10 @@ namespace GodotPCKExplorer.UI
 
         private void btn_create_Click(object? sender, EventArgs e)
         {
-            var ver = GetPCKVersion();
+            var ver = pckVersionSelector1.GetVersion();
+            if (!ver.IsValid())
+                return;
+
             DialogResult res = DialogResult.No;
             string file = "";
             string prefix = tb_prefix.Text;
@@ -390,7 +374,7 @@ namespace GodotPCKExplorer.UI
         {
             if (e.KeyCode == Keys.Enter)
             {
-                SetFolderPath(tb_folder_path.Text);
+                RefreshFilesList();
                 e.Handled = true;
                 e.SuppressKeyPress = true;
             }
@@ -424,13 +408,13 @@ namespace GodotPCKExplorer.UI
             if (fbd_pack_folder.ShowDialog(this) == DialogResult.OK)
             {
                 tb_folder_path.Text = Path.GetFullPath(fbd_pack_folder.SelectedPath);
-                SetFolderPath(tb_folder_path.Text);
+                RefreshFilesList();
             }
         }
 
         private void btn_refresh_Click(object? sender, EventArgs e)
         {
-            SetFolderPath(tb_folder_path.Text);
+            RefreshFilesList();
         }
 
         private void textBoxWithPlaceholder1_KeyDown(object? sender, KeyEventArgs e)
@@ -496,24 +480,17 @@ namespace GodotPCKExplorer.UI
             }
         }
 
-        private void cb_ver_SelectionChangeCommitted(object sender, EventArgs e)
+        private void PckVersionSelector1_VersionChanged(object? sender, VersionChanges e)
         {
-            UpdatePCKVersionOfOpenedFiles();
-        }
+            if (e.IsPackChanged || e.IsValidityChanged)
+            {
+                RefreshFilesList();
+            }
 
-        private void nud_major_ValueChanged(object sender, EventArgs e)
-        {
-            UpdatePCKVersionOfOpenedFiles();
-        }
-
-        private void nud_minor_ValueChanged(object sender, EventArgs e)
-        {
-            UpdatePCKVersionOfOpenedFiles();
-        }
-
-        private void nud_revision_ValueChanged(object sender, EventArgs e)
-        {
-            UpdatePCKVersionOfOpenedFiles();
+            if (e.Value.Pack == (int)PCKUtils.PACK_VERSION.Godot_4 && e.IsMinorChanged)
+            {
+                RefreshFilesList();
+            }
         }
     }
 }
