@@ -250,7 +250,7 @@ namespace GodotPCKExplorer
                     PCKActions.progress?.LogProgress(op, $"Encrypt Files: {encryptFiles}");
                 }
 
-                // delete if not embbeding
+                // delete if not embedding
                 if (!embed)
                 {
                     try
@@ -302,7 +302,7 @@ namespace GodotPCKExplorer
 
                 try
                 {
-                    PCKActions.progress?.LogProgress(op, "Writing the file index");
+                    PCKActions.progress?.LogProgress(op, "Writing the PCK header");
 
                     binWriter.Write(PCKUtils.PCK_MAGIC);
                     binWriter.Write(godotVersion.Pack);
@@ -310,8 +310,9 @@ namespace GodotPCKExplorer
                     binWriter.Write(godotVersion.Minor);
                     binWriter.Write(godotVersion.Revision);
 
-                    long file_base_address = -1;
                     int pack_flags = 0;
+                    long file_base_address = -1;
+                    long index_base_address = -1; // 4.5+
 
                     if (godotVersion.Pack >= (int)PCKUtils.PACK_VERSION.Godot_4)
                     {
@@ -322,24 +323,44 @@ namespace GodotPCKExplorer
                         if (embed && godotVersion.Major >= 4 && godotVersion.Minor >= 3)
                             pack_flags |= (int)PCKUtils.PCK_FLAG.REL_FILEBASE;
 
+                        if (godotVersion.Pack >= (int)PCKUtils.PACK_VERSION.Godot_4_5)
+                            pack_flags |= (int)PCKUtils.PCK_FLAG.REL_FILEBASE;
+
+
                         binWriter.Write(pack_flags); // pack_flags
 
                         file_base_address = binWriter.BaseStream.Position;
                         binWriter.Write((long)0); // file_base
+
+                        if (godotVersion.Pack >= (int)PCKUtils.PACK_VERSION.Godot_4_5)
+                        {
+                            index_base_address = binWriter.BaseStream.Position;
+                            binWriter.Write((long)0); // index_base
+                        }
                     }
 
                     PCKUtils.AddPadding(binWriter, 16 * sizeof(int)); // reserved
 
-                    // write the files count
-                    binWriter.Write((int)files.Count());
+                    if (godotVersion.Pack < (int)PCKUtils.PACK_VERSION.Godot_4_5)
+                    {
+                        // write the files count
+                        binWriter.Write((int)files.Count());
+                        index_base_address = binWriter.BaseStream.Position;
+                    }
+                    else
+                    {
+                        // alignment for fila_base
+                        PCKUtils.AddPaddingAlignedByAddress(binWriter, binWriter.BaseStream.Position, alignment, encryptFiles);
+                    }
+
 
                     var index_writer = binWriter;
-                    long index_begin_pos = binWriter.BaseStream.Position;
+                    bool index_at_the_bottom = godotVersion.Pack >= (int)PCKUtils.PACK_VERSION.Godot_4_5;
 
                     long total_size = 0;
 
                     {
-                        if (encryptIndex)
+                        if (encryptIndex || index_at_the_bottom)
                             index_writer = new BinaryWriter(new MemoryStream());
 
                         // Multi-threaded MD5 pre-calculation
@@ -352,7 +373,11 @@ namespace GodotPCKExplorer
                             });
                         }
 
-                        op = baseOp + ", writing an index";
+                        if (!index_at_the_bottom)
+                            op = baseOp + ", writing an index";
+                        else
+                            op = baseOp + ", generating an index";
+
                         // write pck index
                         int file_idx = 0;
                         foreach (var file in files)
@@ -408,8 +433,9 @@ namespace GodotPCKExplorer
                             PCKActions.progress?.LogProgress(op, (int)(((double)file_idx / files.Count()) * 100));
                         }
 
-                        if (encryptIndex)
+                        if (encryptIndex && !index_at_the_bottom)
                         {
+                            // Fill index with zeroes
                             // Later it will be encrypted and the data size will be aligned to 16 + encrypted header
                             PCKUtils.AddPadding(binWriter, PCKUtils.AlignAddress(index_writer.BaseStream.Length, mbedTLS.CHUNK_SIZE) + ENCRYPTED_HEADER_SIZE);
                         }
@@ -422,7 +448,7 @@ namespace GodotPCKExplorer
                     long offset = binWriter.BaseStream.Position;
                     offset = PCKUtils.AlignAddress(offset, alignment);
 
-                    // end of index
+                    // end of index or header
                     PCKUtils.AddPadding(binWriter, offset - binWriter.BaseStream.Position, encryptIndex); // fill random bytes between index and files
 
                     long file_base = offset;
@@ -528,19 +554,55 @@ namespace GodotPCKExplorer
 
                     // TODO add PCK validation
 
-                    // If the index is encrypted, then it must be written after all other operations in order to properly handle file offsets
-                    if (encryptIndex)
+                    // If the index is encrypted or the index must be at the end,
+                    // then it must be written after all other operations in order to properly handle file offsets
+                    if (index_at_the_bottom)
                     {
-                        // Move to start of index
-                        long pos = binWriter.BaseStream.Position;
-                        binWriter.BaseStream.Seek(index_begin_pos, SeekOrigin.Begin);
+                        PCKActions.progress?.LogProgress(op, "Writing an index!");
 
-                        PackStreamEncrypted(binWriter, index_writer.BaseStream.Length, PCKUtils.ReadStreamAsMemoryBlocks(index_writer.BaseStream), EncryptionKey ?? throw new NullReferenceException(nameof(EncryptionKey)), PCKUtils.GetStreamMD5(index_writer.BaseStream));
+                        PCKUtils.AddPaddingAlignedByAddress(binWriter, binWriter.BaseStream.Position, alignment, encryptFiles);
+
+                        long index_base = binWriter.BaseStream.Position;
+                        // write the files count
+                        binWriter.Write((int)files.Count());
+
+                        // update actual address of index_base in the header
+                        long pos = binWriter.BaseStream.Position;
+                        binWriter.BaseStream.Seek(index_base_address, SeekOrigin.Begin);
+                        binWriter.Write(index_base - pck_start);// always relative
+                        // back to the end of file
+                        binWriter.BaseStream.Seek(pos, SeekOrigin.Begin);
+
+                        if (encryptIndex)
+                        {
+                            PackStreamEncrypted(binWriter, index_writer.BaseStream.Length, PCKUtils.ReadStreamAsMemoryBlocks(index_writer.BaseStream), EncryptionKey ?? throw new NullReferenceException(nameof(EncryptionKey)), PCKUtils.GetStreamMD5(index_writer.BaseStream));
+                        }
+                        else
+                        {
+                            foreach (var block in PCKUtils.ReadStreamAsMemoryBlocks(index_writer.BaseStream))
+                                binWriter.Write(block.Span);
+                        }
+
                         index_writer.Close();
                         index_writer.Dispose();
                         index_writer = null;
+                    }
+                    else
+                    {
+                        // The encrypted Index is written at the beginning of the file, but after all operations.
+                        if (encryptIndex)
+                        {
+                            // Move to start of index
+                            long pos = binWriter.BaseStream.Position;
+                            binWriter.BaseStream.Seek(index_base_address, SeekOrigin.Begin);
 
-                        binWriter.BaseStream.Seek(pos, SeekOrigin.Begin);
+                            PackStreamEncrypted(binWriter, index_writer.BaseStream.Length, PCKUtils.ReadStreamAsMemoryBlocks(index_writer.BaseStream), EncryptionKey ?? throw new NullReferenceException(nameof(EncryptionKey)), PCKUtils.GetStreamMD5(index_writer.BaseStream));
+                            index_writer.Close();
+                            index_writer.Dispose();
+                            index_writer = null;
+
+                            binWriter.BaseStream.Seek(pos, SeekOrigin.Begin);
+                        }
                     }
 
                     if (embed)

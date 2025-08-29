@@ -778,7 +778,7 @@ namespace GodotPCKExplorer
                 }
 
                 // Fix addresses
-                if (PCK_Version.Pack < (int)PCKUtils.PACK_VERSION.Godot_4)
+                if (PCK_Version.Pack <= (int)PCKUtils.PACK_VERSION.Godot_3)
                 {
                     foreach (var p in Files.Values)
                     {
@@ -788,8 +788,11 @@ namespace GodotPCKExplorer
                 }
                 else
                 {
-                    file.BaseStream.Seek(PCK_FileBaseAddressOffset - PCK_StartPosition, SeekOrigin.Begin);
-                    file.Write(PCK_FileBase - PCK_StartPosition);
+                    if (!IsRelativeFileBase) // nothing to change if the filebase is relative
+                    {
+                        file.BaseStream.Seek(PCK_FileBaseAddressOffset - PCK_StartPosition, SeekOrigin.Begin);
+                        file.Write(PCK_FileBase - PCK_StartPosition);
+                    }
                 }
 
                 file.Close();
@@ -854,7 +857,7 @@ namespace GodotPCKExplorer
                 // Ensure embedded PCK starts at a 64-bit multiple
                 try
                 {
-                    PCKUtils.AddPadding(file, file.BaseStream.Position % 8);
+                    PCKUtils.AddPadding(file, (file.BaseStream.Position % 8 > 0) ? 8 - file.BaseStream.Position % 8 : 0);
                 }
                 catch (Exception ex)
                 {
@@ -882,7 +885,7 @@ namespace GodotPCKExplorer
 
                     // Ensure embedded data ends at a 64-bit multiple
                     long embed_end = file.BaseStream.Position - embed_start + 12;
-                    PCKUtils.AddPadding(file, embed_end % 8);
+                    PCKUtils.AddPadding(file, (embed_end % 8 > 0) ? 8 - embed_end % 8 : 0);
 
                     long pck_size = file.BaseStream.Position - pck_start;
                     file.Write((long)pck_size);
@@ -901,7 +904,7 @@ namespace GodotPCKExplorer
                 }
 
                 // Fix addresses
-                if (PCK_Version.Pack < (int)PCKUtils.PACK_VERSION.Godot_4)
+                if (PCK_Version.Pack <= (int)PCKUtils.PACK_VERSION.Godot_3)
                 {
                     foreach (var p in Files.Values)
                     {
@@ -911,8 +914,11 @@ namespace GodotPCKExplorer
                 }
                 else
                 {
-                    file.BaseStream.Seek(embed_start + PCK_FileBaseAddressOffset - PCK_StartPosition, SeekOrigin.Begin);
-                    file.Write(embed_start + PCK_FileBase);
+                    if (!IsRelativeFileBase)
+                    {
+                        file.BaseStream.Seek(embed_start + PCK_FileBaseAddressOffset - PCK_StartPosition, SeekOrigin.Begin);
+                        file.Write(embed_start + PCK_FileBase);
+                    }
                 }
 
                 file.Close();

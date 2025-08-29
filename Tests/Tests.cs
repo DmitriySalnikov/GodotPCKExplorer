@@ -641,7 +641,6 @@ namespace Tests
             nf.Close();
             o.Close();
 
-            // The result is good... but thats not 64bit multiple :/
             Assert.That(PCKActions.Merge(testPCK, newEXE1Byte, true), Is.True);
 
             Title("Bad run");
@@ -655,10 +654,10 @@ namespace Tests
                 Assert.That(r.IsSuccess(), Is.True);
 
             using (var r = new RunGodotWithOutput(newEXE1Byte, DefaultGodotArgs))
-                if (GodotVersionMajor == 3)
-                    Assert.That(r.IsSuccess(), Is.True);
-                else if (GodotVersionMajor >= 4)
+                if (GodotPackVersion == 2 && GodotVersionMajor == 4)
                     Assert.That(r.IsSuccess(), Is.False);
+                else
+                    Assert.That(r.IsSuccess(), Is.True);
         }
 
         [Test]

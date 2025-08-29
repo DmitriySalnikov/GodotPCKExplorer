@@ -224,6 +224,11 @@ namespace GodotPCKExplorer
             }
         }
 
+        public static void AddPaddingAlignedByAddress(BinaryWriter p_file, long p_address, uint p_alignment, bool randomFill = false)
+        {
+            AddPadding(p_file, AlignAddress(p_address, p_alignment) - p_address, randomFill);
+        }
+
         public static string GetResFilePathInPCK(string path, PCKVersion version)
         {
             // removed res:// prefix in 4.4. editor_export_platform.cpp:227 https://github.com/godotengine/godot/commit/d76fbb7a40c56fa4b10edc017dc33a2d668c5c0d
