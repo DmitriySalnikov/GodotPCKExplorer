@@ -220,7 +220,7 @@ namespace GodotPCKExplorer
                 else
                 {
                     var pck = new PCKReader();
-                    if (pck.OpenFile(outPck, false))
+                    if (pck.OpenFile(outPck, false) || pck.IsEncrypted)
                     {
                         pck.Close();
                         PCKActions.progress?.ShowMessage("Attempt to embed a package in a file with an already embedded package or in a regular '.pck' file", "Error", MessageType.Error);

@@ -137,10 +137,15 @@ namespace PCKBruteforcer
 
                 string? pck_in_memory_file_name = null;
                 PCKReaderFile? pck_in_memory_file = null;
+                PCKVersion pck_version;
                 long pck_StartPosition;
+                long pck_EndPosition;
                 bool pck_encIndex;
                 bool pck_embeded;
                 long pck_FileBase;
+                long pck_FileBaseAddress;
+                long pck_IndexBase;
+                long pck_IndexBaseAddress;
 
                 using (PCKReader pck_reader = new())
                 {
@@ -164,10 +169,15 @@ namespace PCKBruteforcer
                         return;
                     }
 
+                    pck_version = pck_reader.PCK_Version;
                     pck_StartPosition = pck_reader.PCK_StartPosition;
+                    pck_EndPosition = pck_reader.PCK_EndPosition;
                     pck_encIndex = pck_reader.IsEncryptedIndex;
                     pck_embeded = pck_reader.PCK_Embedded;
                     pck_FileBase = pck_reader.PCK_FileBase;
+                    pck_FileBaseAddress = pck_reader.PCK_FileBaseAddressOffset;
+                    pck_IndexBase = pck_reader.PCK_IndexBase;
+                    pck_IndexBaseAddress = pck_reader.PCK_IndexBaseAddressOffset;
 
                     if (pck_reader.Files.Count > 0)
                     {
@@ -227,10 +237,36 @@ namespace PCKBruteforcer
                     {
                         using var fileReader = new BinaryReader(File.Open(pck, FileMode.Open, FileAccess.Read, FileShare.Read));
                         fileReader.BaseStream.Position = pck_StartPosition;
-                        encMemChunk = new byte[pck_FileBase - pck_StartPosition];
-                        fileReader.Read(encMemChunk, 0, encMemChunk.Length);
+
+                        if (pck_version.Pack < (int)PCKUtils.PACK_VERSION.Godot_4_5)
+                        {
+                            encMemChunk = new byte[pck_FileBase - pck_StartPosition];
+                            fileReader.Read(encMemChunk, 0, encMemChunk.Length);
+                        }
+                        else
+                        {
+                            // this requires part of the header and the full index section
+                            int header_size = (int)(pck_FileBase - pck_StartPosition);
+                            int index_size = (int)(pck_EndPosition - pck_IndexBase);
+
+                            encMemChunk = new byte[header_size + index_size];
+                            fileReader.Read(encMemChunk, 0, header_size);
+                            fileReader.BaseStream.Position = pck_IndexBase;
+                            fileReader.Read(encMemChunk, header_size, index_size);
+
+                            using MemoryStream mem_stream = new(encMemChunk);
+                            using BinaryWriter w = new(mem_stream);
+
+                            // patch offsets
+                            w.BaseStream.Position = pck_FileBaseAddress - pck_StartPosition;
+                            w.Write((long)-1);
+
+                            w.BaseStream.Position = pck_IndexBaseAddress - pck_StartPosition;
+                            w.Write((long)header_size);
+                        }
                     }
                 }
+
                 else if (pck_in_memory_file != null)
                 {
                     if (inMemory)
