@@ -18,11 +18,17 @@ namespace PCKBruteforcer.UI
         readonly ProgressReporterBrute progress;
         readonly List<ProgressBarEx> progressBars = [];
         static readonly int ProgressRowHeight = 20;
+        readonly int defaultClientHeight;
+        int heightBeforeProgress;
+        bool progressExpanded;
 
         public BruteforcerMainForm()
         {
             InitializeComponent();
             Icon = Resources.icon;
+            ThemeManager.Apply(this);
+            UpdateThemeToggleIcon();
+            defaultClientHeight = ClientSize.Height;
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
@@ -39,8 +45,29 @@ namespace PCKBruteforcer.UI
         {
             foreach (var b in browse_buttons)
             {
-                b.Enabled = enabled;
+                if (b is Button button)
+                {
+                    // Keep the themed button palette stable; its click handler
+                    // ignores interaction while a run is active.
+                    button.Enabled = true;
+                }
+                else if (b is CheckBox checkBox)
+                {
+                    checkBox.Enabled = true;
+                    checkBox.AutoCheck = enabled;
+                }
+                else if (b is TextBoxBase textBox)
+                {
+                    textBox.ReadOnly = !enabled;
+                    textBox.Enabled = true;
+                }
+                else
+                {
+                    b.Enabled = enabled;
+                }
             }
+
+            ThemeManager.Apply(this);
         }
 
         private void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
@@ -50,6 +77,9 @@ namespace PCKBruteforcer.UI
 
         private void btn_exe_Click(object? sender, EventArgs e)
         {
+            if (bgTask != null)
+                return;
+
             if (File.Exists(tb_exe.Text))
                 ofd_exe.FileName = tb_exe.Text;
 
@@ -85,6 +115,9 @@ namespace PCKBruteforcer.UI
 
         private void btn_pck_Click(object? sender, EventArgs e)
         {
+            if (bgTask != null)
+                return;
+
             if (File.Exists(tb_pck.Text))
                 ofd_pck.FileName = tb_pck.Text;
 
@@ -195,6 +228,7 @@ namespace PCKBruteforcer.UI
             tlp_progressTable.ColumnStyles.Clear();
             tlp_progressTable.RowStyles.Clear();
             progressBars.Clear();
+            tlp_progressTable.Visible = true;
 
             if (count > Environment.ProcessorCount * 2)
             {
@@ -203,6 +237,7 @@ namespace PCKBruteforcer.UI
 
             int bars_columns = Math.Min(count, 8);
             int bars_rows = (int)Math.Ceiling((double)count / bars_columns);
+            ResizeForProgressRows(bars_rows);
             tlp_progressTable.ColumnCount = bars_columns;
             tlp_progressTable.RowCount = bars_rows + 1;
             tlp_progressTable.Height = bars_rows * ProgressRowHeight;
@@ -237,6 +272,39 @@ namespace PCKBruteforcer.UI
             }
 
             tlp_output.PerformLayout();
+            ThemeManager.Apply(tlp_progressTable);
+            tlp_output.PerformLayout();
+        }
+
+        void ResizeForProgressRows(int rows)
+        {
+            int requiredHeight = defaultClientHeight + Math.Max(0, rows - 1) * ProgressRowHeight;
+            if (requiredHeight <= ClientSize.Height)
+                return;
+
+            if (!progressExpanded)
+            {
+                heightBeforeProgress = ClientSize.Height;
+                progressExpanded = true;
+            }
+
+            ClientSize = new Size(ClientSize.Width, Math.Min(requiredHeight, MaximumSize.Height));
+        }
+
+        private void btn_theme_Click(object? sender, EventArgs e)
+        {
+            ThemeManager.Toggle();
+            UpdateThemeToggleIcon();
+        }
+
+        void UpdateThemeToggleIcon()
+        {
+            var oldImage = btn_theme.Image;
+            btn_theme.Image = ThemeManager.CreateToggleIcon();
+            oldImage?.Dispose();
+            btn_theme.Text = "";
+            btn_theme.AccessibleName = ThemeManager.IsDark ? "Switch to light theme" : "Switch to dark theme";
+            toolTip1.SetToolTip(btn_theme, btn_theme.AccessibleName);
         }
 
         void StopTask()
@@ -251,6 +319,37 @@ namespace PCKBruteforcer.UI
             bruteforcer = null;
 
             btn_start.Text = "Try to get the key";
+
+            ResetProgressDisplay();
+
+            if (progressExpanded)
+            {
+                ClientSize = new Size(ClientSize.Width, heightBeforeProgress);
+                progressExpanded = false;
+            }
+
+            ThemeManager.Apply(this);
+        }
+
+        void ResetProgressDisplay()
+        {
+            foreach (Control control in tlp_progressTable.Controls)
+                control.Dispose();
+
+            tlp_progressTable.Controls.Clear();
+            tlp_progressTable.ColumnStyles.Clear();
+            tlp_progressTable.RowStyles.Clear();
+            tlp_progressTable.ColumnCount = 1;
+            tlp_progressTable.RowCount = 1;
+            tlp_progressTable.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            tlp_progressTable.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            tlp_progressTable.Visible = false;
+            tlp_progressTable.Height = 0;
+
+            l_percents.Text = "0.00%";
+            l_estimatedTime.Text = "Estimated: 00:00:00";
+            l_remaningTime.Text = "Remaining: 00:00:00";
+            l_elapsedTime.Text = "Elapsed: 00:00:00";
         }
 
         void SafeCall(Action action)

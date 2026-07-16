@@ -21,11 +21,13 @@ namespace GodotPCKExplorer.Cmd
 
         static Action<string>? _log = null;
         static Action<Exception>? _logEx = null;
+        static Action<bool>? _setTimestamps = null;
 
-        public static void InitLogs(Action<string> log, Action<Exception> logEx)
+        public static void InitLogs(Action<string> log, Action<Exception> logEx, Action<bool>? setTimestamps = null)
         {
             _log = log;
             _logEx = logEx;
+            _setTimestamps = setTimestamps;
         }
 
         public static bool RunCommand(params string[] args)
@@ -122,9 +124,12 @@ Examples of valid commands:
 	-i C:/Game.pck
 	
 -l	Show pack file info with a list of packed files
-	-l [path to pack] {[encryption key]}
+	-l [path to pack] {[encryption key]} {--sort-size} {--human-size} {--no-timestamp}
 	-l C:/Game.exe
 	-l C:/Game.pck
+	--sort-size	Sort listed files from largest to smallest
+	--human-size	Show file sizes using KB, MB, GB, etc.
+	--no-timestamp	Omit timestamps from console output
 
 -e	Extract content from a pack to a folder. Automatically overwrites existing files
 	Instead of the key, you can specify ""skip"" or ""encrypted"" to skip or extract files without decryption, respectively
@@ -265,19 +270,43 @@ Examples of valid commands:
 
             string filePath;
             string? encKey = null;
+            bool sortBySize = false;
+            bool humanReadableSize = false;
+            bool noTimestamp = false;
 
             try
             {
-                if (args.Length >= 2 && args.Length <= 3)
+                var positional = args.Skip(1).Where(a => !a.StartsWith("--", StringComparison.Ordinal)).ToArray();
+                foreach (var option in args.Skip(1).Where(a => a.StartsWith("--", StringComparison.Ordinal)))
                 {
-                    filePath = Path.GetFullPath(args[1]);
-
-                    if (args.Length == 3)
+                    switch (option)
                     {
-                        encKey = args[2];
+                        case "--sort-size": sortBySize = true; break;
+                        case "--human-size": humanReadableSize = true; break;
+                        case "--no-timestamp": noTimestamp = true; break;
+                        default: LogErrHelp($"Unknown -l option: {option}"); return;
+                    }
+                }
+
+                if (list_files && positional.Length >= 1 && positional.Length <= 2)
+                {
+                    filePath = Path.GetFullPath(positional[0]);
+
+                    if (positional.Length == 2)
+                    {
+                        encKey = positional[1];
 
                         if (!ValidateEncryptionKey(encKey))
                             return;
+                    }
+                }
+                else if (!list_files && positional.Length >= 1 && positional.Length <= 2 && !sortBySize && !humanReadableSize && !noTimestamp)
+                {
+                    filePath = Path.GetFullPath(positional[0]);
+                    if (positional.Length == 2)
+                    {
+                        encKey = positional[1];
+                        if (!ValidateEncryptionKey(encKey)) return;
                     }
                 }
                 else
@@ -292,7 +321,8 @@ Examples of valid commands:
                 return;
             }
 
-            var res = PCKActions.PrintInfo(filePath, list_files, encKey);
+            _setTimestamps?.Invoke(!noTimestamp);
+            var res = PCKActions.PrintInfo(filePath, list_files, encKey, sortBySize, humanReadableSize);
             SetResult(res);
         }
 

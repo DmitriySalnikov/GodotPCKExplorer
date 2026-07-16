@@ -53,6 +53,7 @@
             label3 = new Label();
             tableLayoutPanel2 = new TableLayoutPanel();
             tlp_output = new TableLayoutPanel();
+            btn_theme = new Button();
             ((System.ComponentModel.ISupportInitialize)nud_threads).BeginInit();
             ((System.ComponentModel.ISupportInitialize)nud_from).BeginInit();
             ((System.ComponentModel.ISupportInitialize)nud_to).BeginInit();
@@ -173,6 +174,15 @@
             cb_inMemory.Text = "In memory";
             toolTip1.SetToolTip(cb_inMemory, "Load PCK parts into RAM");
             cb_inMemory.UseVisualStyleBackColor = true;
+            // 
+            // btn_theme
+            // 
+            btn_theme.Location = new Point(160, 100);
+            btn_theme.Name = "btn_theme";
+            btn_theme.Size = new Size(32, 23);
+            btn_theme.TabIndex = 18;
+            btn_theme.UseVisualStyleBackColor = true;
+            btn_theme.Click += btn_theme_Click;
             // 
             // nud_from
             // 
@@ -305,8 +315,8 @@
             // tlp_output
             // 
             tlp_output.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            tlp_output.AutoScroll = true;
-            tlp_output.AutoScrollMinSize = new Size(5, 0);
+            tlp_output.AutoScroll = false;
+            tlp_output.AutoScrollMinSize = Size.Empty;
             tlp_output.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             tlp_output.ColumnCount = 1;
             tlp_output.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
@@ -327,10 +337,11 @@
             AllowDrop = true;
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(553, 278);
+            ClientSize = new Size(553, 298);
             Controls.Add(tlp_output);
             Controls.Add(tableLayoutPanel2);
             Controls.Add(cb_inMemory);
+            Controls.Add(btn_theme);
             Controls.Add(nud_threads);
             Controls.Add(btn_pck);
             Controls.Add(btn_exe);
@@ -342,7 +353,7 @@
             Margin = new Padding(4, 3, 4, 3);
             MaximizeBox = false;
             MaximumSize = new Size(1491, 830);
-            MinimumSize = new Size(569, 317);
+            MinimumSize = new Size(569, 337);
             Name = "BruteforcerMainForm";
             Text = "PCK Bruteforcer";
             FormClosing += MainForm_FormClosing;
@@ -386,6 +397,7 @@
         private TableLayoutPanel tableLayoutPanel2;
         private TableLayoutPanel tlp_output;
         private Label l_estimatedTime;
+        private Button btn_theme;
     }
 }
 

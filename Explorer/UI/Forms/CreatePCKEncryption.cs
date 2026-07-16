@@ -7,6 +7,7 @@ namespace GodotPCKExplorer.UI
         public CreatePCKEncryption()
         {
             InitializeComponent();
+            ThemeManager.Apply(this);
 
             tb_key.Text = GUIConfig.Instance.PackEncryptionKey;
             cb_encrypt_index.Checked = GUIConfig.Instance.PackEncryptIndex;

@@ -9,6 +9,7 @@ namespace GodotPCKExplorer.UI
         public OpenWithPCKEncryption(string key = "")
         {
             InitializeComponent();
+            ThemeManager.Apply(this);
 
             tb_key.Text = key;
             DialogResult = DialogResult.Cancel;

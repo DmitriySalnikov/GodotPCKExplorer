@@ -447,6 +447,24 @@ namespace PCKBruteforcer
                     }
                 }
 
+                lock (task_progress_mutex)
+                {
+                    for (int i = 0; i < thread_progress.Length; i++)
+                    {
+                        var data = thread_progress[i];
+                        thread_progress[i] = new ThreadProgressData(
+                            ProgressMaximum,
+                            data.text,
+                            data.color == Color.Empty ? ProgressDefaultColor : data.color);
+                    }
+                }
+
+                ReportProgress(new ReportData(
+                    DateTime.UtcNow - start_time,
+                    TimeSpan.Zero,
+                    100,
+                    [.. thread_progress]));
+
                 if (threads_res.found)
                 {
                     use_custom_output = true;

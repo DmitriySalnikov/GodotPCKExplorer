@@ -24,6 +24,7 @@ namespace GodotPCKExplorer.UI
         public CreatePCKFile()
         {
             InitializeComponent();
+            ThemeManager.Apply(this);
             Icon = Properties.Resources.icon;
 
             {

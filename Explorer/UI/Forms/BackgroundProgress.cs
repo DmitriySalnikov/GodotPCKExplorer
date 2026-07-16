@@ -16,6 +16,7 @@ namespace GodotPCKExplorer.UI
         public BackgroundProgress(Action<CancellationToken> action)
         {
             InitializeComponent();
+            ThemeManager.Apply(this);
 
             work_action = action;
             Icon = Properties.Resources.icon;
