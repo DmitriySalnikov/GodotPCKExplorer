@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -165,7 +166,7 @@ namespace GodotPCKExplorer
         /// <param name="encKey">The encryption key, if the PCK is encrypted.</param>
         /// <param name="cancellationToken">Cancellation token to interrupt the extraction process.</param>
         /// <returns><c>true</c> if successful</returns>
-        public static bool PrintInfo(string filePath, bool listFiles = false, string? encKey = null, CancellationToken? cancellationToken = null)
+        public static bool PrintInfo(string filePath, bool listFiles = false, string? encKey = null, bool sortBySize = false, bool humanReadableSize = false, CancellationToken? cancellationToken = null)
         {
             progress?.Log("PCK Info started");
             progress?.Log($"Input file: {filePath}");
@@ -175,10 +176,16 @@ namespace GodotPCKExplorer
                 using var pckReader = new PCKReader();
                 if (pckReader.OpenFile(
                     path: filePath,
-                    logFileNamesProgress: listFiles,
+                    logFileNamesProgress: listFiles && !sortBySize,
                     getEncryptionKey: () => new PCKReaderEncryptionKeyResult() { Key = encKey ?? "" },
                     cancellationToken: cancellationToken))
                 {
+                    if (listFiles && sortBySize)
+                    {
+                        foreach (var file in pckReader.Files.Values.OrderByDescending(f => f.Size).ThenBy(f => f.FilePath, StringComparer.Ordinal))
+                            progress?.LogProgress("Open PCK", $"{file.FilePath}\nSize: {FormatInfoSize(file.Size, humanReadableSize)} Flags: {file.Flags}");
+                    }
+
                     progress?.ShowMessage(
                         $"Pack version {pckReader.PCK_Version.Pack}. Godot version {pckReader.PCK_Version.Major}.{pckReader.PCK_Version.Minor}.{pckReader.PCK_Version.Revision}\n" +
                         $"Version string for this program: {pckReader.PCK_Version.Pack}.{pckReader.PCK_Version.Major}.{pckReader.PCK_Version.Minor}.{pckReader.PCK_Version.Revision}\n" +
@@ -198,6 +205,26 @@ namespace GodotPCKExplorer
                 progress?.ShowMessage($"Specified file does not exists! '{filePath}'", "Error", MessageType.Error);
             }
             return false;
+        }
+
+        static string FormatInfoSize(long size, bool humanReadable)
+        {
+            if (!humanReadable)
+                return size.ToString(CultureInfo.InvariantCulture);
+
+            if (size == 0)
+                return "0 bytes";
+
+            string[] suffixes = { "bytes", "KB", "MB", "GB", "TB", "PB", "EB" };
+            double value = Math.Abs(size);
+            int suffix = 0;
+            while (value >= 1024 && suffix < suffixes.Length - 1)
+            {
+                value /= 1024;
+                suffix++;
+            }
+
+            return $"{(size < 0 ? -value : value):0.##} {suffixes[suffix]}";
         }
 
         /// <summary>

@@ -38,6 +38,7 @@ namespace GodotPCKExplorer.GlobalShared
     public sealed class Logger : IDisposable
     {
         public bool DuplicateToConsole = true;
+        public bool IncludeTimestamp = true;
 
         bool disposed = false;
         readonly string saveFile;
@@ -119,7 +120,9 @@ namespace GodotPCKExplorer.GlobalShared
                 txt.Split(["\r\n", "\n", "\r"], StringSplitOptions.None)
                 .Select((t) =>
                 {
-                    var res = $"[{DateTime.Now.ToString(CultureInfo.InvariantCulture)}]{(isFirst ? "\t" : "-\t")}{t}";
+                    var res = IncludeTimestamp
+                        ? $"[{DateTime.Now.ToString(CultureInfo.InvariantCulture)}]{(isFirst ? "\t" : "-\t")}{t}"
+                        : $"{(isFirst ? "\t" : "-\t")}{t}";
                     isFirst = false;
                     return res;
                 }));

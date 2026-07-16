@@ -7,6 +7,7 @@ namespace GodotPCKExplorer.UI
         public ChangePCKVersion()
         {
             InitializeComponent();
+            ThemeManager.Apply(this);
         }
 
         public void ShowAndOpenFile(string filePath)

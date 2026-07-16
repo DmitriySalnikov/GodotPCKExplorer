@@ -54,7 +54,14 @@ namespace PCKBruteforcer.UI
                 TextBrush = new SolidBrush(TextColor);
 
             var rec = new Rectangle(0, 0, Width, Height);
-            if (ProgressBarRenderer.IsSupported)
+            if (BackColor == ThemeManager.DarkBackColor)
+            {
+                using var backgroundBrush = new SolidBrush(BackColor);
+                using var borderPen = new Pen(Color.FromArgb(100, 103, 110));
+                e.Graphics.FillRectangle(backgroundBrush, rec);
+                e.Graphics.DrawRectangle(borderPen, 0, 0, rec.Width - 1, rec.Height - 1);
+            }
+            else if (ProgressBarRenderer.IsSupported)
                 ProgressBarRenderer.DrawHorizontalBar(e.Graphics, rec);
 
             Rectangle barRec = rec;

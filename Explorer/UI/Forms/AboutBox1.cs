@@ -8,6 +8,7 @@ namespace GodotPCKExplorer.UI
         public AboutBox1()
         {
             InitializeComponent();
+            ThemeManager.Apply(this);
 
             Icon = Properties.Resources.icon;
 

@@ -56,6 +56,7 @@ namespace GodotPCKExplorer.UI
         public List<RecentFiles> MainFormRecentOpenedFiles { get; set; } = [];
         public bool MainFormMatchCaseFilter { get; set; } = false;
         public bool MainFormShowConsole { get; set; } = false;
+        public bool DarkTheme { get; set; } = false;
         public string SkipVersion { get; set; } = "";
 
         #endregion

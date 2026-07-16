@@ -10,7 +10,7 @@ namespace GodotPCKExplorer.Cmd
         static int Main(string[] args)
         {
             PCKActions.Init((s) => Log(s));
-            ConsoleCommands.InitLogs(Log, Log);
+            ConsoleCommands.InitLogs(Log, Log, include => logger.IncludeTimestamp = include);
 
             ConsoleCommands.RunCommand(args);
             Cleanup();

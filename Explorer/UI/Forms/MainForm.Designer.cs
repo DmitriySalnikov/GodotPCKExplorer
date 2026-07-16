@@ -66,6 +66,7 @@
             toolStripMenuItem_clearFilter = new ToolStripMenuItem();
             searchText = new ToolStripTextBoxWithPlaceholder();
             tsmi_match_case_filter = new ToolStripMenuItem();
+            themeToggleToolStripMenuItem = new ToolStripMenuItem();
             helpToolStripMenuItem = new ToolStripMenuItem();
             checkUpdates_toolStripMenuItem1 = new ToolStripMenuItem();
             about_toolStripMenuItem1 = new ToolStripMenuItem();
@@ -105,7 +106,7 @@
             // 
             // menuStrip1
             // 
-            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, extractToolStripMenuItem, integrationToolStripMenuItem, toolStripMenuItem_filterButton, toolStripMenuItem_clearFilter, searchText, tsmi_match_case_filter, helpToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, extractToolStripMenuItem, integrationToolStripMenuItem, toolStripMenuItem_filterButton, toolStripMenuItem_clearFilter, searchText, tsmi_match_case_filter, themeToggleToolStripMenuItem, helpToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.Padding = new Padding(7, 2, 0, 2);
@@ -350,6 +351,14 @@
             tsmi_match_case_filter.Text = "Aa";
             tsmi_match_case_filter.ToolTipText = "Match Case";
             tsmi_match_case_filter.Click += tsmi_match_case_filter_Click;
+            // 
+            // themeToggleToolStripMenuItem
+            // 
+            themeToggleToolStripMenuItem.Alignment = ToolStripItemAlignment.Right;
+            themeToggleToolStripMenuItem.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            themeToggleToolStripMenuItem.Name = "themeToggleToolStripMenuItem";
+            themeToggleToolStripMenuItem.Size = new Size(23, 23);
+            themeToggleToolStripMenuItem.Click += themeToggleToolStripMenuItem_Click;
             // 
             // helpToolStripMenuItem
             // 
@@ -637,6 +646,7 @@
         private ToolStripMenuItem changePackVersionToolStripMenuItem;
         private OpenFileDialog ofd_change_version;
         private ToolStripMenuItem tsmi_match_case_filter;
+        private ToolStripMenuItem themeToggleToolStripMenuItem;
         private ToolStripMenuItem showConsoleToolStripMenuItem;
         private ToolStripMenuItem checkMD5OnExportToolStripMenuItem;
         private ToolStripMenuItem copyMD5ToolStripMenuItem;

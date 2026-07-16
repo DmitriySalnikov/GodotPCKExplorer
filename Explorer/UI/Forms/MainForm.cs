@@ -24,6 +24,8 @@ namespace GodotPCKExplorer.UI
             InitializeComponent();
             Icon = Properties.Resources.icon;
             FormBaseTitle = Text;
+            ThemeManager.Apply(this);
+            UpdateThemeToggleIcon();
 
             MatchCaseNormal = tsmi_match_case_filter.Font;
             MatchCaseStrikeout = new Font(tsmi_match_case_filter.Font, FontStyle.Strikeout);
@@ -71,6 +73,21 @@ namespace GodotPCKExplorer.UI
         {
             using var tmpAbout = new AboutBox1();
             tmpAbout.ShowDialog(this);
+        }
+
+        private void themeToggleToolStripMenuItem_Click(object? sender, EventArgs e)
+        {
+            ThemeManager.Toggle();
+            UpdateThemeToggleIcon();
+        }
+
+        void UpdateThemeToggleIcon()
+        {
+            var oldImage = themeToggleToolStripMenuItem.Image;
+            themeToggleToolStripMenuItem.Image = ThemeManager.CreateToggleIcon();
+            oldImage?.Dispose();
+            themeToggleToolStripMenuItem.ToolTipText = ThemeManager.IsDark ? "Switch to light theme" : "Switch to dark theme";
+            themeToggleToolStripMenuItem.AccessibleName = themeToggleToolStripMenuItem.ToolTipText;
         }
 
         private void checkForUpdates_tstb_Click(object sender, EventArgs e)
