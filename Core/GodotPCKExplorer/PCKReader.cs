@@ -253,23 +253,50 @@ namespace GodotPCKExplorer
 
                 if (magic != PCKUtils.PCK_MAGIC)
                 {
-                    //maybe at the end.... self contained exe
-                    fileReader.BaseStream.Seek(-4, SeekOrigin.End);
-                    magic = fileReader.ReadInt32();
-                    if (magic != PCKUtils.PCK_MAGIC)
+                    // A self-contained executable stores the PCK size and magic at
+                    // the end of the file. Newer exporters also keep the embedded
+                    // position in the trailer, so accept both trailer layouts.
+                    long fileLength = fileReader.BaseStream.Length;
+                    if (fileLength < 12)
                     {
                         fileReader.Close();
                         if (show_NotPCKError)
                             PCKActions.progress?.ShowMessage("Not a Godot PCK file!", "Error", MessageType.Error);
                         return false;
                     }
-                    fileReader.BaseStream.Seek(-12, SeekOrigin.Current);
 
+                    fileReader.BaseStream.Seek(fileLength - 12, SeekOrigin.Begin);
                     long ds = fileReader.ReadInt64();
-                    fileReader.BaseStream.Seek(-ds - 8, SeekOrigin.Current);
-
                     magic = fileReader.ReadInt32();
-                    if (magic != PCKUtils.PCK_MAGIC)
+
+                    long pckEnd = fileLength - 12;
+                    long pckStart = pckEnd - ds;
+
+                    bool validRange = ds >= 0 && pckStart >= 0 && pckStart + 4 <= pckEnd;
+                    if (validRange)
+                    {
+                        fileReader.BaseStream.Seek(pckStart, SeekOrigin.Begin);
+                        validRange = fileReader.ReadInt32() == PCKUtils.PCK_MAGIC;
+                    }
+
+                    // Godot 4.7+ may emit [embedded position][PCK size][magic].
+                    // The position is redundant, but is useful when the executable
+                    // contains data after the PCK.
+                    if (!validRange && magic == PCKUtils.PCK_MAGIC && fileLength >= 20)
+                    {
+                        fileReader.BaseStream.Seek(fileLength - 20, SeekOrigin.Begin);
+                        long embeddedPosition = fileReader.ReadInt64();
+                        long embeddedEnd = embeddedPosition + ds;
+                        validRange = ds >= 0 && embeddedPosition >= 0 &&
+                            embeddedEnd >= embeddedPosition && embeddedEnd <= fileLength - 12;
+                        if (validRange)
+                        {
+                            pckStart = embeddedPosition;
+                            pckEnd = embeddedEnd;
+                        }
+                    }
+
+                    if (magic != PCKUtils.PCK_MAGIC || !validRange)
                     {
                         fileReader.Close();
                         if (show_NotPCKError)
@@ -281,8 +308,10 @@ namespace GodotPCKExplorer
                     {
                         // If embedded PCK
                         PCK_Embedded = true;
-                        PCK_StartPosition = fileReader.BaseStream.Position - 4;
-                        PCK_EndPosition = fileReader.BaseStream.Length - 12;
+                        PCK_StartPosition = pckStart;
+                        PCK_EndPosition = pckEnd;
+                        PCKActions.progress?.LogProgress(op, $"Embedded PCK range: start={PCK_StartPosition}, end={PCK_EndPosition}, size={PCK_EndPosition - PCK_StartPosition}, file size={fileLength}");
+                        fileReader.BaseStream.Seek(PCK_StartPosition + sizeof(int), SeekOrigin.Begin);
                     }
                 }
                 else

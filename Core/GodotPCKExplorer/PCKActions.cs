@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using NativeLibraryLoader;
 
@@ -489,6 +490,11 @@ namespace GodotPCKExplorer
             {
                 bool res = false;
                 long to_write = 0;
+                long pck_start = 0;
+                long pck_end = 0;
+                bool rewritePeHeaders = false;
+                bool updatePeImageSize = false;
+                bool removePeSection = false;
 
                 using (var pckReader = new PCKReader())
                 {
@@ -499,6 +505,20 @@ namespace GodotPCKExplorer
                         return false;
                     }
                     to_write = pckReader.PCK_StartPosition;
+                    pck_start = to_write;
+                    pck_end = pckReader.PCK_EndPosition;
+                    var version = pckReader.PCK_Version;
+                    rewritePeHeaders = version.Pack >= 4 ||
+                        (version.Pack == 3 &&
+                         (version.Major > 4 ||
+                          (version.Major == 4 &&
+                           (version.Minor > 6 ||
+                            (version.Minor == 6 && version.Revision >= 0)))));
+                    removePeSection = rewritePeHeaders;
+                    updatePeImageSize = rewritePeHeaders;
+                    long inputLength = new FileInfo(exeFile).Length;
+                    progress?.Log($"Embedded PCK range: start={to_write}, end={pck_end}, size={pck_end - to_write}, input size={inputLength}, trailing bytes={inputLength - pck_end}");
+                    LogPELayout(exeFile, to_write);
 
                     if (!pckReader.PCK_Embedded)
                     {
@@ -523,6 +543,45 @@ namespace GodotPCKExplorer
                         else
                         {
                             return false;
+                        }
+                    }
+
+                    static void LogPELayout(string path, long pckStart)
+                    {
+                        try
+                        {
+                            using (var stream = File.OpenRead(path))
+                            using (var reader = new BinaryReader(stream))
+                            {
+                                ushort mz = reader.ReadUInt16();
+                                stream.Seek(0x3c, SeekOrigin.Begin);
+                                int peOffset = reader.ReadInt32();
+                                stream.Seek(peOffset, SeekOrigin.Begin);
+                                uint signature = reader.ReadUInt32();
+                                ushort machine = reader.ReadUInt16();
+                                ushort sectionCount = reader.ReadUInt16();
+                                stream.Seek(12, SeekOrigin.Current);
+                                ushort optionalHeaderSize = reader.ReadUInt16();
+                                stream.Seek(peOffset + 24 + optionalHeaderSize, SeekOrigin.Begin);
+
+                                long sectionEnd = 0;
+                                for (int i = 0; i < sectionCount; i++)
+                                {
+                                    stream.Seek(8, SeekOrigin.Current);
+                                    uint virtualSize = reader.ReadUInt32();
+                                    stream.Seek(4, SeekOrigin.Current);
+                                    uint rawSize = reader.ReadUInt32();
+                                    uint rawAddress = reader.ReadUInt32();
+                                    sectionEnd = Math.Max(sectionEnd, (long)rawAddress + rawSize);
+                                    stream.Seek(16, SeekOrigin.Current);
+                                }
+
+                                progress?.Log($"PE layout: MZ=0x{mz:X4}, PE=0x{signature:X8}, machine=0x{machine:X4}, sections={sectionCount}, section raw end={sectionEnd}, PCK start={pckStart}, PCK starts after PE={pckStart >= sectionEnd}");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            progress?.Log($"PE layout diagnostic failed: {ex.Message}");
                         }
                     }
                 }
@@ -551,15 +610,38 @@ namespace GodotPCKExplorer
                     try
                     {
                         exeOld = new BinaryReader(File.OpenRead(oldExeFile));
-                        exeNew = new BinaryWriter(File.OpenWrite(exeFile));
+                        exeNew = new BinaryWriter(new FileStream(exeFile, FileMode.Create, FileAccess.Write, FileShare.Read));
                         while (to_write > 0)
                         {
                             var read = exeOld.ReadBytes(Math.Min(PCKUtils.BUFFER_MAX_SIZE, (int)to_write));
                             exeNew.Write(read);
                             to_write -= read.Length;
                         }
+
+                        // Some newer exporters can place data after the embedded
+                        // PCK. Keep that executable data when removing the PCK.
+                        long trailerStart = exeOld.BaseStream.Length - 12;
+                        long suffixLength = trailerStart - pck_end;
+                        if (suffixLength > 0)
+                        {
+                            exeOld.BaseStream.Seek(pck_end, SeekOrigin.Begin);
+                            while (suffixLength > 0)
+                            {
+                                var read = exeOld.ReadBytes(Math.Min(PCKUtils.BUFFER_MAX_SIZE, (int)suffixLength));
+                                if (read.Length == 0)
+                                    break;
+                                exeNew.Write(read);
+                                suffixLength -= read.Length;
+                            }
+                        }
+                        progress?.Log($"Split executable size before close: {exeNew.BaseStream.Position}");
                         exeOld.Close();
                         exeNew.Close();
+
+                         // Godot 2 exports use the legacy PE layout. Godot 3 and newer
+                         // require the embedded section to be removed after truncation.
+                         if (rewritePeHeaders)
+                             PCKActions.TrimEmbeddedPCKFromPE(exeFile, pck_start, removePeSection, updatePeImageSize);
                     }
                     catch (Exception ex)
                     {
@@ -604,6 +686,162 @@ namespace GodotPCKExplorer
                 progress?.ShowMessage($"Specified file does not exists! '{exeFile}'", "Error", MessageType.Error);
             }
             return false;
+        }
+
+        static void TrimEmbeddedPCKFromPE(string path, long pckStart, bool removeSection, bool updateImageSize)
+        {
+            using (var stream = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.Read))
+            using (var reader = new BinaryReader(stream))
+            {
+                stream.Seek(0x3c, SeekOrigin.Begin);
+                long peOffset = reader.ReadInt32();
+                stream.Seek(peOffset + 6, SeekOrigin.Begin);
+                ushort sectionCount = reader.ReadUInt16();
+                stream.Seek(peOffset + 20, SeekOrigin.Begin);
+                ushort optionalHeaderSize = reader.ReadUInt16();
+                stream.Seek(peOffset + 24 + 32, SeekOrigin.Begin);
+                uint sectionAlignment = reader.ReadUInt32();
+                stream.Seek(peOffset + 24 + 56, SeekOrigin.Begin);
+                uint originalImageSize = reader.ReadUInt32();
+                long sectionTableOffset = peOffset + 24 + optionalHeaderSize;
+                stream.Seek(sectionTableOffset, SeekOrigin.Begin);
+
+                var sections = new List<byte[]>();
+                int pckSectionIndex = -1;
+                for (int i = 0; i < sectionCount; i++)
+                {
+                    var section = reader.ReadBytes(40);
+                    if (section.Length != 40)
+                        return;
+
+                    uint currentVirtualSize = BitConverter.ToUInt32(section, 8);
+                    uint currentRawSize = BitConverter.ToUInt32(section, 16);
+                    uint currentRawAddress = BitConverter.ToUInt32(section, 20);
+                    long currentRawEnd = (long)currentRawAddress + currentRawSize;
+                    if (currentRawSize != 0 && currentRawAddress != 0 &&
+                        currentRawAddress <= pckStart && currentRawEnd > pckStart)
+                        pckSectionIndex = i;
+
+                    sections.Add(section);
+                }
+
+                if (pckSectionIndex < 0)
+                {
+                    PCKActions.progress?.Log($"PE section lookup: no section contains PCK start={pckStart}; PE headers unchanged");
+                    return;
+                }
+
+                var pckSection = sections[pckSectionIndex];
+                uint pckRawAddress = BitConverter.ToUInt32(pckSection, 20);
+                uint pckRawSize = BitConverter.ToUInt32(pckSection, 16);
+                uint pckVirtualSize = BitConverter.ToUInt32(pckSection, 8);
+                uint newRawSize = (uint)(pckStart - pckRawAddress);
+                uint newVirtualSize = Math.Min(pckVirtualSize, newRawSize);
+                var keptSections = new List<byte[]>();
+                uint imageSize = 0;
+
+                for (int i = 0; i < sections.Count; i++)
+                {
+                    var section = sections[i];
+                    uint currentVirtualSize = BitConverter.ToUInt32(section, 8);
+                    uint currentVirtualAddress = BitConverter.ToUInt32(section, 12);
+                    uint currentRawSize = BitConverter.ToUInt32(section, 16);
+                    uint currentRawAddress = BitConverter.ToUInt32(section, 20);
+
+                    if (i == pckSectionIndex)
+                    {
+                        if (newRawSize == 0 && removeSection)
+                            continue;
+
+                        Array.Copy(BitConverter.GetBytes(removeSection ? newVirtualSize : 0), 0, section, 8, 4);
+                        Array.Copy(BitConverter.GetBytes(removeSection ? newRawSize : 0), 0, section, 16, 4);
+                    }
+
+                    // Sections whose file data follows the PCK cannot remain after truncation.
+                    if (i != pckSectionIndex && currentRawSize != 0 &&
+                        (long)currentRawAddress + currentRawSize > pckStart)
+                        continue;
+
+                    keptSections.Add(section);
+                    imageSize = Math.Max(imageSize, currentVirtualAddress + Math.Max(currentVirtualSize, currentRawSize));
+                }
+
+                stream.Seek(sectionTableOffset, SeekOrigin.Begin);
+                using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
+                {
+                    foreach (var section in keptSections)
+                        writer.Write(section);
+                    writer.Flush();
+                }
+
+                stream.Seek(peOffset + 6, SeekOrigin.Begin);
+                using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
+                {
+                    writer.Write((ushort)keptSections.Count);
+                    writer.Flush();
+                }
+
+                PCKActions.progress?.Log(newRawSize == 0 && removeSection
+                    ? $"PE PCK section removed: raw address={pckRawAddress}, old raw size={pckRawSize}, sections={keptSections.Count}"
+                    : removeSection
+                        ? $"PE PCK section trimmed: raw address={pckRawAddress}, old raw size={pckRawSize}, new raw size={newRawSize}, sections={keptSections.Count}"
+                        : $"PE PCK section cleared: raw address={pckRawAddress}, old raw size={pckRawSize}, sections={keptSections.Count}");
+
+                if (updateImageSize && sectionAlignment != 0)
+                {
+                    uint newImageSize = (uint)(((ulong)imageSize + sectionAlignment - 1) / sectionAlignment * sectionAlignment);
+                    stream.Seek(peOffset + 24 + 56, SeekOrigin.Begin);
+                    using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
+                    {
+                        writer.Write(newImageSize);
+                        writer.Flush();
+                    }
+                }
+
+                PCKActions.progress?.Log(updateImageSize
+                    ? $"PE image size updated: {imageSize}"
+                    : $"PE image size preserved: {originalImageSize}");
+            }
+
+            UpdatePEChecksum(path);
+        }
+
+        static void UpdatePEChecksum(string path)
+        {
+            using (var stream = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.Read))
+            using (var reader = new BinaryReader(stream))
+            {
+                stream.Seek(0x3c, SeekOrigin.Begin);
+                long peOffset = reader.ReadInt32();
+                long checksumOffset = peOffset + 24 + 64;
+                long fileLength = stream.Length;
+                ulong checksum = 0;
+
+                stream.Seek(0, SeekOrigin.Begin);
+                while (stream.Position < fileLength)
+                {
+                    if (stream.Position == checksumOffset)
+                    {
+                        stream.Seek(4, SeekOrigin.Current);
+                        continue;
+                    }
+
+                    int low = stream.ReadByte();
+                    int high = stream.Position < fileLength ? stream.ReadByte() : 0;
+                    checksum += (uint)(low | (high << 8));
+                    checksum = (checksum & 0xffff) + (checksum >> 16);
+                }
+
+                checksum = (checksum & 0xffff) + (checksum >> 16);
+                checksum += (ulong)fileLength;
+
+                stream.Seek(checksumOffset, SeekOrigin.Begin);
+                using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
+                {
+                    writer.Write((uint)checksum);
+                    writer.Flush();
+                }
+            }
         }
 
         /// <summary>
