@@ -14,7 +14,7 @@ namespace PCKBruteforcer
 
         public double ReportUpdateInterval = 0.25;
 
-        struct StartData(string exe, string pck, bool encIndex, long startPos, long endPos, CancellationTokenSource ct, int threadIdx, string? testFileName, PCKReaderFile? testFile, MemoryStream? memStr)
+        struct StartData(string exe, string pck, bool encIndex, long startPos, long endPos, CancellationTokenSource ct, int threadIdx, string? testFileName, PCKReaderFile? testFile, MemoryStream? memStr, byte[]? indexProbe, byte[]? indexProbeIV)
         {
             public string exe = exe;
             public string pck = pck;
@@ -27,6 +27,8 @@ namespace PCKBruteforcer
             public string? testFileName = testFileName;
             public PCKReaderFile? testFile = testFile;
             public MemoryStream? memStr = memStr;
+            public byte[]? indexProbe = indexProbe;
+            public byte[]? indexProbeIV = indexProbeIV;
         }
 
         public struct ResultData(bool result, string key, long address)
@@ -288,6 +290,50 @@ namespace PCKBruteforcer
                     return;
                 }
 
+                byte[]? indexProbe = null;
+                byte[]? indexProbeIV = null;
+
+                if (pck_encIndex)
+                {
+                    // The encrypted index starts with the plaintext file count, followed by
+                    // [MD5][size][IV][ciphertext]. A few bytes of that ciphertext are enough to
+                    // discard almost every candidate before the whole index is decrypted and
+                    // parsed, which is what makes the per-byte scan slow.
+                    try
+                    {
+                        using var probeReader = new BinaryReader(File.Open(pck, FileMode.Open, FileAccess.Read, FileShare.Read));
+                        long indexHeader = pck_IndexBase + sizeof(int);
+                        long fileLength = probeReader.BaseStream.Length;
+
+                        probeReader.BaseStream.Position = indexHeader;
+                        byte[] header = probeReader.ReadBytes(16 + 8 + mbedTLS.CHUNK_SIZE);
+                        byte[] cipher = probeReader.ReadBytes(32);
+
+                        long indexSize = header.Length == 40 ? BitConverter.ToInt64(header, 16) : -1;
+                        long cipherOffset = indexHeader + 40;
+                        long indexEnd = cipherOffset + (indexSize > 0 ? PCKUtils.AlignAddress(indexSize, mbedTLS.CHUNK_SIZE) : 0);
+
+                        // If this does not look like the index header, do not trust the probe and
+                        // fall back to validating every candidate against the whole index.
+                        if (cipher.Length == 32 && indexSize > 0 && indexEnd <= fileLength)
+                        {
+                            indexProbe = cipher;
+                            indexProbeIV = header[24..40];
+                        }
+                        else
+                        {
+                            Log("Could not read the encrypted index header, every candidate will be checked against the whole index.");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Not fatal: fall back to validating every candidate against the whole index
+                        Log(ex);
+                        indexProbe = null;
+                        indexProbeIV = null;
+                    }
+                }
+
                 List<Thread> threads = [];
                 ResultData[] thread_results = new ResultData[threadsCount];
                 ThreadProgressData[] thread_progress = new ThreadProgressData[threadsCount];
@@ -337,7 +383,9 @@ namespace PCKBruteforcer
                             i,
                             pck_in_memory_file_name,
                             pck_in_memory_file,
-                            encMemChunk != null ? new MemoryStream(encMemChunk) : null);
+                            encMemChunk != null ? new MemoryStream(encMemChunk) : null,
+                            indexProbe,
+                            indexProbeIV);
 
                         args.reportProgress = (percent, address) =>
                         {
@@ -488,6 +536,97 @@ namespace PCKBruteforcer
             }
         }
 
+        /// <summary>
+        /// Returns a 32 byte window for every position in [startPos, endPos).
+        /// The executable is read sequentially in chunks instead of seeking for every byte.
+        /// The returned memory points into a shared buffer and is only valid until the next
+        /// iteration, so consumers must copy it if they need to keep it.
+        /// </summary>
+        static IEnumerable<(long Position, ReadOnlyMemory<byte> Window)> EnumerateCandidates(Stream exe, long startPos, long endPos, CancellationToken ct, Action<long> reportProgress)
+        {
+            const int ChunkSize = 1024 * 1024;
+            byte[] buffer = new byte[ChunkSize + 31];
+            long position = startPos;
+            int untilReport = 0;
+
+            while (position < endPos)
+            {
+                if (ct.IsCancellationRequested)
+                    yield break;
+
+                int want = (int)Math.Min(buffer.Length, endPos + 31 - position);
+                if (want < 32)
+                    yield break;
+
+                exe.Position = position;
+                int got = 0;
+                while (got < want)
+                {
+                    int read = exe.Read(buffer, got, want - got);
+                    if (read <= 0)
+                        break;
+                    got += read;
+                }
+
+                if (got < 32)
+                    yield break;
+
+                for (int i = 0; i + 32 <= got; i++)
+                {
+                    if (++untilReport == 4096)
+                    {
+                        untilReport = 0;
+                        reportProgress(position + i);
+                    }
+
+                    yield return (position + i, new ReadOnlyMemory<byte>(buffer, i, 32));
+                }
+
+                position += got - 31;
+            }
+        }
+
+        /// <summary>
+        /// Cheap structural test for a decrypted index: the file table starts with the length
+        /// of the first path followed by the path itself, which points inside the project.
+        /// Exported Godot packs always use "res://" paths; relative printable paths are accepted
+        /// too so custom packers do not become false negatives.
+        /// </summary>
+        static bool LooksLikeIndexStart(ReadOnlySpan<byte> plain)
+        {
+            if (plain.Length < 10)
+                return false;
+
+            int pathLength = BitConverter.ToInt32(plain);
+            if (pathLength < 6 || pathLength > 4096)
+                return false;
+
+            int visible = Math.Min(pathLength, plain.Length - 4);
+            ReadOnlySpan<byte> path = plain.Slice(4, visible);
+
+            if (path.StartsWith("res://"u8))
+            {
+                for (int i = 6; i < path.Length; i++)
+                {
+                    // UTF-8 is allowed, control characters are not
+                    if (path[i] < 0x20)
+                        return false;
+                }
+
+                return true;
+            }
+
+            // Custom packs may use relative paths. Requiring the visible part to be printable
+            // ASCII keeps the false positive rate negligible.
+            for (int i = 0; i < path.Length; i++)
+            {
+                if (path[i] < 0x20 || path[i] > 0x7E)
+                    return false;
+            }
+
+            return true;
+        }
+
         ResultData BruteforcePartial(StartData args)
         {
             Thread.CurrentThread.Name = $"Bruteforce thread {args.threadIdx}";
@@ -499,13 +638,19 @@ namespace PCKBruteforcer
 
             try
             {
-                using var exeReader = new BinaryReader(File.Open(args.exe, FileMode.Open, FileAccess.Read, FileShare.Read));
+                using var exeStream = File.Open(args.exe, FileMode.Open, FileAccess.Read, FileShare.Read);
 
                 Log($"Thread {args.threadIdx} Started on {args.startPos}");
-                var exeStream = exeReader.BaseStream;
-                exeStream.Position = args.startPos;
 
                 double data_length = args.endPos - args.startPos;
+                byte[] keyBytes = new byte[32];
+
+                void Report(long position)
+                {
+                    hex_position = position;
+                    current_progress = (int)((position - args.startPos) / data_length * ProgressMaximum);
+                    args.reportProgress?.Invoke(current_progress, position);
+                }
 
                 if (args.encIndex)
                 {
@@ -514,28 +659,39 @@ namespace PCKBruteforcer
                         args.memStr != null ? args.memStr : File.Open(args.pck, FileMode.Open, FileAccess.Read, FileShare.Read),
                         Encoding.UTF8, args.memStr != null);
 
-                    while ((args.endPos - exeStream.Position) > 0)
+                    // Decrypting the whole index for every byte is what made this slow. Decrypting
+                    // its first block with the candidate key and checking that it looks like a
+                    // resource path rejects almost every position before the full parse.
+                    using mbedTLS? mtls = args.indexProbe != null && args.indexProbeIV != null ? new mbedTLS() : null;
+                    byte[] iv = new byte[mbedTLS.CHUNK_SIZE];
+                    byte[] plain = new byte[32];
+
+                    foreach (var (position, window) in EnumerateCandidates(exeStream, args.startPos, args.endPos, args.ct.Token, Report))
                     {
                         if (args.ct.IsCancellationRequested)
                         {
                             return new ResultData();
                         }
 
-                        hex_position = exeStream.Position;
-                        current_progress = (int)((exeStream.Position - args.startPos) / data_length * ProgressMaximum);
-                        args.reportProgress?.Invoke(current_progress, hex_position);
+                        window.Span.CopyTo(keyBytes);
 
-                        var bytes = exeReader.ReadBytes(32);
-                        if (bytes.Length < 32)
+                        if (mtls != null)
                         {
-                            return new ResultData();
+                            Buffer.BlockCopy(args.indexProbeIV!, 0, iv, 0, mbedTLS.CHUNK_SIZE);
+                            mtls.set_key(keyBytes);
+                            mtls.decrypt_cfb(iv, args.indexProbe!, plain);
+
+                            if (!LooksLikeIndexStart(plain))
+                            {
+                                continue;
+                            }
                         }
 
                         br.BaseStream.Position = 0;
                         DisablePCKLogs();
                         bool res = pckReader.OpenFile(
                             br,
-                            getEncryptionKey: () => new PCKReaderEncryptionKeyResult() { KeyBytes = bytes },
+                            getEncryptionKey: () => new PCKReaderEncryptionKeyResult() { KeyBytes = keyBytes },
                             disableExceptions: true,
                             cancellationToken: args.ct.Token);
                         pckReader.Close();
@@ -544,11 +700,8 @@ namespace PCKBruteforcer
                         if (res)
                         {
                             args.ct.Cancel();
-                            return new ResultData(true, PCKUtils.ByteArrayToHexString(bytes), hex_position);
+                            return new ResultData(true, PCKUtils.ByteArrayToHexString(keyBytes), position);
                         }
-
-                        // Move to next byte
-                        exeStream.Seek(-32 + 1, SeekOrigin.Current);
                     }
                 }
                 else
@@ -563,27 +716,19 @@ namespace PCKBruteforcer
                         args.memStr != null ? args.memStr : File.Open(args.pck, FileMode.Open, FileAccess.Read, FileShare.Read),
                         Encoding.UTF8, true);
 
-                    while ((args.endPos - exeStream.Position) > 0)
+                    foreach (var (position, window) in EnumerateCandidates(exeStream, args.startPos, args.endPos, args.ct.Token, Report))
                     {
                         if (args.ct.IsCancellationRequested)
                         {
                             return new ResultData();
                         }
 
-                        hex_position = exeStream.Position;
-                        current_progress = (int)((exeStream.Position - args.startPos) / data_length * ProgressMaximum);
-                        args.reportProgress?.Invoke(current_progress, hex_position);
-
-                        var bytes = exeReader.ReadBytes(32);
-                        if (bytes.Length < 32)
-                        {
-                            return new ResultData();
-                        }
+                        window.Span.CopyTo(keyBytes);
 
                         DisablePCKLogs();
                         br.BaseStream.Position = args.memStr != null ? 0 : args.testFile.Offset;
                         long fileSize = 0;
-                        using (var r = new PCKEncryptedFileReader(br, bytes))
+                        using (var r = new PCKEncryptedFileReader(br, keyBytes))
                         {
                             memFile.BaseStream.Position = 0;
                             foreach (var chunk in r.ReadDencryptedBlocks())
@@ -597,11 +742,8 @@ namespace PCKBruteforcer
                         if (args.testFile.MD5.SequenceEqual(PCKUtils.GetStreamMD5(memFile.BaseStream, 0, fileSize)))
                         {
                             args.ct.Cancel();
-                            return new ResultData(true, PCKUtils.ByteArrayToHexString(bytes), hex_position);
+                            return new ResultData(true, PCKUtils.ByteArrayToHexString(keyBytes), position);
                         }
-
-                        // Move to next byte
-                        exeStream.Seek(-32 + 1, SeekOrigin.Current);
                     }
                 }
             }
